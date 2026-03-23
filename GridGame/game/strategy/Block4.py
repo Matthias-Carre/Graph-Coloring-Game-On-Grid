@@ -24,6 +24,8 @@ class Block:
         self.particular_config_j = None # index of the j for the particular config 
         self.particular_config_block = None #give the block with the particular config rotated
 
+        self.particular_configs = []
+
         self.is_right_flipped = False
         self.is_left_flipped = False
         
@@ -302,34 +304,57 @@ class Block:
     
 
     # In reverse of the paiper (j,1 j,2 j,3 j,4 => j,3 j,2 j,1 j,0) 
-    # a sont importance D' et D2' sont pas sym horisontale
+    # ONLY D' and D2' Have vertical sym
     # j,1 == j,3 == j+2,0 == j+2,2 != 0 
     # j+1,0 == j+1,1 == j+1,3 == j+2,1 == j+2,3 == 0
     # j+1,2 != 0 != j,1
-    def is_Delta(self):
+    
+    # particular config functions return list of tuples (config,j,is_fliped) 
+    def get_Delta(self):
         #j = border col - 2
 
-        if(len(self.columns) < 3): return False
+        if(len(self.columns) < 3): return []
         j = len(self.columns) - 3
-        #print(f"Delta config: j={self.columns[j][0].y}")
+
+        res = []
+
+        # not fliped
         cell_c = [(j,1),(j,3),(j+2,0),(j+2,2)]
         cell_0 = [(j+1,0),(j+1,1),(j+1,3),(j+2,1),(j+2,3)]
         if self.same_value(cell_c) and self.columns[j][1].value !=0:
             if self.same_value(cell_0) and self.columns[j+1][0].value == 0 :
                 if self.columns[j+1][2].value != 0 and self.columns[j][1].value != self.columns[j+1][2].value: 
                     self.particular_config_j = self.columns[j][0].y
-                    return True
-                
-        return False
+                    res.append(("D",j,False))
+
+        # fliped
+        cell_c = [(j,2),(j,0),(j+2,3),(j+2,1)]
+        cell_0 = [(j+1,3),(j+1,2),(j+1,0),(j+2,2),(j+2,0)]
+        if self.same_value(cell_c) and self.columns[j][2].value !=0:
+            if self.same_value(cell_0) and self.columns[j+1][3].value == 0 :
+                if self.columns[j+1][1].value != 0 and self.columns[j][2].value != self.columns[j+1][1].value: 
+                    self.particular_config_j = self.columns[j][0].y
+                    res.append(("D",j,True))
+
+        print("Block4: get_Delta res: ", res)
+        return res
+
+
+    # D' and D2' are only particular config with vertic sym
+
+    # D' can appear multiple times so we return the list of j and if fliped
 
     #Is Delta'
     #j-1,1 == j,0 == j,3 == j+1,1 == j+2,3 == j+4,2 != 0
     #j-1,2 == j,1 == j,2 == j+1,0 == j+1,2 == j+1,3 == j+2,0 == j+2,1 == j+2,2 == 0
-    def is_Delta_p(self):
+
+    def get_Delta_p(self):
         j_first = len(self.columns) - 4
         if (len(self.columns) < 5):
-            return False
+            return []
         
+        # list of tuples (j,is_fliped) for each config found in the block
+        res =[]
         #checking for the config starting from each column (to detect config in the middle)
         for j in range(j_first, 0, -1):
             print(f"Block4: j={j}")
@@ -337,92 +362,111 @@ class Block:
             cell_0 = [(j-1,2),(j,1),(j,2),(j+1,0),(j+1,2),(j+1,3),(j+2,0),(j+2,1),(j+2,2)]
             if self.same_value(cell_c) and self.columns[j-1][1].value !=0:
                 if self.same_value(cell_0) and self.columns[j-1][2].value == 0 : 
-                    self.particular_config_j = self.columns[j][0].y
-                    return True
-                
-        return False
+                    res.append(("D'",j,False))
+                    
+        
+        #check for horisontal fliped
+        for j in range(j_first, 0, -1):
+            cell_c = [(j-1,2),(j,3),(j,0),(j+1,2),(j+2,0),(j+3,1)]
+            cell_0 = [(j-1,1),(j,2),(j,1),(j+1,3),(j+1,1),(j+1,0),(j+2,3),(j+2,2),(j+2,1)]
+            if self.same_value(cell_c) and self.columns[j-1][2].value !=0:
+                if self.same_value(cell_0) and self.columns[j-1][1].value == 0 : 
+                    res.append(("D'",j,True))
+
+        return res
 
 
     # j-1,1 == j,0 == j,3 == j+1,1 == j+2,3 !=0
     # j+2,2 != 0 != j-1,1
     # j-1,2 == j,1 == j,2 == j+1,0 == j+1,2 == j+1,3 == 0
-    def is_Delta_p2(self):
+    def get_Delta_p2(self):
         j_max=len(self.columns) - 3
         if (len(self.columns) < 4):
-            return False
+            return []
+        res = []
         for j in range(j_max, 0, -1): 
             cell_c = [(j-1,1),(j,0),(j,3),(j+1,1),(j+2,3)]
             cell_0 = [(j-1,2),(j,1),(j,2),(j+1,0),(j+1,2),(j+1,3)]
             if self.same_value(cell_c) and self.columns[j-1][1].value !=0:
                 if self.same_value(cell_0) and self.columns[j-1][2].value == 0 and self.columns[j+2][2].value != 0 and self.columns[j-1][1].value != self.columns[j+2][2].value:
                     self.particular_config_j = self.columns[j][0].y
-                    return True
-        return False
-   
+                    res.append(("D2",j,False))
+        
+        #check for horisontal fliped
+        for j in range(j_max, 0, -1):
+            cell_c = [(j-1,2),(j,3),(j,0),(j+1,2),(j+2,0)]
+            cell_0 = [(j-1,1),(j,2),(j,1),(j+1,3),(j+1,1),(j+1,0)]
+            if self.same_value(cell_c) and self.columns[j-1][2].value !=0:
+                if self.same_value(cell_0) and self.columns[j-1][1].value == 0 and self.columns[j+2][1].value != 0 and self.columns[j-1][2].value != self.columns[j+2][1].value:
+                    self.particular_config_j = self.columns[j][0].y
+                    res.append(("D2",j,True))
+
+
+        return res
+
 
     #Lambda praticular case like pi
-    #Lambda and Lambda' only symetric on horizontal
     #j-1 empty
     #j-2,0 == j-2,2 == j,1 == j,3 != 0
     #j-2,1 == j-2,3 == "j-1" == j,2 == 0
     #j,0 != j,1 =! j+1,2!= 0
     #j+1,2 != j,1 =! 0
-    def is_Lambda(self):
+    def get_Lambda(self):
         if self.size < 2:
-             return False
+             return []
         if(self.start_col -2 < 0):
-            return False
-        ''''
-        cell_jm2_0 = self.grid.get_cell(self.start_col -2,0)
-        cell_jm2_2 = self.grid.get_cell(self.start_col -2,2)
-        cell_j_1 = self.columns[0][1]
-        cell_j_3 = self.columns[0][3]
+            return []
+        res = []
 
-        cells_c = [cell_jm2_2,cell_jm2_0,cell_j_1,cell_j_3]
-
-        cell_jm2_1 = self.grid.get_cell(self.start_col -2,1)
-        cell_jm2_3 = self.grid.get_cell(self.start_col -2,3)
-        cell_j_2 = self.columns[0][2]
-        cells_0 = [cell_jm2_1,cell_jm2_3,cell_j_2]
-
-        cell_j_0 = self.columns[0][0]
-
-        cell_jp1_2 = self.grid.get_cell(self.start_col +1,2)
-        '''
         cell_jm2_0 = self.grid.get_cell(self.start_col -2,0)
         cell_jm2_1 = self.grid.get_cell(self.start_col -2,1)
         cell_j_0 = self.columns[0][0]
         cell_jp1_2 = self.grid.get_cell(self.start_col +1,2)
-
 
         j = self.start_col
         cells_0 = [(j-2,1),(j-2,3),(j,2)]
         cells_c = [(j-2,0),(j-2,2),(j,1),(j,3)]
-
 
         if  self.same_value_grid(cells_c) and cell_jm2_0.value != 0:
             if self.same_value_grid(cells_0) and cell_jm2_1.value == 0:
                 if(cell_j_0.value != cell_jm2_0.value and cell_j_0.value != 0):
                     if(cell_jp1_2.value != cell_jm2_0.value and cell_jp1_2.value != 0 and cell_jp1_2.value != cell_j_0.value):
                         print("Block4: Lambda config")
-                        self.particular_config_j = self.columns[j][0].y
-                        return True
+                        print(f"Block4: Lambda config j={j},{len(self.columns)}")
+                        #self.particular_config_j = self.columns[j][0].y
+                        self.particular_config_j = self.grid.get_cell(j,0).y
+                        res.append(("L",j,False))
+                        
+        #check for horisontal fliped
+        cell_jm2_3 = self.grid.get_cell(self.start_col -2,3)
+        cell_jm2_2 = self.grid.get_cell(self.start_col -2,2)
+        cell_j_3 = self.columns[0][3]
+        cell_jp1_1 = self.grid.get_cell(self.start_col +1,1)
 
-        #block = Block(self.grid)
+        cells_0 = [(j-2,2),(j-2,0),(j,1)]
+        cells_c = [(j-2,3),(j-2,1),(j,2),(j,0)] 
+
+        if self.same_value_grid(cells_c) and cell_jm2_3.value != 0:
+            if self.same_value_grid(cells_0) and cell_jm2_2.value == 0:
+                if(cell_j_3.value != cell_jm2_3.value and cell_j_3.value != 0):
+                    if(cell_jp1_1.value != cell_jm2_3.value and cell_jp1_1.value != 0 and cell_jp1_1.value != cell_j_3.value):
+                        res.append(("L",j,True))
         
 
-        return False
+        return res
 
 
     #j-2,0 == j-2,2 == j,1 == j,3 != 0
     #j-2,1 == j-2,3 == j,2 == j+1,1 == j+1,2 == j+1,3 == 0
     #j,0 != j,1 != 0
     #j+2,1 safe
-    def is_Lambda_p(self):
+    def get_Lambda_p(self):
         if self.size < 3:
-            return False
+            return []
         if (self.start_col -2 < 0):
-            return False
+            return []
+
+        res = []
 
         j = self.start_col
         cells_c = [(j-2,0),(j-2,2),(j,1),(j,3)]
@@ -432,7 +476,7 @@ class Block:
         cell_j_0 = self.columns[0][0]
         cell_jp2_1 = self.grid.get_cell(self.start_col +2,1)
 
-        if  self.same_value_grid(cells_c) and cell_jm2_0.value != 0:
+        if self.same_value_grid(cells_c) and cell_jm2_0.value != 0:
             print("Lambda_p: same value c")
             if self.same_value_grid(cells_0) and cell_jm2_1.value == 0:
                 print("Lambda_p: same value 0")
@@ -440,56 +484,91 @@ class Block:
                     print("Lambda_p: cell j,0 value")
                     if cell_jp2_1.is_safe:
                         print("Block4: Lambda' config")
-                        self.particular_config_j = self.columns[j][0].y
-                        return True
-        return False
+                        #self.particular_config_j = self.gird.get_cell(j,0).y
+                        res.append(("L'",j,False))
+
+        #check for horisontal fliped
+        cell_c = [(j-2,3),(j-2,1),(j,2),(j,0)]
+        cell_0 = [(j-2,2),(j-2,0),(j,1),(j+1,2),(j+1,1),(j+1,0)]
+        cell_jm2_3 = self.grid.get_cell(self.start_col -2,3)
+        cell_jm2_2 = self.grid.get_cell(self.start_col -2,2)
+        cell_j_3 = self.columns[0][3]
+        cell_jp2_2 = self.grid.get_cell(self.start_col +2,2)
+
+        if self.same_value_grid(cell_c) and cell_jm2_3.value != 0:
+            if self.same_value_grid(cell_0) and cell_jm2_2.value == 0:
+                if(cell_j_3.value != cell_jm2_3.value and cell_j_3.value != 0):
+                    if cell_jp2_2.is_safe:
+                        print("Block4: Lambda' fliped config")
+                        self.particular_config_j = self.grid.get_cell(j,3).y
+                        res.append(("L'",j,True))
+                    
+        return res
     
     #same as Lambda but j-2,1 or j-2,3 colored and j-3 not empty
-    def is_Lambda_2(self):
+    def get_Lambda_2(self):
         if self.size < 2:
-             return False
+             return []
         if(self.start_col -3 < 0):
-            return False
-        
+            return []
+        res = []
+
         cell_jm2_0 = self.grid.get_cell(self.start_col -2,0)
         cell_j_2 = self.grid.get_cell(self.start_col -2,1)
         cell_j_0 = self.columns[0][0]
         cell_jp1_2 = self.grid.get_cell(self.start_col +1,2)
-
-
         j = self.start_col
-        
         cells_c = [(j-2,0),(j-2,2),(j,1),(j,3)]
         cells_jm3 = [(j-3,0),(j-3,1),(j-3,2),(j-3,3)]
-
 
         if  self.same_value_grid(cells_c) and cell_jm2_0.value != 0:
             if cell_j_2.value == 0:
                 if(cell_j_0.value != cell_jm2_0.value and cell_j_0.value != 0):
                     if(cell_jp1_2.value != cell_jm2_0.value and cell_jp1_2.value != 0 and cell_jp1_2.value != cell_j_0.value):
-                        
                         #Check if j-3 not empty
                         if not(self.same_value_grid(cells_jm3)):
-
                             #check if j-2,1 or j-2,3 colored and other one empty
                             cell_jm2_3 = self.grid.get_cell(self.start_col -2,3)
                             cell_jm2_1 = self.grid.get_cell(self.start_col -2,1)
                             if (cell_jm2_1.value == 0 and cell_jm2_3.value != 0) or (cell_jm2_1.value != 0 and cell_jm2_3.value == 0):
                                 print("Block4: Lambda2 config")
                                 self.particular_config_j = self.columns[j][0].y
-                                return True
+                                res.append(("L2",j,False))
+        
+        #check for horisontal fliped
+        cell_jm2_3 = self.grid.get_cell(self.start_col -2,3)
+        cell_j_1 = self.grid.get_cell(self.start_col -2,1)
+        cell_j_3 = self.columns[0][3]
+        cell_jp1_1 = self.grid.get_cell(self.start_col +1,1)
 
-        return False
+        cells_c = [(j-2,3),(j-2,1),(j,2),(j,0)]
+        cells_jm3 = [(j-3,3),(j-3,2),(j-3,1),(j-3,0)]
+        if self.same_value_grid(cells_c) and cell_jm2_3.value != 0:
+            if cell_j_1.value == 0:
+                if(cell_j_3.value != cell_jm2_3.value and cell_j_3.value != 0):
+                    if(cell_jp1_1.value != cell_jm2_3.value and cell_jp1_1.value != 0 and cell_jp1_1.value != cell_j_3.value):
+                        #Check if j-3 not empty
+                        if not(self.same_value_grid(cells_jm3)):
+                            #check if j-2,2 or j-2,0 colored and other one empty
+                            cell_jm2_0 = self.grid.get_cell(self.start_col -2,0)
+                            cell_jm2_2 = self.grid.get_cell(self.start_col -2,2)
+                            if (cell_jm2_2.value == 0 and cell_jm2_0.value != 0) or (cell_jm2_2.value != 0 and cell_jm2_0.value == 0):
+                                print("Block4: Lambda2 fliped config")
+                                self.particular_config_j = self.columns[j][3].y
+                                res.append(("L2",j,True))
+
+        return res
     
 
 
     #same as Lambda' but j-2,1 or j-2,3 colored and j-3 not empty
-    def is_Lambda_2_p(self):
+    def get_Lambda_2_p(self):
         if self.size < 3:
-            return False
+            return []
         if (self.start_col -3 < 0):
-            return False
+            return []
 
+        res = []
         j = self.start_col
         cells_c = [(j-2,0),(j-2,2),(j,1),(j,3)]
         cells_0 = [(j,2),(j+1,1),(j+1,2),(j+1,3)]
@@ -516,8 +595,32 @@ class Block:
                             if (cell_jm2_1.value == 0 and cell_jm2_3.value != 0) or (cell_jm2_1.value != 0 and cell_jm2_3.value == 0):
                                 print("Block4: Lambda2' config")
                                 self.particular_config_j = self.columns[j][0].y
-                                return True
-        return False
+                                res.append(("L2'",j,False))
+
+        #check for horisontal fliped
+        cell_c = [(j-2,3),(j-2,1),(j,2),(j,0)]
+        cell_0 = [(j,1),(j+1,2),(j+1,1),(j+1,0)]
+        cell_jm2_3 = self.grid.get_cell(self.start_col -2,3)
+        cell_j_1 = self.grid.get_cell(self.start_col -2,1)
+        cell_j_3 = self.columns[0][3]
+        cell_jp2_2 = self.grid.get_cell(self.start_col +2,2)
+        cells_jm3 = [(j-3,3),(j-3,2),(j-3,1),(j-3,0)]
+
+        if self.same_value_grid(cell_c) and cell_jm2_3.value != 0:
+            if self.same_value_grid(cell_0) and cell_j_1.value == 0:
+                if(cell_j_3.value != cell_jm2_3.value and cell_j_3.value != 0):
+                    if cell_jp2_2.is_safe:
+                        #Check if j-3 not empty
+                        if not(self.same_value_grid(cells_jm3)):
+                            #check if j-2,2 or j-2,0 colored and other one empty
+                            cell_jm2_0 = self.grid.get_cell(self.start_col -2,0)
+                            cell_jm2_2 = self.grid.get_cell(self.start_col -2,2)
+                            if (cell_jm2_2.value == 0 and cell_jm2_0.value != 0) or (cell_jm2_2.value != 0 and cell_jm2_0.value == 0):
+                                print("Block4: Lambda2' fliped config")
+                                self.particular_config_j = self.columns[j][3].y
+                                res.append(("L2'",j,True))
+
+        return res
 
 
 
@@ -549,39 +652,45 @@ class Block:
             self.right_configuration = "p"
             
 
- 
-  
+
         #manage particulars cases
-        if self.is_Delta():
-            self.particular_config = "Delta"
-      
-        if self.is_Delta_p():
-            self.particular_config = "Delta'"
-
-        if self.is_Delta_p2():
-            self.particular_config = "Delta2'"
-
-        if self.is_Lambda():
-            self.particular_config = "Lambda"
-
-        if self.is_Lambda_p():
-            self.particular_config = "Lambda'"
-
-        if self.is_Lambda_2():
-            self.particular_config = "Lambda2"
-
-        if self.is_Lambda_2_p():
-            self.particular_config = "Lambda2'"
+        self.manage_particular_config()
 
         print(f"Block from column {self.start_col} to {self.end_col}, size: {self.size}")
         print(f"RIGHT {self.right_configuration} LEFT {self.left_configuration}")
         print(f"particular config: {self.particular_config}")
-        '''
-        print("RIGHT config:")
-        self.print_block(self.flip_config_right)
-        print("LEFT config:")
-        self.print_block(self.flip_config_left)
-        '''
+
+
+
+    # managment of the particular config fliped or not
+    def manage_particular_config(self):
+        particular_configs = []
+        Delta_conf = self.get_Delta()
+        if Delta_conf != []:
+            particular_configs.append(Delta_conf)
+        Delta_p_conf = self.get_Delta_p()
+        if Delta_p_conf != []:
+            particular_configs.append(Delta_p_conf)
+        Delta_p2_conf = self.get_Delta_p2()
+        if Delta_p2_conf != []:
+            particular_configs.append(Delta_p2_conf)
+        Lambda_conf = self.get_Lambda()
+        if Lambda_conf != []:
+            particular_configs.append(Lambda_conf)
+        Lambda_p_conf = self.get_Lambda_p()
+        if Lambda_p_conf != []:
+            particular_configs.append(Lambda_p_conf)
+        Lambda_2_conf = self.get_Lambda_2()
+        if Lambda_2_conf != []:
+            particular_configs.append(Lambda_2_conf)
+        Lambda_2_p_conf = self.get_Lambda_2_p()
+        if Lambda_2_p_conf != []:
+            particular_configs.append(Lambda_2_p_conf)
+
+        
+
+        print(f"Block4: particular config {particular_configs}")
+
     #flip the block on horizontal axis 
     #goal is to apply same strategy after fliping (creating a new block object pointing to same cells)
     def flip_horizontal(self):

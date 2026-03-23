@@ -656,6 +656,7 @@ def solve_3_gamma_F(grid,bob_move):
 def is_3_gamma(grid,bob_move):
     #Bob play between gamma and (alpha beta or gamma)
     
+    return False
     
 
 """
