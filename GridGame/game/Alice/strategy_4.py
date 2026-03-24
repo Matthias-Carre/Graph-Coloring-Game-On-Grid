@@ -45,27 +45,34 @@ def is_1Delta(grid,bob_move):
     x,y,color = bob_move
     block = grid.blocks.block_at(x)
 
-    if block.particular_config != "Delta":
+    if grid.bob_play_on_config["config"] != "D":
         return False
-
-    j = block.particular_config_j
-    #Bob play in j+1 or j+2 of Delta
-    print("x =",x,"j=",j)
-    if x == j+1 or x == j+2:
-        return True
-
-    print("Bob in block D","j=",block.particular_config_j)
-    return False
+    print("Strat 1Delta: Bob played on:",grid.bob_play_on_config)
+    return True
 
 def solve_1Delta(grid,bob_move):
     x,y,color = bob_move
-    j =  grid.blocks.block_at(x).particular_config_j
+    is_h_flip = grid.bob_play_on_config["is_hori_flipped"]
+    is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
     
-    if x == j+1 and y == 1 :
-        print("Alice colore dans j+1 ")
+    j = grid.bob_play_on_config["j"]
+    dx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
+
+    #Bob play 1,j+1 => Alice play any of j+1
+    #else => A 1,j+1
+    if (dx == 1 and ny == 1):
+        #Alice play 1,j+1 with any color
+        cell = get_norm_cell(grid,1,0,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
+        print("1 Delta a")
+        return (rx,ry,cell.color_options[0])
     else:
-        print("Alice colore sick")
-        
+        #Alice play 1,j+1 (color the sound vertex)
+        cell = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+        print("1 Delta b")
+        return (rx,ry,cell.color_options[0])
+'''=-=--=-=-=-=-=-=-=-=-=-=- A MODIFIER =-=-=-==-==-=-=-=--=--=-=-'''
 def is_Delta_p_a(grid,bob_move):
     x,y,color = bob_move
     block = grid.blocks.block_at(x)
@@ -178,7 +185,7 @@ def is_Lambda_a(grid,bob_move):
     return False
 
 
-"""
+"""=-=-=--==-=-=--=-==-=--=-==--==-=-=--=-=-=-==--=---=-=-=-=
 Case 3: Bob colors empty column
 """
 
@@ -218,14 +225,8 @@ def solve_3_pi(grid,bob_move):
 
     #fix j is full line of 3_pi is right or left
     j = x+1 if is_v_flip else x-1 
-
     #bob 2,j+1 => alice 1,j+1
 
-    #print("3Pi: Bob last move ",(x,y))
-    #print("3Pi: in :",grid.bob_play_on_config["config"])
-    #print("3Pi: Bob normalized move: ",get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip))
-    #print("3Pi: check j+2, 2:",get_norm_cell(grid,2,2,j,is_h_flip,is_v_flip).value)
-    #print("3Pi: flip h and v: ",is_h_flip, is_v_flip)
     dx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
 
     if(ny == 2):

@@ -20,6 +20,8 @@ class Block:
         self.flip_config_right = None #store the block fliped to match configurations (can be same as self)
         self.flip_config_left = None #store the block for the left config but flip it at right
 
+        self.particular_configs = [] #list of particular config in the block 
+
         self.particular_config = None #dict to store node:config
         self.particular_config_j = None # index of the j for the particular config 
         self.particular_config_block = None #give the block with the particular config rotated
@@ -325,7 +327,7 @@ class Block:
             if self.same_value(cell_0) and self.columns[j+1][0].value == 0 :
                 if self.columns[j+1][2].value != 0 and self.columns[j][1].value != self.columns[j+1][2].value: 
                     self.particular_config_j = self.columns[j][0].y
-                    res.append(("D",j,False))
+                    res.append(("D",self.columns[j][0].y,False))
 
         # fliped
         cell_c = [(j,2),(j,0),(j+2,3),(j+2,1)]
@@ -341,6 +343,7 @@ class Block:
 
 
     # D' and D2' are only particular config with vertic sym
+    # they have (config,j,hori,verti) w verti more
 
     # D' can appear multiple times so we return the list of j and if fliped
 
@@ -357,12 +360,11 @@ class Block:
         res =[]
         #checking for the config starting from each column (to detect config in the middle)
         for j in range(j_first, 0, -1):
-            print(f"Block4: j={j}")
             cell_c = [(j-1,1),(j,0),(j,3),(j+1,1),(j+2,3),(j+3,2)]
             cell_0 = [(j-1,2),(j,1),(j,2),(j+1,0),(j+1,2),(j+1,3),(j+2,0),(j+2,1),(j+2,2)]
             if self.same_value(cell_c) and self.columns[j-1][1].value !=0:
                 if self.same_value(cell_0) and self.columns[j-1][2].value == 0 : 
-                    res.append(("D'",j,False))
+                    res.append(("D'",j,False,False))
                     
         
         #check for horisontal fliped
@@ -371,7 +373,26 @@ class Block:
             cell_0 = [(j-1,1),(j,2),(j,1),(j+1,3),(j+1,1),(j+1,0),(j+2,3),(j+2,2),(j+2,1)]
             if self.same_value(cell_c) and self.columns[j-1][2].value !=0:
                 if self.same_value(cell_0) and self.columns[j-1][1].value == 0 : 
-                    res.append(("D'",j,True))
+                    res.append(("D'",j,True,False))
+
+        # Check for vertical sym
+
+        for j in range(0, len(self.columns)-2):
+            cell_c = [(j+1,1),(j,0),(j,3),(j-1,1),(j-2,3),(j-3,2)]
+            cell_0 = [(j+1,2),(j,1),(j,2),(j-1,0),(j-1,2),(j-1,3),(j-2,0),(j-2,1),(j-2,2)]
+            if self.same_value(cell_c) and self.columns[j+1][1].value !=0:
+                if self.same_value(cell_0) and self.columns[j+1][2].value == 0 : 
+                    res.append(("D'",j,False,True))
+                    
+        
+        #check for horisontal fliped
+        for j in range(1, len(self.columns)-3):
+            cell_c = [(j+1,2),(j,3),(j,0),(j-1,2),(j-2,0),(j-3,1)]
+            cell_0 = [(j+1,1),(j,2),(j,1),(j-1,3),(j-1,1),(j-1,0),(j-2,3),(j-2,2),(j-2,1)]
+            if self.same_value(cell_c) and self.columns[j+1][2].value !=0:
+                if self.same_value(cell_0) and self.columns[j+1][1].value == 0 : 
+                    res.append(("D'",j,True,True))
+
 
         return res
 
@@ -390,7 +411,7 @@ class Block:
             if self.same_value(cell_c) and self.columns[j-1][1].value !=0:
                 if self.same_value(cell_0) and self.columns[j-1][2].value == 0 and self.columns[j+2][2].value != 0 and self.columns[j-1][1].value != self.columns[j+2][2].value:
                     self.particular_config_j = self.columns[j][0].y
-                    res.append(("D2",j,False))
+                    res.append(("D2",j,False,False))
         
         #check for horisontal fliped
         for j in range(j_max, 0, -1):
@@ -399,7 +420,26 @@ class Block:
             if self.same_value(cell_c) and self.columns[j-1][2].value !=0:
                 if self.same_value(cell_0) and self.columns[j-1][1].value == 0 and self.columns[j+2][1].value != 0 and self.columns[j-1][2].value != self.columns[j+2][1].value:
                     self.particular_config_j = self.columns[j][0].y
-                    res.append(("D2",j,True))
+                    res.append(("D2",j,True,False))
+
+        #check for vertical sym
+
+        for j in range(1, len(self.columns)-2): 
+            cell_c = [(j+1,1),(j,0),(j,3),(j-1,1),(j-2,3)]
+            cell_0 = [(j+1,2),(j,1),(j,2),(j-1,0),(j-1,2),(j-1,3)]
+            if self.same_value(cell_c) and self.columns[j+1][1].value !=0:
+                if self.same_value(cell_0) and self.columns[j+1][2].value == 0 and self.columns[j-2][2].value != 0 and self.columns[j+1][1].value != self.columns[j-2][2].value:
+                    self.particular_config_j = self.columns[j][0].y
+                    res.append(("D2",j,False,True))
+        
+        #check for horisontal fliped
+        for j in range(1, len(self.columns)-2):
+            cell_c = [(j+1,2),(j,3),(j,0),(j-1,2),(j-2,0)]
+            cell_0 = [(j+1,1),(j,2),(j,1),(j-1,3),(j-1,1),(j-1,0)]
+            if self.same_value(cell_c) and self.columns[j+1][2].value !=0:
+                if self.same_value(cell_0) and self.columns[j+1][1].value == 0 and self.columns[j-2][1].value != 0 and self.columns[j+1][2].value != self.columns[j-2][1].value:
+                    self.particular_config_j = self.columns[j][0].y
+                    res.append(("D2",j,True,True))
 
 
         return res
@@ -667,26 +707,27 @@ class Block:
         particular_configs = []
         Delta_conf = self.get_Delta()
         if Delta_conf != []:
-            particular_configs.append(Delta_conf)
+            particular_configs.extend(Delta_conf)
         Delta_p_conf = self.get_Delta_p()
         if Delta_p_conf != []:
-            particular_configs.append(Delta_p_conf)
+            particular_configs.extend(Delta_p_conf)
         Delta_p2_conf = self.get_Delta_p2()
         if Delta_p2_conf != []:
-            particular_configs.append(Delta_p2_conf)
+            particular_configs.extend(Delta_p2_conf)
         Lambda_conf = self.get_Lambda()
         if Lambda_conf != []:
-            particular_configs.append(Lambda_conf)
+            particular_configs.extend(Lambda_conf)
         Lambda_p_conf = self.get_Lambda_p()
         if Lambda_p_conf != []:
-            particular_configs.append(Lambda_p_conf)
+            particular_configs.extend(Lambda_p_conf)
         Lambda_2_conf = self.get_Lambda_2()
         if Lambda_2_conf != []:
-            particular_configs.append(Lambda_2_conf)
+            particular_configs.extend(Lambda_2_conf)
         Lambda_2_p_conf = self.get_Lambda_2_p()
         if Lambda_2_p_conf != []:
-            particular_configs.append(Lambda_2_p_conf)
+            particular_configs.extend(Lambda_2_p_conf)
 
+        self.particular_configs = particular_configs
         
 
         print(f"Block4: particular config {particular_configs}")

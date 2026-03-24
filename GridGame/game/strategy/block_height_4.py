@@ -28,6 +28,10 @@ class BlockHeight4:
 
         return
 
+    def update_all_blocks(self):
+        for block in self.blocks:
+            block.check_configurations()
+
     def evaluate_block(self):
 
         return
@@ -122,6 +126,12 @@ class BlockHeight4:
     def get_config_at(self,x):
         block = self.block_at(x)
         if block:
+            if block.particular_configs:
+                for config in block.particular_configs:
+                    if config[0] == "D" and (config[1]+1 == x or config[1]+2 == x):
+                        print("block_height_4: Bob played on config D")
+                        return {"config": "D", "config2": None, "is_hori_flipped": config[2], "is_vert_flipped":False,"j": config[1]}
+
             #A MODIFIER SI JOUE DANS UN BLOCK ON CHECK LES CONFIG PARTICULIERES
             return {"config": block.left_configuration,"config2": None, "is_hori_flipped": False, "is_vert_flipped": False}
 

@@ -28,6 +28,10 @@ def make_grid(width, colored_cells):
 def get_block(strategy, x):
     return strategy.block_at(x)
 
+
+def local_j_to_grid_col(block, local_j):
+    return block.columns[local_j][0].y
+
 #config type
 
 @pytest.fixture
@@ -103,19 +107,25 @@ class TestDelta:
         grid, strategy = grid_delta
         block = get_block(strategy, 2)
         assert block is not None, "Block non trouvé en colonne 2"
-        assert block.is_Delta(), "Config Delta non détectée"
+        found = block.get_Delta()
+        assert found, "Config Delta non détectée"
+        assert any(cfg == "D" for cfg, _, _ in found)
 
     def test_particular_config_is_delta(self, grid_delta):
         grid, strategy = grid_delta
         block = get_block(strategy, 2)
         block.check_configurations()
-        assert block.particular_config == "Delta"
+        found = block.get_Delta()
+        assert found
+        assert any(cfg == "D" for cfg, _, _ in found)
 
     def test_particular_config_j(self, grid_delta):
         grid, strategy = grid_delta
         block = get_block(strategy, 2)
-        block.is_Delta()
-        assert block.particular_config_j == 2  # colonne y=j=2
+        found = block.get_Delta()
+        assert found
+        _, local_j, _ = found[0]
+        assert local_j_to_grid_col(block, local_j) == 2
 
 
 class TestDeltaPrime:
@@ -123,21 +133,24 @@ class TestDeltaPrime:
         grid, strategy = grid_delta_p
         block = get_block(strategy, 2)
         assert block is not None
-        assert block.is_Delta_p(), "Config Delta' non détectée"
+        found = block.get_Delta_p()
+        assert found, "Config Delta' non détectée"
+        assert any(cfg == "D'" for cfg, _, _, _ in found)
 
     def test_particular_config_is_delta_p(self, grid_delta_p):
         grid, strategy = grid_delta_p
         block = get_block(strategy, 2)
         block.check_configurations()
-        assert block.particular_config == "Delta'"
+        found = block.get_Delta_p()
+        assert found
+        assert any(cfg == "D'" for cfg, _, _, _ in found)
 
     def test_delta_p_detected_not_at_border(self, grid_delta_p):
         """Vérifie que Delta' est détecté même si le pattern n'est pas collé à droite"""
         grid, strategy = grid_delta_p
         block = get_block(strategy, 2)
-        # ajouter des colonnes à droite pour éloigner le pattern du bord
-        result = block.is_Delta_p()
-        assert result is True, "Delta' doit être détecté quelle que soit la position dans le block"
+        found = block.get_Delta_p()
+        assert found, "Delta' doit être détecté quelle que soit la position dans le block"
 
 
 class TestAlpha:
@@ -183,9 +196,9 @@ class TestNoFalsePositive:
         grid, strategy = make_grid(width=8, colored_cells=[(3, 1, 1)])
         block = strategy.block_at(3)
         assert block is not None
-        assert not block.is_Delta(), "Delta ne doit pas être détecté avec une seule cellule"
+        assert block.get_Delta() == [], "Delta ne doit pas être détecté avec une seule cellule"
 
     def test_single_cell_no_delta_p(self):
         grid, strategy = make_grid(width=8, colored_cells=[(3, 1, 1)])
         block = strategy.block_at(3)
-        assert not block.is_Delta_p()
+        assert block.get_Delta_p() == []
