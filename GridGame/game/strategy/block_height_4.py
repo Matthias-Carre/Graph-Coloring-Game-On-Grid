@@ -32,6 +32,16 @@ class BlockHeight4:
         for block in self.blocks:
             block.check_configurations()
 
+    #test for undo
+    def rebuild_from_grid(self):
+        """Rebuild all blocks/configurations from current grid state."""
+        self.blocks = []
+
+        for x in range(self.width):
+            col_has_color = any(self.grid.get_cell(x, y).value != 0 for y in range(self.height))
+            if col_has_color:
+                self.update_block(x)
+
     def evaluate_block(self):
 
         return

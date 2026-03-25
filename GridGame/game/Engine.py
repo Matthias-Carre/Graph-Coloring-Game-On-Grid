@@ -213,11 +213,15 @@ class GameEngine:
     Undo the last move played
     """
     def undo(self):
-        print("Undo last move")
+        print(f"====----====\nUndo last move")
         if(self.grid.undo_move()):
             self.on_update_callback()
             if self.strategy is not None:
-                self.strategy.update_all_blocks()
+                #self.strategy.update_all_blocks()
+                self.strategy.rebuild_from_grid()
+                self.grid.blocks = self.strategy
+
+
             if self.grid.player == 0:
                 self.grid.round -= 1
             self.grid.player = 0 if self.grid.player == 1 else 1

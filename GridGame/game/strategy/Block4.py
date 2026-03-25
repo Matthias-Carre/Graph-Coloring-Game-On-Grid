@@ -33,10 +33,6 @@ class Block:
         
         self.pi_side = None #side of the line full on pi config
 
-    #merge 2 blocks together 
-    def merge(self,other_block):
-        return
-
     """
     functions to check the type of block:
     Illustration of the columns:
@@ -90,7 +86,7 @@ class Block:
             #a and c not doctors
             #print("Block4: check doc")
             if((not(a.is_doctor()) and not(c.is_doctor()))):
-                print("Block4: alpha config b=d=",b.value)
+                #print("Block4: alpha config b=d=",b.value)
                 #if a and c colored then a != c
                 if(a.value != c.value or a.value == 0 or c.value == 0):
                     return True
@@ -364,7 +360,7 @@ class Block:
             cell_0 = [(j-1,2),(j,1),(j,2),(j+1,0),(j+1,2),(j+1,3),(j+2,0),(j+2,1),(j+2,2)]
             if self.same_value(cell_c) and self.columns[j-1][1].value !=0:
                 if self.same_value(cell_0) and self.columns[j-1][2].value == 0 : 
-                    res.append(("D'",j,False,False))
+                    res.append(("D'",self.columns[j][0].y,False,False))
                     
         
         #check for horisontal fliped
@@ -373,7 +369,7 @@ class Block:
             cell_0 = [(j-1,1),(j,2),(j,1),(j+1,3),(j+1,1),(j+1,0),(j+2,3),(j+2,2),(j+2,1)]
             if self.same_value(cell_c) and self.columns[j-1][2].value !=0:
                 if self.same_value(cell_0) and self.columns[j-1][1].value == 0 : 
-                    res.append(("D'",j,True,False))
+                    res.append(("D'",self.columns[j][0].y,True,False))
 
         # Check for vertical sym
 
@@ -382,7 +378,7 @@ class Block:
             cell_0 = [(j+1,2),(j,1),(j,2),(j-1,0),(j-1,2),(j-1,3),(j-2,0),(j-2,1),(j-2,2)]
             if self.same_value(cell_c) and self.columns[j+1][1].value !=0:
                 if self.same_value(cell_0) and self.columns[j+1][2].value == 0 : 
-                    res.append(("D'",j,False,True))
+                    res.append(("D'",self.columns[j][0].y,False,True))
                     
         
         #check for horisontal fliped
@@ -391,7 +387,7 @@ class Block:
             cell_0 = [(j+1,1),(j,2),(j,1),(j-1,3),(j-1,1),(j-1,0),(j-2,3),(j-2,2),(j-2,1)]
             if self.same_value(cell_c) and self.columns[j+1][2].value !=0:
                 if self.same_value(cell_0) and self.columns[j+1][1].value == 0 : 
-                    res.append(("D'",j,True,True))
+                    res.append(("D'",self.columns[j][0].y,True,True))
 
 
         return res
@@ -471,8 +467,8 @@ class Block:
             if self.same_value_grid(cells_0) and cell_jm2_1.value == 0:
                 if(cell_j_0.value != cell_jm2_0.value and cell_j_0.value != 0):
                     if(cell_jp1_2.value != cell_jm2_0.value and cell_jp1_2.value != 0 and cell_jp1_2.value != cell_j_0.value):
-                        print("Block4: Lambda config")
-                        print(f"Block4: Lambda config j={j},{len(self.columns)}")
+                        #print("Block4: Lambda config")
+                        #print(f"Block4: Lambda config j={j},{len(self.columns)}")
                         #self.particular_config_j = self.columns[j][0].y
                         self.particular_config_j = self.grid.get_cell(j,0).y
                         res.append(("L",j,False))

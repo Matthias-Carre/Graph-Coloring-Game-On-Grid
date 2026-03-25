@@ -72,128 +72,176 @@ def solve_1_Delta(grid,bob_move):
         print("1 Delta b")
         return (rx,ry,cell.color_options[0])
     
-def is_1_Dp(grid,bob_move):
+def is_1_Dp_1(grid,bob_move):
     x,y,color = bob_move
-    if grid.bob_play_on_config["config"] != "D'" or grid.bob_play_on_config["config"] != "D2'":
-        return False
-    print("Strat 1Dp: Bob played on:",grid.bob_play_on_config)
-    return True
+    if grid.bob_play_on_config["config"] == "D'" :
+        return True
+    return False
 
-def solve_1_Dp(grid,bob_move):
+#Bob play in in Delta'
+def solve_1_Dp_1(grid,bob_move):
+    x,y,color = bob_move
+    is_h_flip = grid.bob_play_on_config["is_hori_flipped"]
+    is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
+    j = grid.bob_play_on_config["j"]
+
+    dx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
+
+    #Bob 2,j-1 or 1,j c => Alice 2,j+1 c
+    print("1 Dp 1: Bob played on:",x,y ,"norm pos: ",dx,ny)
+    if (dx == -1 and ny == 2) or (dx == 0 and ny == 1) :
+        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+        print("1 Dp 1 a")
+        return (rx,ry,color)
+    #Bob 2,j c => Alice 3,j+1 c
+    if (dx == 0 and ny == 2):
+        rx,ry = get_real_pos(grid,1,3,j,is_h_flip,is_v_flip)
+        print("1 Dp 1 b")
+        return (rx,ry,color)
+    
+    #Bob 2,j+1 respc 3,j+1 => Alice 3,j+1 respc 2,j+1 available
+    if (dx == 1 and ny == 2):
+        cell = get_norm_cell(grid,1,3,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,1,3,j,is_h_flip,is_v_flip)
+        print("1 Dp 1 c1")
+        return (rx,ry,cell.color_options[0])
+    if (dx == 1 and ny == 3):
+        cell = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+        print("1 Dp 1 c2")
+        return (rx,ry,cell.color_options[0])
+    
+    #Bob 1,j+2 => Alice 2,j+1 aviable
+    if (dx == 2 and ny == 1):
+        cell = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+        print("1 Dp 1 d")
+        return (rx,ry,cell.color_options[0])
+    
+    #Bob 0,j+2 or 0,j+1 => Alice 1,j+2 available
+    if (dx == 2 and ny == 0) or (dx == 1 and ny == 0):
+        cell = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,2,1,j,is_h_flip,is_v_flip)
+        print("1 Dp 1 e")
+        return (rx,ry,cell.color_options[0])
+
+    #Bob 2,j+2 c' != c => Alice 1,j+2
+    if (dx == 2 and ny == 2):
+        cell_c = get_norm_cell(grid,0,0,j,is_h_flip,is_v_flip)
+        if color != cell_c.value:
+            cell = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
+            rx,ry = get_real_pos(grid,2,1,j,is_h_flip,is_v_flip)
+            print("1 Dp 1 f")
+            return (rx,ry,cell.color_options[0])
+        
+    print("1 Dp 1 no condition matched ")
     return
 
-
-'''=-=--=-=-=-=-=-=-=-=-=-=- A MODIFIER =-=-=-==-==-=-=-=--=--=-=-'''
-def is_Delta_p_a(grid,bob_move):
+def is_1_Dp_2(grid,bob_move):
     x,y,color = bob_move
-    block = grid.blocks.block_at(x)
-
-    if block.particular_config != "Delta'":
-        return False
-    j = block.particular_config_j
-    #Bob play in (1,j-1) or (0,j+1)
-    print("DPA: Bob last move ",(x,y))
-    print("DPA: check:",2,j-1,"or",1,j)
-    print("Bob last move 2,j-1 ",(y,x) == (2,j-1), "or" "1,j",(y,x) == (1,j))
-    print("j=",j)
-    if ((y,x) == (2,j-1)) or ((y,x) == (1,j)):
-        print("DELTRA P A")
+    if grid.bob_play_on_config["config"] == "D2'":
         return True
     return False
 
-def solve_Delta_p_a(grid,bob_move):
-
-    print("Alice joue (2,j+1)")
-
-def is_Delta_p_b(grid,bob_move):
+def solve_1_Dp_2(grid,bob_move):
     x,y,color = bob_move
-    block = grid.blocks.block_at(x)
-    if block.particular_config != "Delta'":
-        return False
+    is_h_flip = grid.bob_play_on_config["is_hori_flipped"]
+    is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
+    j = grid.bob_play_on_config["j"]
 
-    j = block.particular_config_j
-    if ((y,x) == (2,j)):
-        print("DELTRA P B")
+    dx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
+
+    #If after Bob move, 2,j can be c' => Alice (1,j) c'
+    
+    #cell c' 
+    cell_cp = get_norm_cell(grid,2,2,j,is_h_flip,is_v_flip)
+    #cell 2,j
+    cell_2_j = get_norm_cell(grid,0,2,j,is_h_flip,is_v_flip)
+
+    if cell_2_j.value == 0 and (cell_cp.value in cell_2_j.color_options):
+        rx,ry = get_real_pos(grid,0,1,j,is_h_flip,is_v_flip)
+        print("1 Dp 2 a")
+        return (rx,ry,cell_cp.value)
+    
+    #else A => 3,j+1 c'
+    else:
+        rx,ry = get_real_pos(grid,1,3,j,is_h_flip,is_v_flip)
+        print("1 Dp 2 b")
+        return (rx,ry,cell_cp.value)
+    
+    #Impossible Mais tql
+    print("1 Dp 2 no condition matched")
+    return
+
+def is_1_L(grid,bob_move):
+    x,y,color = bob_move
+    if grid.bob_play_on_config["config"] == "L" or grid.bob_play_on_config["config"] == "L2":
+        print("Is 1 L")
         return True
-
-def solve_Delta_p_b(grid,bob_move):
-    
-    print("Alice joue")
-    
-def is_Delta_p_c(grid,bob_move):
-    x,y,color = bob_move
-    block = grid.blocks.block_at(x)
-    if block.particular_config != "Delta'":
-        return False
-    j = block.particular_config_j
-
-    if ((y,x) == (2,j+1)):
-        print("DELTRA P C")
-        return True
-
-def solve_Delta_p_c(grid,bob_move):
-    
-    print("Alice joue")
-
-def is_Delta_p_d(grid,bob_move):
-    x,y,color = bob_move
-    block = grid.blocks.block_at(x)
-    if block.particular_config != "Delta'":
-        return False
-    j = block.particular_config_j
-
-    if ((y,x) == (1,j+2)):
-        print("DELTRA P D")
-        return True
-
-def solve_Delta_p_d(grid,bob_move):
-    
-    print("Alice joue")
-
-def is_Delta_p_e(grid,bob_move):
-    x,y,color = bob_move
-    block = grid.blocks.block_at(x)
-
-    if block.particular_config != "Delta'":
-        return False
-    j = block.particular_config_j
-    if ((y,x) == (4,j+2)):
-        print("DELTRA P E")
-        return True
-    
-def solve_Delta_p_e(grid,bob_move):
-    
-    print("Alice joue")
-
-
-def is_Delta_p_f(grid,bob_move):
-    x,y,color = bob_move
-    block = grid.blocks.block_at(x)
-
-    if block.particular_config != "Delta'":
-        return False
-    j = block.particular_config_j
-    if ((y,x) == (2,j+2)):
-        print("DELTRA P F")
-        return True
-
-def solve_Delta_p_f(grid,bob_move):
-    
-    print("Alice joue")
-
-def is_Delta_p_2(grid,bob_move):
-    x,y,color = bob_move
-    block = grid.blocks.block_at(x)
-
-    if block.particular_config != "Delta2'":
-        return False
-    
-    return True
-
-#Bob play in (j-2,j-1 or j) in Lambda or Lambda2
-def is_Lambda_a(grid,bob_move):
-    # 4,j-1 -> 3,j-1
     return False
+
+def solve_1_L(grid,bob_move):
+    x,y,color = bob_move
+    is_h_flip = grid.bob_play_on_config["is_hori_flipped"]
+    is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
+    j = grid.bob_play_on_config["j"]    
+    dx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
+
+    # Bob 0,j-1 => Alice 2,j-1 same
+    if (dx == -1 and ny == 0):
+        rx,ry = get_real_pos(grid,-1,2,j,is_h_flip,is_v_flip)
+        print("1 L a")
+        return (rx,ry,color)
+    # Bob 2,j-1 respc 1,j-1 => Alice 1,j-1 respc 2,j-1 available
+    if(dx == -1 and ny == 2):
+        cell = get_norm_cell(grid,-1,1,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,-1,1,j,is_h_flip,is_v_flip)
+        print("1 L b1")
+        return (rx,ry,cell.color_options[0])
+    if(dx == -1 and ny == 1):
+        cell = get_norm_cell(grid,-1,2,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,-1,2,j,is_h_flip,is_v_flip)
+        print("1 L b2")
+        return (rx,ry,cell.color_options[0])
+    
+    # Bob 2,j => Alice 1,j-1 same if available else 3,j-1 same
+    if (dx == 0 and ny == 2):
+        cell = get_norm_cell(grid,-1,1,j,is_h_flip,is_v_flip)
+        if color in cell.color_options :
+            rx,ry = get_real_pos(grid,-1,1,j,is_h_flip,is_v_flip)
+            print("1 L c1")
+            return (rx,ry,color)
+        else:
+            rx,ry = get_real_pos(grid,-1,3,j,is_h_flip,is_v_flip)
+            print("1 L c2")
+            return (rx,ry,color)
+        
+    # Bob 3,j-1 x => Alice 1,j-1 x if possible else
+    if (dx == -1 and ny == 3):
+        cell_1_jm1 = get_norm_cell(grid,-1,1,j,is_h_flip,is_v_flip)
+        cell_cpp = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
+        if color in cell_1_jm1.color_options:
+            rx,ry = get_real_pos(grid,-1,1,j,is_h_flip,is_v_flip)
+            print("1 L d1")
+            return (rx,ry,color)
+        # if x != c'' => Alice 2,j x else Alice 0,j-1 c''
+        else:
+            
+            if color != cell_cpp.value:
+                rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+                print("1 L d2")
+                return (rx,ry,color)
+            else:
+                rx ,ry = get_real_pos(grid,-1,0,j,is_h_flip,is_v_flip)
+                print("1 L d3")
+                return (rx,ry,cell_cpp.value)
+    
+    # Bob 3,j-2 or 1,j-2 => Alice 1,j-2
+    if (dx == -2 and ny == 3) or (dx == -2 and ny == 1):
+        cell = get_norm_cell(grid,-2,1,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,-2,1,j,is_h_flip,is_v_flip)
+        print("1 L e")
+        return (rx,ry,cell.color_options[0])
 
 
 """=-=-=--==-=-=--=-==-=--=-==--==-=-=--=-=-=-==--=---=-=-=-=
