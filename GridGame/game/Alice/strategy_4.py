@@ -243,6 +243,88 @@ def solve_1_L(grid,bob_move):
         print("1 L e")
         return (rx,ry,cell.color_options[0])
 
+def is_1_Lp(grid,bob_move):
+    x,y,color = bob_move
+    if grid.bob_play_on_config["config"] == "L'" or grid.bob_play_on_config["config"] == "L'2":
+        print("Is 1 L'")
+        return True
+    return False
+
+def solve_1_Lp(grid,bob_move):
+    x,y,color = bob_move
+    is_h_flip = grid.bob_play_on_config["is_hori_flipped"]
+    is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
+    j = grid.bob_play_on_config["j"]
+    dx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
+
+    # Bob 3,j+1 or 1,j+1 => Alice 2,j+1 c'' != c'
+    if (dx == 1 and ny == 3) or (dx == 1 and ny == 1):
+        cell_cp = get_norm_cell(grid,0,0,j,is_h_flip,is_v_flip)
+        cell = get_norm_cell(grid,-1,0,j,is_h_flip,is_v_flip)
+
+        #Check c'' != c' (0, j-1) is not c nether c' 
+        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+        print("1 L' a")
+        return (rx,ry,cell.color_options[0])
+
+       
+    # Bob 2,j+1 => Alice 1,j-1 aviable
+    if (dx == 1 and ny == 2):
+        cell = get_norm_cell(grid,-1,1,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,-1,1,j,is_h_flip,is_v_flip)
+        print("1 L' b")
+        return (rx,ry,cell.color_options[0])
+        
+    #Bob 3,j-2 or 1,j-2 => Alice 1,j-1
+    if (dx == -2 and ny == 3) or (dx == -1 and ny == 1):
+        cell = get_norm_cell(grid,-1,1,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,-1,1,j,is_h_flip,is_v_flip)
+        print("1 L' c")
+        return (rx,ry,cell.color_options[0])
+    print("1 L' no condition matched")
+    return
+
+#Bob color doc of v not in gamma
+def is_1_doc(grid,bob_move):
+    
+    return False    
+
+def solve_1_doc(grid,bob_move):
+    return
+
+#Bob color doc of v in gamma
+def is_1_g_doc(grid,bob_move):
+
+    return False
+
+def solve_1_g_doc(grid,bob_move):
+    return
+
+#Bob color safe vertex
+def is_1_safe(grid,bob_move):
+    return False
+
+def solve_1_safe(grid,bob_move):
+    # if E sick => Alice color it
+    # if E sound => Alice make it safe
+    # E uncolored safe not in border => Alice color it
+
+    #1g
+
+    #1 pi
+    #1 gamma
+    #1 beta
+    #1 alpha 1
+    #1 alpha 2
+    #1 aplha 3
+
+    return
+
+"""
+Case 2
+"""
+
+
 
 """=-=-=--==-=-=--=-==-=--=-==--==-=-=--=-=-=-==--=---=-=-=-=
 Case 3: Bob colors empty column
