@@ -128,7 +128,7 @@ class GameEngine:
             #print("color selected:", self.color_selected)
 
         if (0 <= i) and (i < self.grid.width) and (0 <= j) and (j < self.grid.height) and (self.color_selected != -1):
-            print(f'Button clicked at: {i}, {j}, color: {self.color_selected}')
+            print(f'=-=-=-=-=-=-=-=-=-=-=\nButton clicked at: {i}, {j}, color: {self.color_selected}')
             if not(self.is_move_valid(i, j, self.color_selected + 1)):
                 print("Engie: Invalid move")
                 #popup message

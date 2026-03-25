@@ -41,16 +41,15 @@ def solve_TestConfig(grid,bob_move):
 #Bob joue dans j+1 ou j+2 de D 
 # 1. Bob color sick => Alice color any j+1
 # 2. Bob not color sick => Alice color sick with available color
-def is_1Delta(grid,bob_move):
+def is_1_Delta(grid,bob_move):
     x,y,color = bob_move
-    block = grid.blocks.block_at(x)
 
     if grid.bob_play_on_config["config"] != "D":
         return False
     print("Strat 1Delta: Bob played on:",grid.bob_play_on_config)
     return True
 
-def solve_1Delta(grid,bob_move):
+def solve_1_Delta(grid,bob_move):
     x,y,color = bob_move
     is_h_flip = grid.bob_play_on_config["is_hori_flipped"]
     is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
@@ -72,6 +71,18 @@ def solve_1Delta(grid,bob_move):
         rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
         print("1 Delta b")
         return (rx,ry,cell.color_options[0])
+    
+def is_1_Dp(grid,bob_move):
+    x,y,color = bob_move
+    if grid.bob_play_on_config["config"] != "D'" or grid.bob_play_on_config["config"] != "D2'":
+        return False
+    print("Strat 1Dp: Bob played on:",grid.bob_play_on_config)
+    return True
+
+def solve_1_Dp(grid,bob_move):
+    return
+
+
 '''=-=--=-=-=-=-=-=-=-=-=-=- A MODIFIER =-=-=-==-==-=-=-=--=--=-=-'''
 def is_Delta_p_a(grid,bob_move):
     x,y,color = bob_move

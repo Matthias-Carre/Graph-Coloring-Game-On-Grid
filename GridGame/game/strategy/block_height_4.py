@@ -131,9 +131,32 @@ class BlockHeight4:
                     if config[0] == "D" and (config[1]+1 == x or config[1]+2 == x):
                         print("block_height_4: Bob played on config D")
                         return {"config": "D", "config2": None, "is_hori_flipped": config[2], "is_vert_flipped":False,"j": config[1]}
+                    
+                    # D' 
+                    if config[0] == "D'" and (config[1]-1 == x or config[1] == x or config[1]+1 == x or config[1]+2 == x) and config[3] == False:
+                        print("block_height_4: Bob played on config D' A")
+                        return {"config": "D'", "config2": None, "is_hori_flipped": config[2], "is_vert_flipped":False,"j": config[1]}
+                    #D' flipped verticalement
+                    if config[0] == "D'" and (config[1]-2 == x or config[1] == x-1 or config[1] == x or config[1]+1 == x) and config[3] == True:
+                        print("block_height_4: Bob played on config D' B")
+                        return {"config": "D'", "config2": None, "is_hori_flipped": config[2], "is_vert_flipped":True,"j": config[1]}
 
+                    # D2'
+                    print("block_height_4: D2' x=", x, "config[1]=", config[1])
+                    print("block_height_4: ",config[0]) 
+                    if config[0] == "D2'" and (config[1]-1 == x-1 or config[1] == x or config[1]+1 == x or config[1]+2  == x ) and config[3] == False:
+                        print("block_height_4: Bob played on config D2' C")
+                        return {"config": "D2'", "config2": None, "is_hori_flipped": config[2], "is_vert_flipped":False,"j": config[1]}
+                    
+                    # D2' flipped verticalement
+                    if config[0] == "D2'" and (config[1]-2 == x-2 or config[1] == x-1 or config[1] == x or config[1]+1 == x) and config[3] == True:
+                        print("block_height_4: Bob played on config D2' D ")
+                        return {"config": "D2'", "config2": None, "is_hori_flipped": config[2], "is_vert_flipped":True,"j": config[1]}
+                    
+                    
+                    
             #A MODIFIER SI JOUE DANS UN BLOCK ON CHECK LES CONFIG PARTICULIERES
-            return {"config": block.left_configuration,"config2": None, "is_hori_flipped": False, "is_vert_flipped": False}
+            return {"config": "Not particular","config2": None, "is_hori_flipped": False, "is_vert_flipped": False}
 
         #Bob play on empty col
 
@@ -141,6 +164,25 @@ class BlockHeight4:
         block_right = self.block_at(x+1)
         # between 2 blocks
         if block_left and block_right:
+            #in config L
+            for config in block_right.particular_configs:
+                # L
+                if config[0] == "L" and (config[1]-2 == x or config[1]-1 == x or config[1] == x):
+                    print("block_height_4: Bob played on config L")
+                    return {"config": "L", "config2": None, "is_hori_flipped": config[2], "is_vert_flipped":False,"j": config[1]} 
+                # L2
+                if config[0] == "L2" and (config[1]-2 == x or config[1]-1 == x or config[1] == x):
+                    print("block_height_4: Bob played on config L2")
+                    return {"config": "L2", "config2": None, "is_hori_flipped": config[2], "is_vert_flipped":False,"j": config[1]}
+                # L'
+                if config[0] == "L'" and (config[1] - 2 == x or config[1] - 1 == x or config[1] == x or config[1]+1 == x) :
+                    print("block_height_4: Bob played on config L'")
+                    return {"config": "L'", "config2": None, "is_hori_flipped": config[2], "is_vert_flipped":False,"j": config[1]} 
+                # L2'
+                if config[0] == "L2'" and (config[1] - 2 == x or config[1] - 1 == x or config[1] == x or config[1]+1 == x) :
+                    print("block_height_4: Bob played on config L2'")
+                    return {"config": "L2'", "config2": None, "is_hori_flipped": config[2], "is_vert_flipped":False,"j": config[1]}
+
             # in config pi
             if block_left.right_configuration == 'p':
                 if block_left.pi_side == "left":
