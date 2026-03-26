@@ -236,6 +236,51 @@ class Grid:
                 self.nodes[y][x].check_sound_cell()
 
 
+    # get the first sick cell in the grid
+    def get_first_sick_cell(self):
+        for y in range(self.height):
+            for x in range(self.width):
+                if len(self.nodes[y][x].color_options) == 1:
+                    return self.nodes[y][x]
+                    
+        return None
+
+    def get_first_sound_cell(self):
+        for y in range(self.height):
+            for x in range(self.width):
+                if self.nodes[y][x].is_sound:
+                    return self.nodes[y][x]
+                    
+        return None
+    
+    #get the first safe cell not in border
+    def get_first_inner_safe_cell(self):
+        # le mieux c'est surement de parcourir l'interieur des blocks
+        for block in self.blocks :
+            #col w/o border
+            for col in block.columns[1:-1]:
+                for cell in col:
+                    if cell.is_safe:
+                        return cell
+                
+
+    # get the first border delta
+    def get_first_border_delta(self):
+        return None
+    
+    # get the first pi
+    def get_first_pi(self):
+        return None
+    
+    #get the first gamma
+    def get_first_gamma(self):
+        return None
+    
+    #get the first alpha/beta free
+    def get_first_alpha_beta_free(self):
+        return None
+    
+
 
     #test d'une autre logique de save, on garde une zone autour du coup jouer 
     # on grade les co des elements voisin pour les restorer apres sans garder les objets 

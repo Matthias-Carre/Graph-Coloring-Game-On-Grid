@@ -37,7 +37,18 @@ def solve_TestConfig(grid,bob_move):
     print("resolve test config")
     return (0,0,1)
 
-
+'''
+Case 1
+-------------##-------
+-----------####-------
+---------##--##-------
+-------##----##-------
+-------------##-------
+-------------##-------
+-------------##-------
+-------------##-------
+-------------##-------
+'''
 #Bob joue dans j+1 ou j+2 de D 
 # 1. Bob color sick => Alice color any j+1
 # 2. Bob not color sick => Alice color sick with available color
@@ -286,6 +297,13 @@ def solve_1_Lp(grid,bob_move):
 
 #Bob color doc of v not in gamma
 def is_1_doc(grid,bob_move):
+    x,y,color = bob_move
+    if grid.get_cell(x,y).is_doctor:
+        #check if v not in gamma 
+        # Faut le faire avant pcq bob ecrase la config
+        v = grid.get_cell(x,y).patients[0] 
+        b = grid.blocks.block_at(v.x)
+        
     
     return False    
 
@@ -322,12 +340,47 @@ def solve_1_safe(grid,bob_move):
 
 """
 Case 2
+-----##########-------
+-------------##-------
+-------------##-------
+-------------##-------
+-----##########-------
+-----##---------------
+-----##---------------
+-----##---------------
+-----##########-------
 """
 
+def is_2_delta(grid,bob_move):
+    if grid.bob_play_on_config["config"] == "d":
+        print("Is 2 delta")
+        return True
+    return False
+
+def solve_2_delta(grid,bob_move):
+    #normalize bob move:
+    x,y,color = bob_move
+    is_h_flip = grid.bob_play_on_config["is_hori_flipped"]
+    is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
+    #fix j
+    j = x
+
+    # if (2,j+2) != c' => Alice 1,j+1 c'
+    # else A 0,j+1 c'
 
 
 """=-=-=--==-=-=--=-==-=--=-==--==-=-=--=-=-=-==--=---=-=-=-=
 Case 3: Bob colors empty column
+
+-----##########-------
+-------------##-------
+-------------##-------
+-------------##-------
+-----##########-------
+-------------##-------
+-------------##-------
+-------------##-------
+-----##########-------
 """
 
 # Bob play in col j with j-1,j and j+1 empty 
@@ -800,8 +853,31 @@ def is_3_gamma(grid,bob_move):
     
     return False
     
+def solve_3_gamma(grid,bob_move):
+    return
 
-"""
+
+def is_3_beta(grid,bob_move):
+    return False
+
+def solve_3_beta(grid,bob_move):
+    return
+
+
+def is_3_alpha(grid,bob_move):
+    return False
+
+def solve_3_alpha(grid,bob_move):
+    return
+
+
+
+
+
+#=========--------=========--------======
+
+
+""" 
 input: list of (j,x) coordinates
 return true if all the cells in the list have the same value
 """

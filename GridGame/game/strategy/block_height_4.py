@@ -131,7 +131,7 @@ class BlockHeight4:
     
     """
     input: column x
-    output: {"config": char ,"config2":char, "is_hori_flipped" : bool, "is_vert_flipped": bool}
+    output: {"config": char ,"config2":char, "is_hori_flipped" : bool, "is_vert_flipped": bool, "j": int}
     """
     def get_config_at(self,x):
         block = self.block_at(x)
@@ -165,7 +165,16 @@ class BlockHeight4:
                     
                     
                     
-            #A MODIFIER SI JOUE DANS UN BLOCK ON CHECK LES CONFIG PARTICULIERES
+            #SI ON JOUE DANS UNE BORDURE? 
+            if x == block.start_col:
+                if block.left_configuration:
+                    print("block_height_4: Bob played on left border config")
+                    return {"config": block.left_configuration, "config2": None, "is_hori_flipped": block.is_left_flipped, "is_vert_flipped": False, "j": block.start_col}
+            if x == block.end_col:
+                if block.right_configuration:
+                    print("block_height_4: Bob played on right border config")
+                    return {"config": block.right_configuration, "config2": None, "is_hori_flipped": block.is_right_flipped, "is_vert_flipped": False, "j": block.end_col}
+                
             return {"config": "Not particular","config2": None, "is_hori_flipped": False, "is_vert_flipped": False}
 
         #Bob play on empty col
