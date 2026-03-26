@@ -19,13 +19,18 @@ class Alice:
 
         if self.grid.height == 4:
             self.strategy = [
-                (is_1Delta, solve_1Delta),
-                (is_Delta_p_a, solve_Delta_p_a),
-                (is_Delta_p_b, solve_Delta_p_b),
-                (is_Delta_p_c, solve_Delta_p_c),
-                (is_Delta_p_d, solve_Delta_p_d),
-                (is_Delta_p_e, solve_Delta_p_e),
-                (is_Delta_p_f, solve_Delta_p_f),
+                (is_1_Delta, solve_1_Delta),
+                (is_1_Dp_1, solve_1_Dp_1),
+                (is_1_L, solve_1_L),
+                #(is_1_Lp_1, solve_1_Lp_1),
+
+                #Case 3:
+                (is_3_new, solve_3_new),
+                (is_3_pi, solve_3_pi),
+                (is_3_delta, solve_3_delta),
+                (is_3_alpha_F, solve_3_alpha_F),
+                (is_3_beta_F, solve_3_beta_F),
+                (is_3_gamma_F, solve_3_gamma_F),
 
                 (is_TestConfig,solve_TestConfig)
             ]
@@ -48,6 +53,7 @@ class Alice:
         if(self.grid.round == 1):
             return (0,1,1)
         
+        print("Alice strategy: Bob: ", self.grid.bob_play_on_config)
         for is_case, solve_case in self.strategy:
             if is_case(self.grid,self.grid.last_Bob_move):
                 return solve_case(self.grid,self.grid.last_Bob_move)

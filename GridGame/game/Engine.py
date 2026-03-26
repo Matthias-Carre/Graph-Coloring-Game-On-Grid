@@ -116,7 +116,7 @@ class GameEngine:
     """
     def on_left_click(self,event):
         
-        print("click",event)
+        #print("click",event)
         x = event.x
         y = event.y
         ratio = min(self.window_width / self.grid.width, self.window_height / self.grid.height)
@@ -128,7 +128,7 @@ class GameEngine:
             #print("color selected:", self.color_selected)
 
         if (0 <= i) and (i < self.grid.width) and (0 <= j) and (j < self.grid.height) and (self.color_selected != -1):
-            print(f'Button clicked at: {i}, {j}, color: {self.color_selected}')
+            print(f'=-=-=-=-=-=-=-=-=-=-=\nButton clicked at: {i}, {j}, color: {self.color_selected}')
             if not(self.is_move_valid(i, j, self.color_selected + 1)):
                 print("Engie: Invalid move")
                 #popup message
@@ -213,9 +213,15 @@ class GameEngine:
     Undo the last move played
     """
     def undo(self):
-        print("Undo last move")
+        print(f"====----====\nUndo last move")
         if(self.grid.undo_move()):
             self.on_update_callback()
+            if self.strategy is not None:
+                #self.strategy.update_all_blocks()
+                self.strategy.rebuild_from_grid()
+                self.grid.blocks = self.strategy
+
+
             if self.grid.player == 0:
                 self.grid.round -= 1
             self.grid.player = 0 if self.grid.player == 1 else 1
@@ -238,7 +244,9 @@ class GameEngine:
 
     """
     def change_node_color(self,grid, x, y, color):
-        grid.play_move(x, y, color)
+
+        if(not(grid.play_move(x, y, color))):
+           return 
         if self.strategy is not None:
             self.strategy.move_played(x, y, color, "A" if grid.player == 0 else "B")
 

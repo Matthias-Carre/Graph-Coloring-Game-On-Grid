@@ -35,7 +35,7 @@ class Interface:
         w = ratio * self.grid.width
         h = ratio * self.grid.height
         print(f"h={h}, ratio={ratio}, grid height={self.grid.height}, window height={window_height}")
-        self.root.geometry(f'{int(w)}x{int(h)+250}')
+        self.root.geometry(f'{int(w)}x{int(h)+45+28*self.grid.num_colors}') 
 
         print(f"Window size: {int(w)}x{int(h)}, ratio: {ratio}")
         canvas = tk.Canvas(self.root, width=w, height=h, bg="white")

@@ -29,7 +29,16 @@ class Grid:
         self.player = 0 #0 for Alice, 1 for Bob
         self.round = 1
         
-        self.last_Bob_move = None # (x,y,color,past_config)        
+        
+        self.last_Bob_move = None # (x,y,color,past_config) 
+
+        # dic with the config and the flips to normelize 
+        # "config2": can be:
+        # None -> there is a block but no config
+        # Empty -> there is no block
+        # char -> block with config char     
+        self.bob_play_on_config = {"config":'',"config2":"","is_hori_flipped":False,"is_vert_flipped":False}
+        #might have to keep left and right on some cases
 
         #add neighbors to each cell
         self.init_state()
@@ -50,6 +59,7 @@ class Grid:
     def is_move_valid(self, x, y, value):
         for neighbor in self.nodes[y][x].neighbors:
             if neighbor.value == value:
+                print(f"Invalide move {x},{y} val: {value} already in neighbor at ({neighbor.x},{neighbor.y})")
                 return False
 
         if 0 <= x < self.width and 0 <= y < self.height:
@@ -70,19 +80,42 @@ class Grid:
             print(f"Invalid move at ({x}, {y})")
             return False
         
+
         #save pour undo
         self.last_Bob_move = (x,y,color)
         self.save_zone_snapshot(x, y, distance=2)
+
+        #test config where bob play:
+        
+
+
 
         #applique le coup
         target = self.nodes[y][x]
         target.value = color
         target.played_by = self.player
         target.round = self.round
+        #manage if its a doctor / patient
+        if target.is_doctor():
+            patient = target.patients[0] 
+            for doc in patient.doctors:
+                doc.patients = []
+            patient.doctors = []
+        
+        if target.doctors != []:
+            for doc in target.doctors:
+                doc.patients = []
+            target.doctors = []
+
+        
+        
         target.update_cell()
+
         
         self.last_moves.append((x,y,color))
         self.update_neighbors(x,y,color)
+
+        self.recompute_local_status(x, y, distance=2)
 
         return True
 
@@ -185,6 +218,70 @@ class Grid:
                 neighborhood.append(self.nodes[ny][nx])
         return neighborhood
     
+
+    def recompute_local_status(self, center_x, center_y, distance=2):
+        min_x = max(0, center_x - distance)
+        max_x = min(self.width, center_x + distance + 1)
+        min_y = max(0, center_y - distance)
+        max_y = min(self.height, center_y + distance + 1)
+
+        # Passe 1: safe
+        for y in range(min_y, max_y):
+            for x in range(min_x, max_x):
+                self.nodes[y][x].check_safe_cell()
+
+        # Passe 2: sound (dépend souvent de safe)
+        for y in range(min_y, max_y):
+            for x in range(min_x, max_x):
+                self.nodes[y][x].check_sound_cell()
+
+
+    # get the first sick cell in the grid
+    def get_first_sick_cell(self):
+        for y in range(self.height):
+            for x in range(self.width):
+                if len(self.nodes[y][x].color_options) == 1:
+                    return self.nodes[y][x]
+                    
+        return None
+
+    def get_first_sound_cell(self):
+        for y in range(self.height):
+            for x in range(self.width):
+                if self.nodes[y][x].is_sound:
+                    return self.nodes[y][x]
+                    
+        return None
+    
+    #get the first safe cell not in border
+    def get_first_inner_safe_cell(self):
+        # le mieux c'est surement de parcourir l'interieur des blocks
+        for block in self.blocks :
+            #col w/o border
+            for col in block.columns[1:-1]:
+                for cell in col:
+                    if cell.is_safe:
+                        return cell
+                
+
+    # get the first border delta
+    def get_first_border_delta(self):
+        return None
+    
+    # get the first pi
+    def get_first_pi(self):
+        return None
+    
+    #get the first gamma
+    def get_first_gamma(self):
+        return None
+    
+    #get the first alpha/beta free
+    def get_first_alpha_beta_free(self):
+        return None
+    
+
+
     #test d'une autre logique de save, on garde une zone autour du coup jouer 
     # on grade les co des elements voisin pour les restorer apres sans garder les objets 
     def save_zone_snapshot(self, center_x, center_y, distance=2):
