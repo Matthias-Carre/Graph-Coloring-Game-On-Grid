@@ -66,6 +66,7 @@ class Cell:
 
     def check_safe_cell(self):
         affected = []
+
         #check if its safe
         #is colorred OR #N <= 3 OR 2 neighbors colored with same color
         #OR 3 neighbors colored with 3 colors but the 4th is neighbor to the last color
@@ -93,13 +94,15 @@ class Cell:
                     self.is_safe = True
                     print(f"Cell at ({self.x}, {self.y}) is safe by neighbor colors")
         return affected
+    
     #check if sound
     #return the list of affected cells
     def check_sound_cell(self):
         if self.is_safe:
             return []
         
-
+        if len(self.doctors) == 2:
+            return []
         #check if sound
         #sound if 2 neighbors are safe and become doctors.(doctors can only have 1 patient)
 
@@ -119,6 +122,8 @@ class Cell:
             self.doctors.append(safe_doctor_neighbors[0])
             self.doctors.append(safe_doctor_neighbors[1])
             self.is_sound = True
+        if len(self.doctors) == 0:
+            self.is_sound = False
 
         return affected
 

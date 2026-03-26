@@ -115,6 +115,8 @@ class Grid:
         self.last_moves.append((x,y,color))
         self.update_neighbors(x,y,color)
 
+        self.recompute_local_status(x, y, distance=2)
+
         return True
 
     def update_neighbors(self,x,y,color):
@@ -216,6 +218,25 @@ class Grid:
                 neighborhood.append(self.nodes[ny][nx])
         return neighborhood
     
+
+    def recompute_local_status(self, center_x, center_y, distance=2):
+        min_x = max(0, center_x - distance)
+        max_x = min(self.width, center_x + distance + 1)
+        min_y = max(0, center_y - distance)
+        max_y = min(self.height, center_y + distance + 1)
+
+        # Passe 1: safe
+        for y in range(min_y, max_y):
+            for x in range(min_x, max_x):
+                self.nodes[y][x].check_safe_cell()
+
+        # Passe 2: sound (dépend souvent de safe)
+        for y in range(min_y, max_y):
+            for x in range(min_x, max_x):
+                self.nodes[y][x].check_sound_cell()
+
+
+
     #test d'une autre logique de save, on garde une zone autour du coup jouer 
     # on grade les co des elements voisin pour les restorer apres sans garder les objets 
     def save_zone_snapshot(self, center_x, center_y, distance=2):
