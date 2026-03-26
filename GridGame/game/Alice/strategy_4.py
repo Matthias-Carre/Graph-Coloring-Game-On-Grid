@@ -351,8 +351,10 @@ Case 2
 -----##########-------
 """
 
+#Bob play in col of config delta
 def is_2_delta(grid,bob_move):
-    if grid.bob_play_on_config["config"] == "d":
+    x,_,_ = bob_move
+    if grid.bob_play_on_config["config"] == "d" and (x == grid.bob_play_on_config["j"]):
         print("Is 2 delta")
         return True
     return False
@@ -364,9 +366,150 @@ def solve_2_delta(grid,bob_move):
     is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
     #fix j
     j = x
+    dx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
+
 
     # if (2,j+2) != c' => Alice 1,j+1 c'
+    cell_2_jp2 = get_norm_cell(grid,2,2,j,is_h_flip,is_v_flip)
+    cell_cp = get_norm_cell(grid,0,2,j,is_h_flip,is_v_flip)
+    if cell_2_jp2.value != cell_cp.value :
+        rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+        print("2 Delta a")
+        return (rx,ry,cell_cp.value)
     # else A 0,j+1 c'
+    else:
+        rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
+        print("2 Delta b")
+        return (rx,ry,cell_cp.value)
+
+# Bob play in free border of a b or g
+def is_2_abgF(grid,bob_move):
+    x,_,_ = bob_move
+    if grid.bob_play_on_config["config"] in ["a","b","g"] and (x == grid.bob_play_on_config["j"]):
+        # check if it's free border
+        
+        print("Is 2 abg free")
+        return True
+    return False
+
+def solve_2_abgF(grid,bob_move):
+    #normalize bob move:
+    x,y,color = bob_move
+    is_h_flip = grid.bob_play_on_config["is_hori_flipped"]
+    is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
+    
+    config = grid.bob_play_on_config["config"]
+    j = x
+    nx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
+
+    # if B in alpha => Alice 2,j+1 c
+    cell_c = get_norm_cell(grid,0,3,j,is_h_flip,is_v_flip)
+    if config == "a":
+        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+        print("2 abg free a")
+        print("2 abg free a: c=",cell_c.value)
+        return (rx,ry,cell_c.value)
+
+
+    # if B in beta => Alice 2,j+1 c
+    if config == "b":
+        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+        print("2 abg free b")
+        return (rx,ry,cell_c.value)
+
+    # if B (2,j) c' != c (forcement different) in gamma => A (1,j+1) c'
+    if config == "g" and ny == 2:
+        rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+        print("2 abg free g1")
+        return (rx,ry,color)
+
+    
+    # if B (1,j) c' != c (forcement different) in gamma => A (2,j+1) c'
+    if config == "g" and ny == 1:
+        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+        print("2 abg free g2")
+        return (rx,ry,color)
+    
+
+    return
+
+def is_2_beta(grid,bob_move):
+    x,_,_ = bob_move
+    j= grid.bob_play_on_config["j"]
+    if grid.bob_play_on_config["config"] == "b" and (x == j):
+        print("Is 2 beta")
+        return True
+    return False
+
+def solve_2_beta(grid,bob_move):
+    #normalize bob move:
+    x,y,color = bob_move
+    is_h_flip = grid.bob_play_on_config["is_hori_flipped"]
+    is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
+    j = grid.bob_play_on_config["j"]
+    dx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
+
+    #if Bob dont play 2,j => A 1,j+1 available
+    cell_2_j = get_norm_cell(grid,0,2,j,is_h_flip,is_v_flip)
+    if cell_2_j.value == 0:
+        cell = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+        print("2 beta a")
+        return (rx,ry,cell_2_j.color_options[0])
+    
+    # if B 2,j c' => if 1,j+2 != c' => A 1,j+1 c'
+    if cell_2_j.value != 0:
+        cell_1_jp2 = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
+        if color != cell_1_jp2.value:
+            rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+            print("2 beta b1")
+            return (rx,ry,color)
+    # else if 0,j != c' => A 0,j+1 c'
+        else:
+            cell_0_j = get_norm_cell(grid,0,0,j,is_h_flip,is_v_flip)
+            if color != cell_0_j.value:
+                rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
+                print("2 beta b2")
+                return (rx,ry,color)
+            #else gerer plus tard
+    print("2 beta no condition matched")
+    return
+
+#Bob play in in non free Beta
+def is_2_gamma(grid,bob_move):
+    x,_,_ = bob_move
+    j= grid.bob_play_on_config["j"]
+    if grid.bob_play_on_config["config"] == "b" and (x == j):
+        print("Is 2 gamma")
+        return True
+
+    return False
+
+def solve_2_gamma(grid,bob_move):
+    #normalize bob move:
+    x,y,color = bob_move
+    is_h_flip = grid.bob_play_on_config["is_hori_flipped"]
+    is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
+    j = grid.bob_play_on_config["j"]
+    dx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
+
+    #B 2,j => A 2,j+1 available
+
+    #B 1,j c' & 2,j+2 != c' => A 2,j+1 c'
+
+    #else 2,j+1 c' => A 2,j) c'' (diff c et c')
+    return
+
+# Bob play in non free alpha of at least size 2 
+def is_2_alpha(grid,bob_move):
+    return False
+
+def solve_2_alpha(grid,bob_move):
+    return
+
+def is_2_aplha_prime(grid,bob_move):
+    return False
+    
 
 
 """=-=-=--==-=-=--=-==-=--=-==--==-=-=--=-=-=-==--=---=-=-=-=
@@ -874,7 +1017,7 @@ def solve_3_alpha(grid,bob_move):
 
 
 
-#=========--------=========--------======
+#=========--------=========--------========--------=========--------======
 
 
 """ 

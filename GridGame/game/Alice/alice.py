@@ -24,6 +24,13 @@ class Alice:
                 (is_1_L, solve_1_L),
                 #(is_1_Lp_1, solve_1_Lp_1),
 
+
+                #Case 2:
+                (is_2_delta, solve_2_delta),
+                (is_2_abgF, solve_2_abgF),
+                #(is_2_b, solve_2_b),
+
+
                 #Case 3:
                 (is_3_new, solve_3_new),
                 (is_3_pi, solve_3_pi),

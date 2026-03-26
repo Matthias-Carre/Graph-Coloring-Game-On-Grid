@@ -689,11 +689,11 @@ class Block:
         #manage particulars cases
         self.manage_particular_config()
 
-        '''
+        print("Block4: Blocks Info:")
         print(f"Block from column {self.start_col} to {self.end_col}, size: {self.size}")
         print(f"RIGHT {self.right_configuration} LEFT {self.left_configuration}")
         print(f"particular config: {self.particular_config}")
-        '''
+        
 
 
     # managment of the particular config fliped or not

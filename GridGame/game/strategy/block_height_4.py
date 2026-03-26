@@ -223,24 +223,24 @@ class BlockHeight4:
             #if l or r is in None we keep the other config
             if block_left.right_configuration == None:
                 print("block_height_4: 5")
-                return {"config": block_right.left_configuration,"config2": None, "is_hori_flipped": block_right.is_left_flipped, "is_vert_flipped": True}
+                return {"config": block_right.left_configuration,"config2": None, "is_hori_flipped": block_right.is_left_flipped, "is_vert_flipped": True, "j": block_right.start_col}
             if block_right.left_configuration == None:
                 print("block_height_4: 6")
-                return {"config": block_left.right_configuration,"config2": None, "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": False}
+                return {"config": block_left.right_configuration,"config2": None, "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": False, "j": block_left.start_col}
             
             # 2 blocks have config
             # need to sort (config and config2)
             print("block_height_4: 7")
-            return {"config": block_left.right_configuration,"config2": block_right.left_configuration, "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": False }  
+            return {"config": block_left.right_configuration,"config2": block_right.left_configuration, "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": False, "j": block_left.start_col}  
 
 
         #if bob play side to only 1 block
         #left
         if block_left and block_right == None:
-            return {"config": block_left.right_configuration, "config2": "empty", "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": False}
+            return {"config": block_left.right_configuration, "config2": "empty", "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": False, "j": block_left.start_col}
         #right
         if block_right and block_left == None:
-            return {"config": block_right.left_configuration, "config2": "empty", "is_hori_flipped": block_right.is_left_flipped, "is_vert_flipped": True}
+            return {"config": block_right.left_configuration, "config2": "empty", "is_hori_flipped": block_right.is_left_flipped, "is_vert_flipped": True, "j": block_right.start_col}
         
         #bob play on empty col with no block around
-        return {"config": 'none', "config2": "empty", "is_hori_flipped": False, "is_vert_flipped": False}
+        return {"config": 'none', "config2": "empty", "is_hori_flipped": False, "is_vert_flipped": False, "j": None}
