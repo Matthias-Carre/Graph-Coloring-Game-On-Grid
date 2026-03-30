@@ -19,6 +19,8 @@ rx,ry = get_real_pos(grid,x,y,j,is_h_flip,is_v_flip)
 used to know where Bob played and to translate Alice response
 """
 #exemple de skelet de code pour l'exec
+from logging import config
+
 from matplotlib.pyplot import grid
 
 
@@ -387,9 +389,11 @@ def is_2_abgF(grid,bob_move):
     x,_,_ = bob_move
     if grid.bob_play_on_config["config"] in ["a","b","g"] and (x == grid.bob_play_on_config["j"]):
         # check if it's free border
-        
-        print("Is 2 abg free")
-        return True
+        j = grid.bob_play_on_config["j"]
+        verti = grid.bob_play_on_config["is_vert_flipped"]
+        if is_column_empty(grid,-1,j,verti) and is_column_empty(grid,-2,j,verti) :
+            print("Is 2 abg free")
+            return True
     return False
 
 def solve_2_abgF(grid,bob_move):
@@ -504,6 +508,11 @@ def solve_2_gamma(grid,bob_move):
 def is_2_alpha(grid,bob_move):
     x,_,_ = bob_move
     j= grid.bob_play_on_config["j"]
+    verti = grid.bob_play_on_config["is_vert_flipped"]
+
+    if is_column_empty(grid,-1,j,verti) and is_column_empty(grid,1,j,verti):
+        return False
+    
     if grid.bob_play_on_config["config"] == "a" and (x == j):
         print("Is 2 alpha")
         return True
@@ -582,17 +591,27 @@ def solve_2_alpha(grid,bob_move):
 def is_2_aplha_prime(grid,bob_move):
     x,_,_ = bob_move
     j= grid.bob_play_on_config["j"]
+    verti = grid.bob_play_on_config["is_vert_flipped"]
+
+    # not only 1 column in the block
+    if not(is_column_empty(grid,-1,j,verti) and is_column_empty(grid,1,j,verti)):
+        return False
+    
     if grid.bob_play_on_config["config"] == "a" and (x == j):
         print("Is 2 alpha'")
         return True
     return False
 
+# non free 2 col border
 def solve_2_alpha_prime(grid,bob_move):
+
+    
     #normalize bob move:
     x,y,color = bob_move
     is_h_flip = grid.bob_play_on_config["is_hori_flipped"]
     is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
     j = grid.bob_play_on_config["j"]
+    
     
     cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
 
@@ -623,10 +642,10 @@ def solve_2_alpha_prime(grid,bob_move):
     # sup 0,j-2 = c and 1,j-2 = 0
 
     # if j-3 not empty => A 2,j-1 c'
-    if not is_column_empty(grid,j-3):
+    if not is_column_empty(grid,-3,j,is_v_flip):
         rx,ry = get_real_pos(grid,-1,2,j,is_h_flip,is_v_flip)
         print("2 alpha' 2")
-        return (rx,ry,cell_c.value)
+        return (rx,ry,color)
 
     #if 2,j+2 != c => A 2,j+1 c
     cell_2_jp2 = get_norm_cell(grid,2,2,j,is_h_flip,is_v_flip)
@@ -649,7 +668,7 @@ def solve_2_alpha_prime(grid,bob_move):
     cpp = [1,2,3,4]
     cpp.remove(cell_c.value)
     cpp.remove(color)
-    if not is_column_empty(grid,j+3):
+    if not is_column_empty(grid,3,j,is_v_flip):
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
         print("2 alpha' 5")
         return (rx,ry,cpp[0])
@@ -1143,17 +1162,109 @@ def solve_3_gamma_F(grid,bob_move):
 
 def is_3_gamma(grid,bob_move):
     #Bob play between gamma and (alpha beta or gamma)
+    config = grid.bob_play_on_config["config"]
+    config2 = grid.bob_play_on_config["config2"]
+    if (config == "g" and (config2 == "a" or config2 == "b" or config2 == "g")):
+        print("Is 3 gamma")
+        return True
     
     return False
     
 def solve_3_gamma(grid,bob_move):
+    #normalize bob move:
+    x,y,color = bob_move
+    is_h_flip = grid.bob_play_on_config["is_hori_flipped"]
+    is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
+    j = x+1 if is_v_flip else x-1
+    nx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
+    
+    #3 gamma 1
+    #B 3,j+1 x != c => A 2,j x
+    cell_c = get_norm_cell(grid,0,0,j,is_h_flip,is_v_flip)
+    if (ny == 3 and color != cell_c.value):
+        rx,ry = get_real_pos(grid,0,2,j,is_h_flip,is_v_flip)
+        print("3 gamma 1")
+        return (rx,ry,color)
+
+    #3 gamma 2
+    #B 0,j+1 x != c => if 2,j+2 != c => A 2,j+1 x 
+    if (ny == 0 and color != cell_c.value):
+        cell_2_jp2 = get_norm_cell(grid,2,2,j,is_h_flip,is_v_flip)
+        if color != cell_2_jp2.value:
+            rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+            print("3 gamma 2")
+            return (rx,ry,color)
+        
+    #3 gamma 3
+    #B 0,j+1 x != c => if 2,j+2 = c => A 2,j x
+        else:
+            rx,ry = get_real_pos(grid,0,2,j,is_h_flip,is_v_flip)
+            print("3 gamma 3")
+            return (rx,ry,color)
+    
+    print("3 gamma: no condition matched")
     return
 
 
 def is_3_beta(grid,bob_move):
+
+    config = grid.bob_play_on_config["config"]
+    config2 = grid.bob_play_on_config["config2"]
+    if (config == "b" and (config2 == "a" or config2 == "b")):
+        print("Is 3 beta")
+        return True
     return False
 
 def solve_3_beta(grid,bob_move):
+    #normalize bob move:
+    x,y,color = bob_move
+    is_h_flip = grid.bob_play_on_config["is_hori_flipped"]
+    is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
+    j = x+1 if is_v_flip else x-1
+    nx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
+
+    #3 beta 0
+    # B 2,j+1 respct 1,j+1 => A 1,j+1 respct A 2 j+1
+    if (ny == 2):
+        cell_1_jp1 = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+        print("3 beta 0a")
+        return (rx,ry,cell_1_jp1.value)
+    if (ny == 1):
+        cell_2_jp1 = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+        print("3 beta 0b")
+        return (rx,ry,cell_2_jp1.value)
+    
+    #3 beta 1
+    #B 0,j+1 c => A 1,j+1 other
+    cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
+    if (ny == 0):
+        cell_1_jp1 = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+        print("3 beta 1")
+        return (rx,ry,cell_1_jp1.color_options[0])
+
+    #3 beta 2
+    #B 3,j+1 c' != c => A 2,j 
+    if (ny == 3):
+        if color != cell_c.value:
+            rx,ry = get_real_pos(grid,0,2,j,is_h_flip,is_v_flip)
+            print("3 beta 2")
+            return (rx,ry,color)
+
+    #3 beta 3
+    # if 0,j+2 != c => A 0,j+1 c
+
+    # 3 beta 4
+    # if 2,j+2 = c => A 1,j+1
+
+    # 3 beta 5
+    # if 2,j+2 != c => A 1,j+1 x
+     
+    # 3 beta 6
+    # if 1,j+2 x => A 2,j+1 x
+  
     return
 
 
