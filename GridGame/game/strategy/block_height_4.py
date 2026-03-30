@@ -206,16 +206,16 @@ class BlockHeight4:
             if block_left.right_configuration == 'p':
                 if block_left.pi_side == "left":
                     print("block_height_4: 1")
-                    return {"config": 'p',"config2": 'p', "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": False}
+                    return {"config": 'p',"config2": 'p', "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": False, "j": block_left.start_col}
                 else:
                     print("block_height_4: 2")
-                    return {"config": 'p',"config2": 'p', "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": True}
+                    return {"config": 'p',"config2": 'p', "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": True, "j": block_left.start_col}
                 
             if block_right.left_configuration == 'p':
                 self.grid.bob_play_on_config["is_vert_flipped"] = True
                 if block_right.pi_side == "left":
                     print("block_height_4: 3")
-                    return {"config": 'p',"config2": 'p', "is_hori_flipped": block_right.is_left_flipped, "is_vert_flipped": False}
+                    return {"config": 'p',"config2": 'p', "is_hori_flipped": block_right.is_left_flipped, "is_vert_flipped": False, "j": block_right.start_col}
                 else:
                     print("block_height_4: 4")
                     return {"config": 'p', "config2": 'p', "is_hori_flipped": block_right.is_left_flipped, "is_vert_flipped": True}

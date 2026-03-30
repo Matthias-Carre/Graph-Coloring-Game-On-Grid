@@ -502,14 +502,164 @@ def solve_2_gamma(grid,bob_move):
 
 # Bob play in non free alpha of at least size 2 
 def is_2_alpha(grid,bob_move):
+    x,_,_ = bob_move
+    j= grid.bob_play_on_config["j"]
+    if grid.bob_play_on_config["config"] == "a" and (x == j):
+        print("Is 2 alpha")
+        return True
     return False
 
 def solve_2_alpha(grid,bob_move):
+    #normalize bob move:
+    x,y,color = bob_move
+    is_h_flip = grid.bob_play_on_config["is_hori_flipped"]
+    is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
+    j = grid.bob_play_on_config["j"]
+    nx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
+
+    #if 2,j+2 != c => A 2,j+1 c
+    cell_2_jp2 = get_norm_cell(grid,2,2,j,is_h_flip,is_v_flip)
+    cell_c = get_norm_cell(grid,2,0,j,is_h_flip,is_v_flip)
+    if cell_2_jp2.value != cell_c.value:
+        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+        print("2 alpha 1")
+        return (rx,ry,cell_c.value)
+    
+    
+
+    #Bob (0,j) c' & (2,j) not colored => A(1,j+1) c' if available else A(2,j+1) c'
+    cell_2_j = get_norm_cell(grid,0,2,j,is_h_flip,is_v_flip)
+    if ny == 0 and cell_2_j.value == 0:
+        cell_1_jp1 = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
+        if color in cell_1_jp1.color_options:
+            rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+            print("2 alpha 2.1")
+            return (rx,ry,color)
+        else:
+            rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+            print("2 alpha 2.2")
+            return (rx,ry,color)
+
+    # B 0,j c' & 0,j not colored => if 1,j+2 != c' => A 1,j+1 c' else A 0,j+1 c'
+    cell_0_j = get_norm_cell(grid,0,0,j,is_h_flip,is_v_flip)
+    if ny == 0 and cell_0_j.value == 0:
+        cell_1_jp2 = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
+        if color != cell_1_jp2.value:
+            rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+            print("2 alpha 3.1")
+            return (rx,ry,color)
+        else:
+            rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
+            print("2 alpha 3.2")
+            return (rx,ry,color)
+
+    # if (0,j+2) != c => A 0,j+1 c
+    cell_0_jp2 = get_norm_cell(grid,2,0,j,is_h_flip,is_v_flip)
+    if cell_0_jp2.value != cell_c.value:
+        rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
+        print("2 alpha 4")
+        return (rx,ry,cell_c.value)
+
+    # if (3,j+2) != c' => A 3,j+1 c'
+    cell_3_jp2 = get_norm_cell(grid,2,3,j,is_h_flip,is_v_flip)
+    cell_cp = get_norm_cell(grid,0,2,j,is_h_flip,is_v_flip)
+    if cell_3_jp2.value != cell_cp.value:
+        rx,ry = get_real_pos(grid,1,3,j,is_h_flip,is_v_flip)
+        print("2 alpha 5")
+        return (rx,ry,cell_cp.value)
+
+    # (if 1,j+2) not c' should be the case Prop 3) => A 1,j+1 c' 
+    cell_1_jp2 = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
+    if cell_1_jp2.value != cell_cp.value:
+        print("By Prop 3 : 1,j+2 should not be c' ")
+        rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+        print("2 alpha 6")
+        return (rx,ry,cell_cp.value)
+
     return
 
+# Bob color v of non free 1 colom block alpha
 def is_2_aplha_prime(grid,bob_move):
+    x,_,_ = bob_move
+    j= grid.bob_play_on_config["j"]
+    if grid.bob_play_on_config["config"] == "a" and (x == j):
+        print("Is 2 alpha'")
+        return True
     return False
+
+def solve_2_alpha_prime(grid,bob_move):
+    #normalize bob move:
+    x,y,color = bob_move
+    is_h_flip = grid.bob_play_on_config["is_hori_flipped"]
+    is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
+    j = grid.bob_play_on_config["j"]
     
+    cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
+
+
+    # if 2,j-2 != c => 2,j-1 c
+    cell_2_jm2 = get_norm_cell(grid,-2,2,j,is_h_flip,is_v_flip)
+    if cell_2_jm2.value != cell_c.value :
+        rx,ry = get_real_pos(grid,-1,2,j,is_h_flip,is_v_flip)
+        print("2 alpha' 0")
+        return (rx,ry,cell_c.value)
+    #(now asume that 2,j-2 is c)
+
+    # if 0,j-2 != c => A 0,j-1
+    cell_0_jm2 = get_norm_cell(grid,-2,0,j,is_h_flip,is_v_flip)
+    if cell_0_jm2.value != cell_c.value and cell_0_jm2.value != 0:
+        rx,ry = get_real_pos(grid,-1,0,j,is_h_flip,is_v_flip)
+        print("2 alpha' 1a")
+        return (rx,ry,cell_c.value)
+    
+    # else (=c) => if 1,j-2 colored => A 2mj-1 c'
+    if cell_0_jm2.value == cell_c.value:
+        cell_1_jm2 = get_norm_cell(grid,-2,1,j,is_h_flip,is_v_flip)
+        if cell_1_jm2.value != 0:
+            rx,ry = get_real_pos(grid,-1,2,j,is_h_flip,is_v_flip)
+            print("2 alpha' 1b")
+            return (rx,ry,cell_c.value)
+    # ((0,j-2) colored & 1.j-2 = 0)
+    # sup 0,j-2 = c and 1,j-2 = 0
+
+    # if j-3 not empty => A 2,j-1 c'
+    if not is_column_empty(grid,j-3):
+        rx,ry = get_real_pos(grid,-1,2,j,is_h_flip,is_v_flip)
+        print("2 alpha' 2")
+        return (rx,ry,cell_c.value)
+
+    #if 2,j+2 != c => A 2,j+1 c
+    cell_2_jp2 = get_norm_cell(grid,2,2,j,is_h_flip,is_v_flip)
+    if cell_2_jp2.value != cell_c.value:
+        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+        print("2 alpha' 3")
+        return (rx,ry,cell_c.value)
+    
+    # if (0,j+2) != c => A 0,j+1 c
+    cell_0_jp2 = get_norm_cell(grid,2,0,j,is_h_flip,is_v_flip)
+    if cell_0_jp2.value != cell_c.value and cell_0_jp2.value != 0:
+        rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
+        print("2 alpha' 4")
+        return (rx,ry,cell_c.value)
+
+    # if j+3 not empty => A 2,j+1 c'' != c'
+    # if j+3 empty => A 2,j+1 c'' != c'
+    
+    #c''
+    cpp = [1,2,3,4]
+    cpp.remove(cell_c.value)
+    cpp.remove(color)
+    if not is_column_empty(grid,j+3):
+        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+        print("2 alpha' 5")
+        return (rx,ry,cpp[0])
+    else:
+        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+        print("2 alpha' 6")
+        return (rx,ry,cpp[0])
+
+
+    return  
 
 
 """=-=-=--==-=-=--=-==-=--=-==--==-=-=--=-=-=-==--=---=-=-=-=
@@ -1042,6 +1192,7 @@ def is_column_empty(grid,dx,j,verti):
     return True
 
 
+# for each fonction (a,j+b) => dx = b ; y=a ; j = j
 """
 input: grid, dx, y, j, is_hori_flipped, is_vert_flipped
     dx is just the position relative to j

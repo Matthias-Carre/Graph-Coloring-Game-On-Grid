@@ -29,6 +29,7 @@ class Alice:
                 (is_2_delta, solve_2_delta),
                 (is_2_abgF, solve_2_abgF),
                 #(is_2_b, solve_2_b),
+                (is_2_aplha_prime, solve_2_alpha_prime),
 
 
                 #Case 3:

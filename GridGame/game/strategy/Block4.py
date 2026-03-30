@@ -84,12 +84,18 @@ class Block:
         # b=c != 0
         if( (b.value == d.value and b.value !=0)):
             #a and c not doctors
-            #print("Block4: check doc")
+            
+            # On test sans les docs 
+            if(a.value != c.value or a.value == 0 or c.value == 0):
+                return True
+            
+            """Avec les docs:
             if((not(a.is_doctor()) and not(c.is_doctor()))):
                 #print("Block4: alpha config b=d=",b.value)
                 #if a and c colored then a != c
                 if(a.value != c.value or a.value == 0 or c.value == 0):
                     return True
+            """
 
     #check if the block is of type beta
     # b = cp and c=0 
