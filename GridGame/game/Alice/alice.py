@@ -39,6 +39,9 @@ class Alice:
                 (is_3_alpha_F, solve_3_alpha_F),
                 (is_3_beta_F, solve_3_beta_F),
                 (is_3_gamma_F, solve_3_gamma_F),
+                (is_3_gamma, solve_3_gamma),
+                (is_3_beta, solve_3_beta),
+                (is_3_alpha, solve_3_alpha),
 
                 (is_TestConfig,solve_TestConfig)
             ]

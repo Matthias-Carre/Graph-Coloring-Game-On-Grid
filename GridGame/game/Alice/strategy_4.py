@@ -1210,7 +1210,8 @@ def is_3_beta(grid,bob_move):
 
     config = grid.bob_play_on_config["config"]
     config2 = grid.bob_play_on_config["config2"]
-    if (config == "b" and (config2 == "a" or config2 == "b")):
+    print("Check 3 beta: ", config, config2)
+    if (config == 'b' and (config2 == 'a' or config2 == 'b')):
         print("Is 3 beta")
         return True
     return False
@@ -1255,23 +1256,81 @@ def solve_3_beta(grid,bob_move):
 
     #3 beta 3
     # if 0,j+2 != c => A 0,j+1 c
-
+    cell_0_jp2 = get_norm_cell(grid,2,0,j,is_h_flip,is_v_flip)
+    if cell_0_jp2.value != cell_c.value:
+        rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
+        print("3 beta 3")
+        return (rx,ry,cell_c.value)
+    
     # 3 beta 4
-    # if 2,j+2 = c => A 1,j+1
+    # if 2,j+2 = c => A 1,j+1 any
+    cell_2_jp2 = get_norm_cell(grid,2,2,j,is_h_flip,is_v_flip)
+    if cell_2_jp2.value == cell_c.value:
+        cell = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+        print("3 beta 4")
+        return (rx,ry,cell.color_options[0])
 
     # 3 beta 5
     # if 2,j+2 != c => A 1,j+1 x
-     
+    if cell_2_jp2.value != cell_c.value and cell_2_jp2.value != 0:
+        rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+        print("3 beta 5")
+        return (rx,ry,color)
+    
     # 3 beta 6
     # if 1,j+2 x => A 2,j+1 x
-  
+    cell_1_jp2 = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
+
+    if cell_1_jp2.value != 0:
+        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+        print("3 beta 6")
+        return (rx,ry,cell_1_jp2.value)
+
+    print("3 beta: no condition matched")
     return
 
 
 def is_3_alpha(grid,bob_move):
+    config = grid.bob_play_on_config["config"]
+    config2 = grid.bob_play_on_config["config2"]
+    if (config == "a" and (config2 == "a" )):
+        print("Is 3 alpha")
+        return True
     return False
 
+
+# A CHECK LES CONFIG DEPENDE DES 2 COTES EN Un alpha peut etre flip et lautre non
 def solve_3_alpha(grid,bob_move):
+    #normalize bob move:
+    x,y,color = bob_move
+    is_h_flip = grid.bob_play_on_config["is_hori_flipped"]
+    is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
+    j = x+1 if is_v_flip else x-1
+    nx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
+
+    #3 alpha 0
+    # B 2,j+1 resp 1,j+1 => A 1,j+1 resp A 2 j+1
+
+    #3 alpha 1
+    # B 3,j+1 or 0,j+1 => A 1,j+1 c'
+
+    #3 alpha 2 ???
+    # if c' != c => A 2,j+1 
+
+    # 3 alpha 3
+    # if B 3,j+1 x => 1,j+1 x
+
+    # 3 alpha 4
+    # if 2,j != x -> A 2,j+1
+
+    # 3 alpha 5
+    # if col j+3 empty => A 1,j+1 x
+
+    # 3 alpha 6
+    # if if col j+3 not empty => 3,j+1 c' else 3,j+1 x
+
+
     return
 
 
