@@ -244,11 +244,23 @@ class GameEngine:
 
     """
     def change_node_color(self,grid, x, y, color):
+        #keep the status of the cell before the move to update the strategy if needed
+        cell = grid.get_cell(x,y)
+        if len(cell.patients) > 0:
+            is_doc = True
+            patient = cell.patients[0]
+            other_doc = patient.doctors[0] if patient.doctors[0].x != cell.x else patient.doctors[1]
+            print("other doc: ", other_doc.x, other_doc.y)
+        else:
+            is_doc = False
+            patient = None
+            other_doc = None
+        status_before_move = "safe" if cell.is_safe else "sound" if cell.is_sound else ""
 
         if(not(grid.play_move(x, y, color))):
            return 
         if self.strategy is not None:
-            self.strategy.move_played(x, y, color, "A" if grid.player == 0 else "B")
+            self.strategy.move_played(x, y, color, "A" if grid.player == 0 else "B",is_doc, status_before_move, patient, other_doc)
 
         if self.grid.player == 1:
             self.grid.round += 1

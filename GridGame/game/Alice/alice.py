@@ -22,13 +22,21 @@ class Alice:
                 (is_1_Delta, solve_1_Delta),
                 (is_1_Dp_1, solve_1_Dp_1),
                 (is_1_L, solve_1_L),
-                #(is_1_Lp_1, solve_1_Lp_1),
+                (is_1_Dp_2, solve_1_Dp_2),
+                (is_1_L,solve_1_L),
+                (is_1_Lp, solve_1_Lp),
+                (is_1_doc, solve_1_doc),
+                (is_1_g_doc, solve_1_g_doc),
+                (is_1_safe, solve_1_safe),
+                
 
 
                 #Case 2:
                 (is_2_delta, solve_2_delta),
                 (is_2_abgF, solve_2_abgF),
-                #(is_2_b, solve_2_b),
+                (is_2_beta, solve_2_beta),
+                (is_2_gamma, solve_2_gamma),
+                (is_2_alpha, solve_2_alpha),
                 (is_2_aplha_prime, solve_2_alpha_prime),
 
 

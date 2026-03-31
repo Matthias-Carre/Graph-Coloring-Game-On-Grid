@@ -50,6 +50,12 @@ Case 1
 -------------##-------
 -------------##-------
 -------------##-------
+Bob play:
+    - in border D
+    - in col j or j-1 of L or L2 or L' or L'2
+    - in col j-2 of L or L'
+    - in col j-2 of L2 or L'2 if j-3 is not empty
+    - inside a block
 '''
 #Bob joue dans j+1 ou j+2 de D 
 # 1. Bob color sick => Alice color any j+1
@@ -300,28 +306,40 @@ def solve_1_Lp(grid,bob_move):
 #Bob color doc of v not in gamma
 def is_1_doc(grid,bob_move):
     x,y,color = bob_move
-    if grid.get_cell(x,y).is_doctor:
-        #check if v not in gamma 
-        # Faut le faire avant pcq bob ecrase la config
-        v = grid.get_cell(x,y).patients[0] 
-        b = grid.blocks.block_at(v.x)
-        
+    if grid.bob_play_on_config["doctor"] == True:
+        if grid.bob_play_on_config["config"] != "g":
+            print("Is 1 doc")
+            return True
     
     return False    
 
 def solve_1_doc(grid,bob_move):
-    return
+    patient = grid.bob_play_on_config["patient"]
+    
+    print("Solve 1 doc")
+    return (patient.y,patient.x,patient.color_options[0])
 
 #Bob color doc of v in gamma
 def is_1_g_doc(grid,bob_move):
-
+    x,y,color = bob_move
+    if grid.bob_play_on_config["doctor"] == True:
+        if grid.bob_play_on_config["config"] == "g" and grid.bob_play_on_config["j"] == x:
+            print("Is 1 g doc")
+            return True
     return False
 
 def solve_1_g_doc(grid,bob_move):
-    return
+    x,y,color = bob_move
+    other_doc = grid.bob_play_on_config["other_doc"]
+    return (other_doc.y,other_doc.x,color)
 
 #Bob color safe vertex
+# A CHECK IL FAUT LA CONDITION DANS UN BLOCK
 def is_1_safe(grid,bob_move):
+    if grid.bob_play_on_config["state"] == "safe":
+        print("Is 1 safe")
+        return True
+
     return False
 
 def solve_1_safe(grid,bob_move):
@@ -340,6 +358,8 @@ def solve_1_safe(grid,bob_move):
 
     return
 
+
+
 """
 Case 2
 -----##########-------
@@ -351,6 +371,8 @@ Case 2
 -----##---------------
 -----##---------------
 -----##########-------
+Bob play:
+    - in border (not D, L or L')
 """
 
 #Bob play in col of config delta
@@ -483,7 +505,7 @@ def solve_2_beta(grid,bob_move):
 def is_2_gamma(grid,bob_move):
     x,_,_ = bob_move
     j= grid.bob_play_on_config["j"]
-    if grid.bob_play_on_config["config"] == "b" and (x == j):
+    if grid.bob_play_on_config["config"] == "g" and (x == j):
         print("Is 2 gamma")
         return True
 
@@ -495,13 +517,33 @@ def solve_2_gamma(grid,bob_move):
     is_h_flip = grid.bob_play_on_config["is_hori_flipped"]
     is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
     j = grid.bob_play_on_config["j"]
-    dx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
+    nx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
 
     #B 2,j => A 2,j+1 available
+    if ny == 2 :
+        cell = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+        print("2 gamma a")
+        return (rx,ry,cell.color_options[0])
 
     #B 1,j c' & 2,j+2 != c' => A 2,j+1 c'
+    if ny == 1:
+        cell_2_jp2 = get_norm_cell(grid,2,2,j,is_h_flip,is_v_flip)
+        if color != cell_2_jp2.value:
+            rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+            print("2 gamma b")
+            return (rx,ry,color)
 
     #else 2,j+1 c' => A 2,j) c'' (diff c et c')
+        else:
+            cell_c = get_norm_cell(grid,0,0,j,is_h_flip,is_v_flip)
+            colors = [1,2,3,4]
+            colors.remove(color)
+            colors.remove(cell_c.value)
+            rx,ry = get_real_pos(grid,0,2,j,is_h_flip,is_v_flip)
+            print("2 gamma c")
+            return (rx,ry,colors[0])
+
     return
 
 # Bob play in non free alpha of at least size 2 
@@ -693,6 +735,8 @@ Case 3: Bob colors empty column
 -------------##-------
 -------------##-------
 -----##########-------
+Bob play:
+    - empty col (not in j-1 of L,L2,L',L2')
 """
 
 # Bob play in col j with j-1,j and j+1 empty 
@@ -1210,7 +1254,7 @@ def is_3_beta(grid,bob_move):
 
     config = grid.bob_play_on_config["config"]
     config2 = grid.bob_play_on_config["config2"]
-    print("Check 3 beta: ", config, config2)
+    #print("Check 3 beta: ", config, config2)
     if (config == 'b' and (config2 == 'a' or config2 == 'b')):
         print("Is 3 beta")
         return True
@@ -1311,26 +1355,68 @@ def solve_3_alpha(grid,bob_move):
 
     #3 alpha 0
     # B 2,j+1 resp 1,j+1 => A 1,j+1 resp A 2 j+1
-
-    #3 alpha 1
+    if (ny == 2):
+        cell_1_jp1 = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+        print("3 alpha 0a")
+        return (rx,ry,cell_1_jp1.color_options[0])
+    if (ny == 1):
+        cell_2_jp1 = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+        print("3 alpha 0b")
+        return (rx,ry,cell_2_jp1.color_options[0])
+    
+    #3 alpha 1 (only case where 2 config alpha are sym vertical )
     # B 3,j+1 or 0,j+1 => A 1,j+1 c'
+    #check if alpha aplha
+    cell_1_jp2 = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
+    cell_3_jp2 = get_norm_cell(grid,2,3,j,is_h_flip,is_v_flip)
+    if (cell_1_jp2.value == cell_3_jp2.value and cell_1_jp2.value != 0):
+        if (ny == 3 or ny == 0):
+            rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+            print("3 alpha 1")
+            return (rx,ry,cell_1_jp2.value)
+        print("3 alpha 1: condition not met (should not happen if config is correct)")
 
     #3 alpha 2 ???
     # if c' != c => A 2,j+1 
+    cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
+    cell_cp = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
+    if cell_cp.value != cell_c.value :
+        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+        print("3 alpha 2")
+        return (rx,ry,cell_cp.value)
 
     # 3 alpha 3
     # if B 3,j+1 x => 1,j+1 x
+    if (ny == 3):
+        rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+        print("3 alpha 3")
+        return (rx,ry,color)
 
     # 3 alpha 4
-    # if 2,j != x -> A 2,j+1
+    # if 2,j != x -> A 2,j+1 x
+    cell_2_j = get_norm_cell(grid,0,2,j,is_h_flip,is_v_flip)
+    if cell_2_j.value != color :
+        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+        print("3 alpha 4")
+        return (rx,ry,color)
 
     # 3 alpha 5
     # if col j+3 empty => A 1,j+1 x
+    if is_column_empty(grid,3,j,is_v_flip):
+        rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+        print("3 alpha 5")
+        return (rx,ry,color)
 
     # 3 alpha 6
-    # if if col j+3 not empty => 3,j+1 c' else 3,j+1 x
+    # if if col j+3 not empty => 3,j+1 x
+    else :
+        rx,ry = get_real_pos(grid,1,3,j,is_h_flip,is_v_flip)
+        print("3 alpha 6")
+        return (rx,ry,color)
 
-
+    print("3 alpha: no condition matched")
     return
 
 
@@ -1356,6 +1442,9 @@ def same_value_grid(grid,list):
 def is_column_empty(grid,dx,j,verti):
     rj = j-dx if verti else j+dx
 
+    if rj < 0 or rj >= grid.width:
+        return True
+    
     for y in range(grid.height):
         if grid.get_cell(rj,y).value != 0:
             return False

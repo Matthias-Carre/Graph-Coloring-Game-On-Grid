@@ -14,12 +14,21 @@ class BlockHeight4:
     output: void
     result: update the configuration of the block
     """
-    def move_played(self,x,y,color,player_name):
+    def move_played(self,x,y,color,player_name,is_doc, status_before_move,patient = None,other_doc = None):
         
         #keep the config on which Bob played for Alice strategy
         print("block_height_4: Bob played on config: ", self.get_config_at(x))
         if player_name == "B":
             self.grid.bob_play_on_config = self.get_config_at(x)
+            cell = self.grid.get_cell(x,y)
+            if is_doc:
+                self.grid.bob_play_on_config["doctor"] = True
+                self.grid.bob_play_on_config["patient"] = patient
+                self.grid.bob_play_on_config["other_doc"] = other_doc
+            else:
+                self.grid.bob_play_on_config["doctor"] = False
+            if cell.is_safe:
+                self.grid.bob_play_on_config["state"] = status_before_move
 
         self.update_block(x)
         right_block_start = self.get_right_block(self.block_at(x))
