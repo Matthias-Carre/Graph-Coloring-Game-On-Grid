@@ -342,4 +342,4 @@ class BlockHeight4:
             return {"config": block_right.left_configuration, "config2": "empty", "is_hori_flipped": block_right.is_left_flipped, "is_vert_flipped": True, "j": block_right.start_col}
         
         #bob play on empty col with no block around
-        return {"config": 'none', "config2": "empty", "is_hori_flipped": False, "is_vert_flipped": False, "j": None}
+        return {"config": 'none', "config2": "empty", "is_hori_flipped": False, "is_vert_flipped": False, "j": x}
