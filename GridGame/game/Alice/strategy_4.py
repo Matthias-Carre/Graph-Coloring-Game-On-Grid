@@ -39,6 +39,18 @@ def solve_TestConfig(grid,bob_move):
     print("resolve test config")
     return (0,0,1)
 
+
+
+#TEST FUNCTIOn
+def is_TEST(grid,bob_move):
+    return True
+
+def solve_TEST(grid,bob_move):
+    print("Strategy TEST: 1st gamma:",grid.get_first_gamma())
+    print("Strategy TEST: 1st delta:",grid.get_first_border_delta())
+    print("Strategy TEST: 1st pi:",grid.get_first_pi())
+    print("Strategy TEST: 1st alpha:",grid.get_first_alpha())
+    print("Strategy TEST: 1st beta:",grid.get_first_beta())
 '''
 Case 1
 -------------##-------
@@ -307,23 +319,27 @@ def solve_1_Lp(grid,bob_move):
 def is_1_doc(grid,bob_move):
     x,y,color = bob_move
     if grid.bob_play_on_config["doctor"] == True:
-        if grid.bob_play_on_config["config"] != "g":
+        if grid.bob_play_on_config["config"] != "gm1":
+            
+            #check if its inside a block (not in the borders)
+            print("1 doc: blocks:",grid.blocks)
             print("Is 1 doc")
             return True
     
     return False    
 
 def solve_1_doc(grid,bob_move):
-    patient = grid.bob_play_on_config["patient"]
     
-    print("Solve 1 doc")
-    return (patient.y,patient.x,patient.color_options[0])
+        patient = grid.bob_play_on_config["patient"]
+
+        print("Solve 1 doc")
+        return (patient.y,patient.x,patient.color_options[0])
 
 #Bob color doc of v in gamma
 def is_1_g_doc(grid,bob_move):
     x,y,color = bob_move
     if grid.bob_play_on_config["doctor"] == True:
-        if grid.bob_play_on_config["config"] == "g" and grid.bob_play_on_config["j"] == x:
+        if grid.bob_play_on_config["config"] == 'gm1' and (grid.bob_play_on_config["j"] == x-1 or grid.bob_play_on_config["j"] == x+1):
             print("Is 1 g doc")
             return True
     return False
@@ -336,6 +352,11 @@ def solve_1_g_doc(grid,bob_move):
 #Bob color safe vertex
 # A CHECK IL FAUT LA CONDITION DANS UN BLOCK
 def is_1_safe(grid,bob_move):
+    x,y,color = bob_move
+    block = grid.blocks.block_at(x)
+    if block is None or x == block.start_col or x == block.end_col:
+        return False
+    
     if grid.bob_play_on_config["state"] == "safe":
         print("Is 1 safe")
         return True
@@ -343,23 +364,130 @@ def is_1_safe(grid,bob_move):
     return False
 
 def solve_1_safe(grid,bob_move):
+
+    '''Le TEmps de test les autres f'''
+
     # if E sick => Alice color it
+    cell_sick = grid.get_first_sick_cell()
+    if cell_sick is not None:
+        print("1 safe a (sick)")
+        return (cell_sick.y,cell_sick.x,cell_sick.color_options[0])
+    
     # if E sound => Alice make it safe
+    cell_sound = grid.get_first_sound_cell()
+    if cell_sound is not None:
+        print("1 safe b (sound)")
+        return (cell_sound.y,cell_sound.x,cell_sound.color_options[0])
+    
     # E uncolored safe not in border => Alice color it
+    cell_safe = grid.get_first_inner_safe_cell()
+    if cell_safe is not None:
+        print("1 safe c (safe)")
+        return (cell_safe.y,cell_safe.x,cell_safe.color_options[0])
+    
 
-    #1g
+    """
+    In theory every vertex of a block is colored so alice try to play depending on the borders
+    If there exist a border of x config we react
+    """
 
+    #1delta
+    # config delta 1,j+2 != c' => A 1,j+1 c'
+    # if 1,j+2 = c' => 0,j+1 c' 
+    border_delta = grid.get_first_border_delta()
+    #normalize border pos:
+    if border_delta is not None:
+        is_h_flip = border_delta["is_hori_flipped"]
+        is_v_flip = border_delta["is_vert_flipped"]
+        j = border_delta["j"]
+        
+        cell_1_jp2 = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
+        cell_cp = get_norm_cell(grid,0,2,j,is_h_flip,is_v_flip)
+        if cell_1_jp2.value != cell_cp.value :
+            rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+            print("1 safe delta a")
+            return (rx,ry,cell_cp.value)
+        else:
+            rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
+            print("1 safe delta b")
+            return (rx,ry,cell_cp.value)
+
+    
     #1 pi
+    # A 3,j+1 c'
+    border_pi = grid.get_first_pi()
+    if border_pi is not None:
+        is_h_flip = border_pi["is_hori_flipped"]
+        is_v_flip = border_pi["is_vert_flipped"]
+        j = border_pi["j"]
+
+        cell_cp = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,1,3,j,is_h_flip,is_v_flip)
+        print("1 safe pi")
+        return (rx,ry,cell_cp.value)
+
     #1 gamma
+    # A 2,j aviable
+    border_gamma = grid.get_first_gamma()
+    if border_gamma is not None:
+        is_h_flip = border_gamma["is_hori_flipped"]
+        is_v_flip = border_gamma["is_vert_flipped"]
+        j = border_gamma["j"]
+
+        cell = get_norm_cell(grid,0,2,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,0,2,j,is_h_flip,is_v_flip)
+        print("1 safe gamma")
+        return (rx,ry,cell.color_options[0])
+
+    #1 alpha beta free 
+    # if alpha => A 2,j+1 c
+    # else if beta => A 2,j+1 c
+    border_alpha = grid.get_first_alpha()
+    border_beta = grid.get_first_beta()
+
+
     #1 beta
+    # A 1,j+1 aviable
+    if border_beta is not None:
+        is_h_flip = border_beta["is_hori_flipped"]
+        is_v_flip = border_beta["is_vert_flipped"]
+        print("1 safe beta: border beta found at j=",border_beta["j"],"h_flip=",is_h_flip,"v_flip=",is_v_flip)
+        j = border_beta["j"]
+
+        cell = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+        print("1 safe beta")
+        return (rx,ry,cell.color_options[0])
+
     #1 alpha 1
+    # if 1,j+2 != c => A 1,j+1 c
+    if border_alpha is not None:
+        is_h_flip = border_alpha["is_hori_flipped"]
+        is_v_flip = border_alpha["is_vert_flipped"]
+        j = border_alpha["j"]
+
+        cell_c = get_norm_cell(grid,0,0,j,is_h_flip,is_v_flip)
+        cell_1_jp2 = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
+        if cell_1_jp2.value != cell_c.value:
+            rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+            print("1 safe alpha a")
+            return (rx,ry,cell_c.value)
+        else:
     #1 alpha 2
+    # else if j+3 empty => A 1,j+1 c'
+            if is_column_empty(grid,3,j,is_v_flip):
+                cell = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
+                rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+                print("1 safe alpha b")
+                return (rx,ry,cell.color_options[0])
     #1 aplha 3
-
+    # else (j+3 not empty) => 1,j+1 c'
+            else:
+                cell = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
+                rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+                print("1 safe alpha c")
+                return (rx,ry,cell.color_options[0])
     return
-
-
-
 """
 Case 2
 -----##########-------
@@ -1461,7 +1589,7 @@ return: the cell at (x,y) on this context
 def get_norm_cell(grid,dx,y,j,hori,verti):
 
     if hori and verti:
-        print("strategy: dx,y,j , nx,ny ",dx,y,j,2*j-dx,grid.height-1-y)
+        #print("strategy: dx,y,j , nx,ny ",dx,y,j,2*j-dx,grid.height-1-y)
         return grid.get_cell(j-dx,grid.height-1-y)
     elif hori:
         return grid.get_cell(j+dx,grid.height-1-y)
@@ -1491,3 +1619,6 @@ def get_real_pos(grid,dx,y,j,hori,verti):
     y_real = grid.height-1-y if hori else y 
 
     return (x_real,y_real)
+
+def is_inside_block(grid,x,y):
+    block = grid.blocks

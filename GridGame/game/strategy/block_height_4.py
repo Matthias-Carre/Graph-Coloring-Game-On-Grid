@@ -1,3 +1,5 @@
+from turtle import left
+
 from game.strategy.Block4 import Block
 
 class BlockHeight4:
@@ -31,25 +33,93 @@ class BlockHeight4:
                 self.grid.bob_play_on_config["state"] = status_before_move
 
         self.update_block(x)
+        print("block_height_4: update block at x=", x)  
+        
+        
+        left_block_end = self.get_left_block(self.block_at(x))
+        if left_block_end != None:
+            print("block_height_4: left block end=", left_block_end)    
+            self.update_block(left_block_end) if left_block_end != None else None
+            
+
         right_block_start = self.get_right_block(self.block_at(x))
-        self.update_block(right_block_start) if right_block_start != None else None
+        if right_block_start != None:
+            print("block_height_4: right block start=", right_block_start)
+            self.update_block(right_block_start)
+            
+
+        self.update_pi(self.block_at(x))
+        if left_block_end != None:
+            self.update_pi(self.block_at(left_block_end))
+            self.block_at(left_block_end).print_info() 
+        if right_block_start != None:
+            self.update_pi(self.block_at(right_block_start))
+            self.block_at(right_block_start).print_info()
+        self.block_at(x).print_info()   
 
 
         return
+
+        
+    def update_pi(self,block):
+        
+        if block.right_configuration == 'p':
+            x = block.end_col
+            print("block_height_4: block at x+2", self.block_at(x+2))
+            print("block_height_4: block at x+2=", x+2)
+            self.block_at(x+2).left_configuration = 'p'
+            self.block_at(x+2).is_left_flipped = block.is_right_flipped
+            self.block_at(x+2).pi_side = block.pi_side
+            print("block_height_4: change right block config to p")
+        if block.left_configuration == 'p':
+            x = block.start_col
+            #self.grid.bob_play_on_config["is_vert_flipped"] = True
+            self.block_at(x-2).right_configuration = 'p'
+            self.block_at(x-2).is_right_flipped = block.is_left_flipped
+            self.block_at(x-2).pi_side = block.pi_side
+            print("block_height_4: change left block config to p")
+
+
 
     def update_all_blocks(self):
         for block in self.blocks:
             block.check_configurations()
 
+    
+    """Rebuild contiguous non-empty blocks from grid state, without computing configurations."""
+    def rebuild_blocks_only(self):
+        self.blocks = []
+        x = 0
+
+        while x < self.width:
+            # Skip empty columns
+            while x < self.width and all(self.grid.get_cell(x, y).value == 0 for y in range(self.height)):
+                x += 1
+
+            if x >= self.width:
+                break
+
+            # Start of a new contiguous block
+            start = x
+            columns = []
+
+            while x < self.width and any(self.grid.get_cell(x, y).value != 0 for y in range(self.height)):
+                columns.append([self.get_cell(x, row) for row in range(self.height)])
+                x += 1
+
+            block = Block(self)
+            block.start_col = start
+            block.end_col = x - 1
+            block.size = block.end_col - block.start_col + 1
+            block.columns = columns
+            self.blocks.append(block)
+
+
     #test for undo
     def rebuild_from_grid(self):
         """Rebuild all blocks/configurations from current grid state."""
-        self.blocks = []
-
-        for x in range(self.width):
-            col_has_color = any(self.grid.get_cell(x, y).value != 0 for y in range(self.height))
-            if col_has_color:
-                self.update_block(x)
+        self.rebuild_blocks_only()
+        self.update_all_blocks()
 
     def evaluate_block(self):
 
@@ -105,8 +175,13 @@ class BlockHeight4:
             block.columns.append([self.get_cell(x, row) for row in range(self.height)])
             self.blocks.append(block)
 
+
+
         block.check_configurations()
+        '''
         if block.right_configuration == 'p':
+            print("block_height_4: block at x+2", self.block_at(x+2))
+            print("block_height_4: block at x+2=", x+2)
             self.block_at(x+2).left_configuration = 'p'
             self.block_at(x+2).is_left_flipped = block.is_right_flipped
             self.block_at(x+2).pi_side = block.pi_side
@@ -117,6 +192,9 @@ class BlockHeight4:
             self.block_at(x-2).is_right_flipped = block.is_left_flipped
             self.block_at(x-2).pi_side = block.pi_side
         #block.print_block()
+        '''
+        
+    
         return
 
 
@@ -136,6 +214,12 @@ class BlockHeight4:
         for b in self.blocks:
             if b.start_col > block.end_col:
                 return b.start_col
+        return None
+    
+    def get_left_block(self, block):
+        for b in reversed(self.blocks):
+            if b.end_col < block.start_col:
+                return b.end_col
         return None
     
     """
@@ -184,7 +268,13 @@ class BlockHeight4:
                     print("block_height_4: Bob played on right border config")
                     return {"config": block.right_configuration, "config2": None, "is_hori_flipped": block.is_right_flipped, "is_vert_flipped": False, "j": block.end_col}
                 
-            return {"config": "Not particular","config2": None, "is_hori_flipped": False, "is_vert_flipped": False}
+            if x-1 == block.start_col and block.left_configuration == 'g':
+                return {"config": "gm1","config2": "gm1", "is_hori_flipped": block.is_left_flipped, "is_vert_flipped": True, "j": block.start_col}
+            
+            if x+1 == block.end_col and block.right_configuration == 'g':
+                return {"config": "gm1","config2": "gm1", "is_hori_flipped": block.is_right_flipped, "is_vert_flipped": False, "j": block.end_col}
+
+            return {"config": "Not particular","config2": None, "is_hori_flipped": False, "is_vert_flipped": False, "j": x}
 
         #Bob play on empty col
 

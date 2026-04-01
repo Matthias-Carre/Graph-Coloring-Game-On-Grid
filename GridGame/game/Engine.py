@@ -215,7 +215,7 @@ class GameEngine:
     def undo(self):
         print(f"====----====\nUndo last move")
         if(self.grid.undo_move()):
-            self.on_update_callback()
+            #self.on_update_callback()
             if self.strategy is not None:
                 #self.strategy.update_all_blocks()
                 self.strategy.rebuild_from_grid()
