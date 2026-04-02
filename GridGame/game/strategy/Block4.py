@@ -50,7 +50,7 @@ class Block:
     #check if the block is of type alpha
     # b=c != 0, a and c not doctors and if colored then a != c
     def is_alpha(self):
-        a,b,c,d = self.columns[len(self.columns)-1]
+        a,b,c,d = self.columns[0]
         first = self.alpha_config(a,b,c,d)
         revers = self.alpha_config(d,c,b,a)
 
@@ -66,7 +66,7 @@ class Block:
             self.left_configuration = "a"
 
         #right side
-        a,b,c,d = self.columns[0]
+        a,b,c,d = self.columns[len(self.columns)-1]
         first = self.alpha_config(a,b,c,d)
         revers = self.alpha_config(d,c,b,a)
         if revers:
@@ -673,6 +673,15 @@ class Block:
         self.is_right_flipped = False
         self.is_left_flipped = False
 
+        self.is_alpha()
+        self.is_beta()
+        self.is_gamma()
+        self.is_delta()
+        self.is_pi()
+
+
+
+        '''quesque jai foutu?
         if self.is_alpha():
             #print("Block is alpha")
             self.right_configuration = "a"
@@ -691,7 +700,7 @@ class Block:
         if self.is_pi():
             #print("Block is pi")
             self.right_configuration = "p"
-            
+        '''
 
 
         #manage particulars cases
@@ -779,7 +788,7 @@ class Block:
         if block == None:
             block = self
 
-        print(f"Block Start:{block.start_col} End: {block.end_col}, size: {block.size}")
+        print(f"Block Start:{block.start_col} End: {block.end_col}, size: {block.size} Left: {block.left_configuration} Right: {block.right_configuration}")
         for i in range(4):
             for col in block.columns:
                 cell = col[i]

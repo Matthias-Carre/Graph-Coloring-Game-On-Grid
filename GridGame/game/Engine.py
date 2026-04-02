@@ -49,6 +49,7 @@ class GameEngine:
         self.window.draw_button("Undo",self.undo)
         self.window.draw_button("debug",self.toggle_debug)
         self.window.draw_button("rounds",self.toggle_rounds)
+        self.window.draw_button("print blocks",self.print_blocks)
         self.window.draw_button("Reset",self.reset)
 
         self.window.canvas.bind("<Button-1>", self.on_left_click)
@@ -290,3 +291,8 @@ class GameEngine:
     def toggle_rounds(self):
         self.window.draw.print_rounds = not self.window.draw.print_rounds
         self.on_update_callback()
+
+    def print_blocks(self):
+        for block in self.grid.blocks.blocks:
+            print("Block:")
+            block.print_block()

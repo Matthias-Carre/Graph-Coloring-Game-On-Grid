@@ -132,10 +132,6 @@ class BlockHeight4:
             block_right = self.block_at(x+1)
 
             if(block_left):
-                #Notes: si c'est bob on aimerais save la config du bord pour reagir en consequence
-                #self.grid.bob_play_on_config["config"] = block_left.right_configuration
-                #self.grid.bob_play_on_config["is_hori_flipped"] = block_left.is_right_flipped
-                
 
                 block_left.end_col = x
                 block_left.size += 1
