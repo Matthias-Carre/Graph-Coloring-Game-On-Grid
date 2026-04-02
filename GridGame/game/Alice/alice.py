@@ -64,7 +64,7 @@ class Alice:
         if self.grid.player != 0:
             print("Not Alice's turn")
             return None
-        print("Alice move")
+        print("\n===-- Alice move --===")
 
         # react to Bob's last move
         

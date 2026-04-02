@@ -83,7 +83,7 @@ class GameEngine:
         1-5 : select the color
     """
     def on_key_press(self,event):
-        print("key pressed",event)
+        #print("key pressed",event)
         if event.char == 'u':
             self.undo()
         if event.char == 'l':
@@ -251,7 +251,7 @@ class GameEngine:
             is_doc = True
             patient = cell.patients[0]
             other_doc = patient.doctors[0] if patient.doctors[0].x != cell.x else patient.doctors[1]
-            print("other doc: ", other_doc.x, other_doc.y)
+            #print("other doc: ", other_doc.x, other_doc.y)
         else:
             is_doc = False
             patient = None

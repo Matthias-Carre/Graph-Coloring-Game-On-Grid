@@ -33,29 +33,29 @@ class BlockHeight4:
                 self.grid.bob_play_on_config["state"] = status_before_move
 
         self.update_block(x)
-        print("block_height_4: update block at x=", x)  
+        #print("block_height_4: update block at x=", x)  
         
         
         left_block_end = self.get_left_block(self.block_at(x))
         if left_block_end != None:
-            print("block_height_4: left block end=", left_block_end)    
+            #print("block_height_4: left block end=", left_block_end)    
             self.update_block(left_block_end) if left_block_end != None else None
             
 
         right_block_start = self.get_right_block(self.block_at(x))
         if right_block_start != None:
-            print("block_height_4: right block start=", right_block_start)
+            #print("block_height_4: right block start=", right_block_start)
             self.update_block(right_block_start)
             
 
         self.update_pi(self.block_at(x))
         if left_block_end != None:
             self.update_pi(self.block_at(left_block_end))
-            self.block_at(left_block_end).print_info() 
+            #self.block_at(left_block_end).print_info() 
         if right_block_start != None:
             self.update_pi(self.block_at(right_block_start))
-            self.block_at(right_block_start).print_info()
-        self.block_at(x).print_info()   
+            #self.block_at(right_block_start).print_info()
+        #self.block_at(x).print_info()   
 
 
         return
@@ -65,19 +65,19 @@ class BlockHeight4:
         
         if block.right_configuration == 'p':
             x = block.end_col
-            print("block_height_4: block at x+2", self.block_at(x+2))
-            print("block_height_4: block at x+2=", x+2)
+            #print("block_height_4: block at x+2", self.block_at(x+2))
+            #print("block_height_4: block at x+2=", x+2)
             self.block_at(x+2).left_configuration = 'p'
             self.block_at(x+2).is_left_flipped = block.is_right_flipped
             self.block_at(x+2).pi_side = block.pi_side
-            print("block_height_4: change right block config to p")
+            #print("block_height_4: change right block config to p")
         if block.left_configuration == 'p':
             x = block.start_col
             #self.grid.bob_play_on_config["is_vert_flipped"] = True
             self.block_at(x-2).right_configuration = 'p'
             self.block_at(x-2).is_right_flipped = block.is_left_flipped
             self.block_at(x-2).pi_side = block.pi_side
-            print("block_height_4: change left block config to p")
+            #print("block_height_4: change left block config to p")
 
 
 
@@ -172,25 +172,8 @@ class BlockHeight4:
             self.blocks.append(block)
 
 
-
         block.check_configurations()
-        '''
-        if block.right_configuration == 'p':
-            print("block_height_4: block at x+2", self.block_at(x+2))
-            print("block_height_4: block at x+2=", x+2)
-            self.block_at(x+2).left_configuration = 'p'
-            self.block_at(x+2).is_left_flipped = block.is_right_flipped
-            self.block_at(x+2).pi_side = block.pi_side
-            print("block_height_4: change right block config to p")
-        if block.left_configuration == 'p':
-            #self.grid.bob_play_on_config["is_vert_flipped"] = True
-            self.block_at(x-2).right_configuration = 'p'
-            self.block_at(x-2).is_right_flipped = block.is_left_flipped
-            self.block_at(x-2).pi_side = block.pi_side
-        #block.print_block()
-        '''
         
-    
         return
 
 
@@ -241,8 +224,8 @@ class BlockHeight4:
                         return {"config": "D'", "config2": None, "is_hori_flipped": config[2], "is_vert_flipped":True,"j": config[1]}
 
                     # D2'
-                    print("block_height_4: D2' x=", x, "config[1]=", config[1])
-                    print("block_height_4: ",config[0]) 
+                    #print("block_height_4: D2' x=", x, "config[1]=", config[1])
+                    #print("block_height_4: ",config[0]) 
                     if config[0] == "D2'" and (config[1]-1 == x-1 or config[1] == x or config[1]+1 == x or config[1]+2  == x ) and config[3] == False:
                         print("block_height_4: Bob played on config D2' C")
                         return {"config": "D2'", "config2": None, "is_hori_flipped": config[2], "is_vert_flipped":False,"j": config[1]}
@@ -300,32 +283,25 @@ class BlockHeight4:
             # in config pi
             if block_left.right_configuration == 'p':
                 if block_left.pi_side == "left":
-                    print("block_height_4: 1")
                     return {"config": 'p',"config2": 'p', "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": False, "j": block_left.start_col}
                 else:
-                    print("block_height_4: 2")
                     return {"config": 'p',"config2": 'p', "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": True, "j": block_left.start_col}
                 
             if block_right.left_configuration == 'p':
                 self.grid.bob_play_on_config["is_vert_flipped"] = True
                 if block_right.pi_side == "left":
-                    print("block_height_4: 3")
                     return {"config": 'p',"config2": 'p', "is_hori_flipped": block_right.is_left_flipped, "is_vert_flipped": False, "j": block_right.start_col}
                 else:
-                    print("block_height_4: 4")
                     return {"config": 'p', "config2": 'p', "is_hori_flipped": block_right.is_left_flipped, "is_vert_flipped": True}
             
             #if l or r is in None we keep the other config
             if block_left.right_configuration == None:
-                print("block_height_4: 5")
                 return {"config": block_right.left_configuration,"config2": None, "is_hori_flipped": block_right.is_left_flipped, "is_vert_flipped": True, "j": block_right.start_col}
             if block_right.left_configuration == None:
-                print("block_height_4: 6")
                 return {"config": block_left.right_configuration,"config2": None, "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": False, "j": block_left.start_col}
             
             # 2 blocks have config
             # need to sort (config and config2)
-            print("block_height_4: 7")
             return {"config": block_left.right_configuration,"config2": block_right.left_configuration, "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": False, "j": block_left.start_col}  
 
 

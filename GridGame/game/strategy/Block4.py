@@ -741,8 +741,7 @@ class Block:
 
         self.particular_configs = particular_configs
         
-
-        print(f"Block4: particular config {particular_configs}")
+        #print(f"Block4: particular config {particular_configs}")
 
     #flip the block on horizontal axis 
     #goal is to apply same strategy after fliping (creating a new block object pointing to same cells)

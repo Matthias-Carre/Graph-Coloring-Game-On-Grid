@@ -1560,8 +1560,11 @@ return true if all the cells in the list have the same value
 """
 def same_value_grid(grid,list):
     (j,y) = list[0]
+    
     first_value = grid.get_cell(j,y).value
     for j,y in list: 
+        if j < 0 or j >= grid.width or y < 0 or y >= grid.height:
+            return False
         if grid.get_cell(j,y).value != first_value: 
             return False
     return True
