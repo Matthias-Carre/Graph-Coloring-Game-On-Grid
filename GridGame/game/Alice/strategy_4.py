@@ -871,6 +871,8 @@ Bob play:
 def is_3_new(grid,bob_move):
     x,y,color = bob_move
     #previous and next column
+    if x == 0 or x == grid.width-1:
+        return False
     list = [(x-1,0),(x-1,1),(x-1,2),(x-1,3),(x+1,0),(x+1,1),(x+1,2),(x+1,3),(x,0),(x,1),(x,2),(x,3)]
     list.remove((x,y))
     if same_value_grid(grid,list):
@@ -1402,7 +1404,7 @@ def solve_3_beta(grid,bob_move):
         cell_1_jp1 = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
         print("3 beta 0a")
-        return (rx,ry,cell_1_jp1.value)
+        return (rx,ry,cell_1_jp1.color_options[0])
     if (ny == 1):
         cell_2_jp1 = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)

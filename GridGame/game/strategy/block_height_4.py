@@ -19,7 +19,7 @@ class BlockHeight4:
     def move_played(self,x,y,color,player_name,is_doc, status_before_move,patient = None,other_doc = None):
         
         #keep the config on which Bob played for Alice strategy
-        print("block_height_4: Bob played on config: ", self.get_config_at(x))
+        #print("block_height_4: Bob played on config: ", self.get_config_at(x))
         if player_name == "B":
             self.grid.bob_play_on_config = self.get_config_at(x)
             cell = self.grid.get_cell(x,y)

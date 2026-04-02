@@ -195,6 +195,7 @@ class GameEngine:
             print("Not Alice's turn")
             return
         x, y, color = self.Alice.next_move()  
+        print(f"Alice move: {x}, {y}, color: {color}")
         self.change_node_color(self.grid, x, y, color)
         self.on_update_callback()
 
@@ -207,6 +208,7 @@ class GameEngine:
             print("Not Bob's turn")
             return
         x, y, color = self.Bob.next_move()
+        print(f"Bob move: {x}, {y}, color: {color}")
         self.change_node_color(self.grid, x, y, color)
         self.on_update_callback()
 

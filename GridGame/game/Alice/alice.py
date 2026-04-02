@@ -28,8 +28,8 @@ class Alice:
                 (is_1_Dp_2, solve_1_Dp_2),
                 (is_1_L,solve_1_L),
                 (is_1_Lp, solve_1_Lp),
-                #(is_1_doc, solve_1_doc),
-                #(is_1_g_doc, solve_1_g_doc),
+                (is_1_doc, solve_1_doc),
+                (is_1_g_doc, solve_1_g_doc),
                 (is_1_safe, solve_1_safe),
                 
                 #Case 2:
