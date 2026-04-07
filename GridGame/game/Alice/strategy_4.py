@@ -37,6 +37,7 @@ def solve_TestConfig(grid,bob_move):
     lx,ly,lc = bob_move
     
     print("resolve test config")
+    print("No case matched")
     return (0,0,1)
 
 

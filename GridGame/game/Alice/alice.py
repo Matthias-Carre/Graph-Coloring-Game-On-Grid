@@ -15,6 +15,7 @@ class Alice:
     
     '''
 
+    #import the strategy depending on the grid size
     def load_strategy(self):
 
         if self.grid.height == 4:
