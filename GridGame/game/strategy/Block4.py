@@ -679,30 +679,9 @@ class Block:
         self.is_delta()
         self.is_pi()
 
-
-
-        '''quesque jai foutu?
-        if self.is_alpha():
-            #print("Block is alpha")
-            self.right_configuration = "a"
-        
-        # if config is alpha and beta => beta
-        if self.is_beta():
-            #print("Block is beta")
-            self.right_configuration = "b"
-
-        if self.is_gamma():
-            #print("Block is gamma")
-            self.right_configuration = "g"
-        if self.is_delta():
-            #print("Block is delta")
-            self.right_configuration = "d"
-        if self.is_pi():
-            #print("Block is pi")
-            self.right_configuration = "p"
-        '''
-
-
+        if self.end_col == 0:
+            if self.right_configuration == None:
+                self.right_configuration = "b"
         #manage particulars cases
         self.manage_particular_config()
 
@@ -789,6 +768,7 @@ class Block:
 
         print(f"Block Start:{block.start_col} End: {block.end_col}, size: {block.size} Left: {block.left_configuration} Right: {block.right_configuration}")
         print("left:", block.left_configuration,"vertical flip:", block.is_left_flipped, "horizontal flip:", block.is_left_flipped)
+        
         print("right:", block.right_configuration,"vertical flip:", block.is_right_flipped, "horizontal flip:", block.is_right_flipped)
         for i in range(4):
             for col in block.columns:

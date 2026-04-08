@@ -238,8 +238,9 @@ class BlockHeight4:
                     
                     
             #SI ON JOUE DANS UNE BORDURE? 
-            if x == block.start_col:
-                if block.left_configuration:
+            if x == block.start_col: 
+                #test !=0 pour eviter la col tt a guache soit jouer comme bordure
+                if block.left_configuration and x != 0: 
                     print("block_height_4: Bob played on left border config")
                     return {"config": block.left_configuration, "config2": None, "is_hori_flipped": block.is_left_flipped, "is_vert_flipped": False, "j": block.start_col}
             if x == block.end_col:

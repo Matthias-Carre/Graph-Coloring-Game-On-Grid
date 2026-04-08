@@ -319,6 +319,14 @@ def solve_1_Lp(grid,bob_move):
 #Bob color doc of v not in gamma
 def is_1_doc(grid,bob_move):
     x,y,color = bob_move
+    #check if Bob played inside a block
+    block = grid.blocks.block_at(x)
+    if block is None or x == block.start_col or x == block.end_col:
+        return False
+
+    if grid.bob_play_on_config["config2"] is not None:
+        return False
+
     if grid.bob_play_on_config["doctor"] == True:
         if grid.bob_play_on_config["config"] != "gm1":
             
@@ -355,10 +363,13 @@ def solve_1_g_doc(grid,bob_move):
 def is_1_safe(grid,bob_move):
     x,y,color = bob_move
     block = grid.blocks.block_at(x)
+    #Pas sur de ca mais si config2 != none alors on joue entre 2 block
+    if grid.bob_play_on_config["config2"] is not None:
+        return False
     if block is None or x == block.start_col or x == block.end_col:
         return False
     
-    if grid.bob_play_on_config["state"] == "safe":
+    if grid.bob_play_on_config["state"] == "safe" or grid.bob_play_on_config["state"] == "sound":
         print("Is 1 safe")
         return True
 
@@ -542,7 +553,7 @@ def is_2_abgF(grid,bob_move):
         # check if it's free border
         j = grid.bob_play_on_config["j"]
         verti = grid.bob_play_on_config["is_vert_flipped"]
-        if is_column_empty(grid,-1,j,verti) and is_column_empty(grid,-2,j,verti) :
+        if is_column_empty(grid,1,j,verti) and is_column_empty(grid,2,j,verti) :
             print("Is 2 abg free")
             return True
     return False
@@ -554,6 +565,7 @@ def solve_2_abgF(grid,bob_move):
     is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
     
     config = grid.bob_play_on_config["config"]
+    
     j = x
     nx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
 
@@ -1023,7 +1035,8 @@ def is_3_delta(grid,bob_move):
     #bob coor in col adjacent to border of config delta
     #idea: Alice will color to obtain alpha beta gamma or delta or merge
     print("Check 3 delta: ", grid.bob_play_on_config)
-    if grid.bob_play_on_config["config"] == "d":
+    if grid.bob_play_on_config["config"] == "d" or grid.bob_play_on_config["config2"] == "d":
+
         print("Is 3 delta")
         return True
     
