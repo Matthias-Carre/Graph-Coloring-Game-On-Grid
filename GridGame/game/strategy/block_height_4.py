@@ -308,7 +308,11 @@ class BlockHeight4:
         #if bob play side to only 1 block
         #left
         if block_left and block_right == None:
-            return {"config": block_left.right_configuration, "config2": "empty", "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": False, "j": block_left.start_col}
+            #EXCEPTION IF j=0 then consider as beta
+            if x-1 == 0:
+                return {"config": 'b', "config2": "empty", "is_hori_flipped": True, "is_vert_flipped": False, "j": 0}
+            
+            return {"config": block_left.right_configuration, "config2": "empty", "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": False, "j": block_left.end_col}
         #right
         if block_right and block_left == None:
             return {"config": block_right.left_configuration, "config2": "empty", "is_hori_flipped": block_right.is_left_flipped, "is_vert_flipped": True, "j": block_right.start_col}

@@ -788,6 +788,8 @@ class Block:
             block = self
 
         print(f"Block Start:{block.start_col} End: {block.end_col}, size: {block.size} Left: {block.left_configuration} Right: {block.right_configuration}")
+        print("left:", block.left_configuration,"vertical flip:", block.is_left_flipped, "horizontal flip:", block.is_left_flipped)
+        print("right:", block.right_configuration,"vertical flip:", block.is_right_flipped, "horizontal flip:", block.is_right_flipped)
         for i in range(4):
             for col in block.columns:
                 cell = col[i]
