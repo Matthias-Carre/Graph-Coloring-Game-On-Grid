@@ -552,6 +552,8 @@ def is_2_abgF(grid,bob_move):
     if grid.bob_play_on_config["config"] in ["a","b","g"] and (x == grid.bob_play_on_config["j"]):
         # check if it's free border
         j = grid.bob_play_on_config["j"]
+        if j != x:
+            return False
         verti = grid.bob_play_on_config["is_vert_flipped"]
         if is_column_empty(grid,1,j,verti) and is_column_empty(grid,2,j,verti) :
             print("Is 2 abg free")
@@ -565,12 +567,12 @@ def solve_2_abgF(grid,bob_move):
     is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
     
     config = grid.bob_play_on_config["config"]
-    
-    j = x
+    j = grid.bob_play_on_config["j"]
+
     nx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
 
     # if B in alpha => Alice 2,j+1 c
-    cell_c = get_norm_cell(grid,0,3,j,is_h_flip,is_v_flip)
+    cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
     if config == "a":
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
         print("2 abg free a")
@@ -884,7 +886,7 @@ Bob play:
 def is_3_new(grid,bob_move):
     x,y,color = bob_move
     #previous and next column
-    if x == 0 or x == grid.width-1:
+    if x == 0: #or x == grid.width-1:
         return False
     list = [(x-1,0),(x-1,1),(x-1,2),(x-1,3),(x+1,0),(x+1,1),(x+1,2),(x+1,3),(x,0),(x,1),(x,2),(x,3)]
     list.remove((x,y))
@@ -1009,27 +1011,7 @@ def solve_3_pi(grid,bob_move):
         
     print("3Pi: no condition matched")  
     return
-        
 
-"""
-    
-    print("strat: ",color, grid.get_cell(x,1).value, grid.get_cell(x,2).value)
-    if y == 3:
-        if color == grid.get_cell(x-1,2).value or color == grid.get_cell(x+1,2).value:
-            c = grid.get_cell(x,1).color_options
-            #print("3Pi color option: ", c)
-            return (x,1,c[0])
-        
-        #bob 3,j+1 cw w => if 1,j+2 != w => alice 1,j+1 cw w else 1,j+1 cw c''
-        if color != grid.get_cell(x+1,1).value:
-            return (x,1,color)
-        else:
-            #get the value of c''
-
-            return (x,1,grid.get_cell(x-1,2).value)
-
-    return
-"""
 
 def is_3_delta(grid,bob_move):
     #bob coor in col adjacent to border of config delta
@@ -1517,15 +1499,15 @@ def solve_3_alpha(grid,bob_move):
     cell_3_jp2 = get_norm_cell(grid,2,3,j,is_h_flip,is_v_flip)
     if (cell_1_jp2.value == cell_3_jp2.value and cell_1_jp2.value != 0):
         if (ny == 3 or ny == 0):
-            rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+            rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
             print("3 alpha 1")
             return (rx,ry,cell_1_jp2.value)
         print("3 alpha 1: condition not met (should not happen if config is correct)")
 
     #3 alpha 2 ???
     # if c' != c => A 2,j+1 
-    cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
-    cell_cp = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
+    cell_cp = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
+    cell_c = get_norm_cell(grid,2,0,j,is_h_flip,is_v_flip)
     if cell_cp.value != cell_c.value :
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
         print("3 alpha 2")

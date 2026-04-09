@@ -1,7 +1,7 @@
 
 class Cell:
     def __init__(self, x, y, grid,num_colors=4, value=0):
-        #self.grid = grid
+        self.grid = grid
         self.x = x
         self.y = y
         self.grid_width = grid.width
@@ -98,6 +98,13 @@ class Cell:
     #check if sound
     #return the list of affected cells
     def check_sound_cell(self):
+        #check if cell is in block
+        if self.grid.blocks:
+            block = self.grid.blocks.block_at(self.y)
+            if block == None:
+                self.is_sound = False
+                return []
+
         if self.is_safe:
             return []
         

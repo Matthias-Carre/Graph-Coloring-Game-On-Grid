@@ -240,16 +240,19 @@ class Grid:
     def get_first_sick_cell(self):
         for y in range(self.height):
             for x in range(self.width):
-                if len(self.nodes[y][x].color_options) == 1:
+                if len(self.nodes[y][x].color_options) == 1 and self.nodes[y][x].value == 0:
                     return self.nodes[y][x]
                     
         return None
 
     def get_first_sound_cell(self):
+        
         for y in range(self.height):
             for x in range(self.width):
                 if self.nodes[y][x].is_sound and not self.nodes[y][x].is_safe:
-                    return self.nodes[y][x]
+                    #if inside a block
+                    if self.blocks.block_at(y) is not None:
+                        return self.nodes[y][x]
                     
         return None
     
@@ -260,7 +263,7 @@ class Grid:
             #col w/o border
             for col in block.columns[1:-1]:
                 for cell in col:
-                    if cell.is_safe:
+                    if cell.is_safe and cell.value == 0:
                         return cell
                 
 

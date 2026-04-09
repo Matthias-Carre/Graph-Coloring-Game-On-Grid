@@ -679,6 +679,16 @@ class Block:
         self.is_delta()
         self.is_pi()
 
+        """
+        if self.end_col == self.grid.width - 1:
+            self.right_configuration = None
+            self.is_right_flipped = False
+
+        if self.end_col == 0:
+            if self.right_configuration == None:
+                self.right_configuration = "b"
+        """
+
         if self.end_col == 0:
             if self.right_configuration == None:
                 self.right_configuration = "b"

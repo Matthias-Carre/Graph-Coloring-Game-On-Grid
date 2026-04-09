@@ -209,6 +209,7 @@ class BlockHeight4:
         block = self.block_at(x)
         if block:
             if block.particular_configs:
+                print("block_height_4: block at x=", x, " has particular configs: ", block.particular_configs)
                 for config in block.particular_configs:
                     if config[0] == "D" and (config[1]+1 == x or config[1]+2 == x):
                         print("block_height_4: Bob played on config D")
@@ -303,6 +304,21 @@ class BlockHeight4:
             
             # 2 blocks have config
             # need to sort (config and config2)
+            # gamma > beta > alpha
+            left_config = block_left.right_configuration
+            right_config = block_right.left_configuration
+
+            if left_config == 'g' :
+                return {"config": left_config,"config2": right_config, "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": False, "j": block_left.start_col}
+            if right_config == 'g' :
+                return {"config": right_config,"config2": left_config, "is_hori_flipped": block_right.is_left_flipped, "is_vert_flipped": True, "j": block_right.start_col}
+            
+            if left_config == 'b':
+                return {"config": left_config,"config2": right_config, "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": False, "j": block_left.start_col}
+            if right_config == 'b':
+                return {"config": right_config,"config2": left_config, "is_hori_flipped": block_right.is_left_flipped, "is_vert_flipped": True, "j": block_right.start_col}
+            
+            # should be only alpha alpha left
             return {"config": block_left.right_configuration,"config2": block_right.left_configuration, "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": False, "j": block_left.start_col}  
 
 
@@ -320,3 +336,60 @@ class BlockHeight4:
         
         #bob play on empty col with no block around
         return {"config": 'none', "config2": "empty", "is_hori_flipped": False, "is_vert_flipped": False, "j": x}
+    
+    #check the 5 induction hypothesis to check if they hold after Alice move
+    def check_induction_hypothesis(self):
+        print("IH check: start")
+
+        #1. Every vertex of a block is safe sound or sick (no none or cc)
+        print("IH 1. check:",end=' ')
+        for block in self.blocks:
+            for col in block.columns:
+                for cell in col:
+                    if not (cell.is_safe or cell.is_sound):#or cell.is_sick
+                        print("1. check failed: block at x=", block.start_col, " has a vertex with value ", cell.value)
+                        return False
+        print("1. passed")
+
+        #2. every border of block is alpha/beta/gamma/delta/pi
+        print("IH 2. check:",end=' ')
+        for block in self.blocks:
+            if block.left_configuration and block.left_configuration not in ['a','b','g','d','p']:
+                print(" 2. check failed: block at x=", block.start_col, " has left border config ", block.left_configuration)
+                return False
+            if block.right_configuration and block.right_configuration not in ['a','b','g','d','p']:
+                print(" 2. check failed: block at x=", block.start_col, " has right border config ", block.right_configuration)
+                return False
+        print("2. passed")
+
+        #3. no border have 4 verticices colored with only 2 colors
+        print("IH 3. check:",end=' ')
+        for block in self.blocks:
+            a,b,c,d = block.columns[0]
+            if a == c and b == d and a != 0 and b != 0:
+                print(" 3. check failed: block at x=", block.start_col, " has left border with 4 vertices colored with only 2 colors")
+                return False
+            
+            e,f,g,h = block.columns[-1]
+            if e == g and f == h and e != 0 and f != 0:
+                print(" 3. check failed: block at x=", block.end_col, " has right border with 4 vertices colored with only 2 colors")
+                return False
+        print("3. passed")
+        #4. no vertex of border alpha is doctor
+        print("IH 4. check:",end=' ')
+        for block in self.blocks:
+            if block.left_configuration == 'a':
+                for col in block.columns:
+                    for cell in col:
+                        if cell.is_doctor():
+                            print("4. check failed: block at x=", block.start_col, "y=",cell.x, "has left border with a vertex that is doctor")
+                            return False
+            if block.right_configuration == 'a':
+                for col in block.columns:
+                    for cell in col:
+                        if cell.is_doctor():
+                            print(" 4. check failed: block at x=", block.end_col, " has right border with a vertex that is doctor")
+                            return False
+        print("4. passed")
+        #5. left border alpha has 2 uncolored vertices exepct j of Lambda/Lambda2/Lambda'/Lambda2' 
+        print("IH 5. check:",end=' ')

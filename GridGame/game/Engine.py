@@ -199,6 +199,8 @@ class GameEngine:
         self.change_node_color(self.grid, x, y, color)
         self.on_update_callback()
 
+        if self.strategy is not None:
+            self.strategy.check_induction_hypothesis()
     """
     check if it's Bob's turn
     If yes, play the move coresponding to Bob's strategy
