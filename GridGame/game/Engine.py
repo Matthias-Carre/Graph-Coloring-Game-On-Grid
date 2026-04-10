@@ -275,6 +275,10 @@ class GameEngine:
         if self.grid.player == 1:
             self.grid.round += 1
         self.grid.player = 0 if self.grid.player == 1 else 1
+
+        self.grid.recompute_local_status(x, y, distance=2)
+
+
         return
     
     """

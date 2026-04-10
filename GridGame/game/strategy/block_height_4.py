@@ -241,11 +241,11 @@ class BlockHeight4:
             #SI ON JOUE DANS UNE BORDURE? 
             if x == block.start_col: 
                 #test !=0 pour eviter la col tt a guache soit jouer comme bordure
-                if block.left_configuration and x != 0: 
+                if block.left_configuration and x != 0:
                     print("block_height_4: Bob played on left border config")
-                    return {"config": block.left_configuration, "config2": None, "is_hori_flipped": block.is_left_flipped, "is_vert_flipped": False, "j": block.start_col}
+                    return {"config": block.left_configuration, "config2": None, "is_hori_flipped": block.is_left_flipped, "is_vert_flipped": True, "j": block.start_col}
             if x == block.end_col:
-                if block.right_configuration:
+                if block.right_configuration and x != self.width-1:
                     print("block_height_4: Bob played on right border config")
                     return {"config": block.right_configuration, "config2": None, "is_hori_flipped": block.is_right_flipped, "is_vert_flipped": False, "j": block.end_col}
                 
@@ -386,7 +386,7 @@ class BlockHeight4:
             if block.left_configuration == 'a':
                 for col in block.columns:
                     for cell in col:
-                        if cell.is_doctor():
+                        if cell.is_doctor() and cell.y != 0:
                             print("4. check failed: block at x=", block.start_col, "y=",cell.x, "has left border with a vertex that is doctor")
                             print("4. No vertex of a border in configuration α is a doctor.")
                             return False

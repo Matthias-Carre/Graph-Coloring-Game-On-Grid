@@ -366,7 +366,7 @@ def is_1_safe(grid,bob_move):
     #Pas sur de ca mais si config2 != none alors on joue entre 2 block
     if grid.bob_play_on_config["config2"] is not None:
         return False
-    if block is None or (x == block.start_col and x != 0) or x == block.end_col:
+    if block is None or (x == block.start_col and x != 0) or (x == block.end_col and x != grid.width-1):
         return False
     
     if grid.bob_play_on_config["state"] == "safe" or grid.bob_play_on_config["state"] == "sound":
@@ -457,6 +457,25 @@ def solve_1_safe(grid,bob_move):
     border_alpha = grid.get_first_alpha()
     border_beta = grid.get_first_beta()
 
+    if border_alpha is not None :
+        is_h_flip = border_alpha["is_hori_flipped"]
+        is_v_flip = border_alpha["is_vert_flipped"]
+        j = border_alpha["j"]
+
+        cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+        print("1 safe alpha free")
+        return (rx,ry,cell_c.value)
+
+    if border_beta is not None:
+        is_h_flip = border_beta["is_hori_flipped"]
+        is_v_flip = border_beta["is_vert_flipped"]
+        j = border_beta["j"]
+
+        cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
+        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+        print("1 safe beta free")
+        return (rx,ry,cell_c.value)
 
     #1 beta
     # A 1,j+1 aviable
@@ -736,8 +755,10 @@ def solve_2_alpha(grid,bob_move):
 
     # B 0,j c' & 0,j not colored => if 1,j+2 != c' => A 1,j+1 c' else A 0,j+1 c'
     cell_0_j = get_norm_cell(grid,0,0,j,is_h_flip,is_v_flip)
-    if ny == 0 and cell_0_j.value == 0:
+    print("2 alpha 3: check:",color,"cell 0,j:",cell_0_j.value)
+    if ny == 2 and cell_0_j.value == 0:
         cell_1_jp2 = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
+        print("2 alpha 3: check:",color,"cell 1,j+2:",cell_1_jp2.value)
         if color != cell_1_jp2.value:
             rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
             print("2 alpha 3.1")
@@ -795,7 +816,7 @@ def solve_2_alpha_prime(grid,bob_move):
     #normalize bob move:
     x,y,color = bob_move
     is_h_flip = grid.bob_play_on_config["is_hori_flipped"]
-    is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
+    is_v_flip = not grid.bob_play_on_config["is_vert_flipped"]
     j = grid.bob_play_on_config["j"]
     
     
@@ -804,6 +825,11 @@ def solve_2_alpha_prime(grid,bob_move):
 
     # if 2,j-2 != c => 2,j-1 c
     cell_2_jm2 = get_norm_cell(grid,-2,2,j,is_h_flip,is_v_flip)
+    if cell_2_jm2 == None:
+        rx,ry = get_real_pos(grid,-1,2,j,is_h_flip,is_v_flip)
+        print("2 alpha' 0'")
+        return (rx,ry,cell_c.value)
+
     if cell_2_jm2.value != cell_c.value :
         rx,ry = get_real_pos(grid,-1,2,j,is_h_flip,is_v_flip)
         print("2 alpha' 0")
@@ -812,7 +838,13 @@ def solve_2_alpha_prime(grid,bob_move):
 
     # if 0,j-2 != c => A 0,j-1
     cell_0_jm2 = get_norm_cell(grid,-2,0,j,is_h_flip,is_v_flip)
-    if cell_0_jm2.value != cell_c.value and cell_0_jm2.value != 0:
+    #if cell_0_jm2 is None => A 0,j-1 c
+    if cell_0_jm2 == None:
+        rx,ry = get_real_pos(grid,-1,0,j,is_h_flip,is_v_flip)
+        print("2 alpha' 1a'")
+        return (rx,ry,cell_c.value)
+
+    if (cell_0_jm2.value != cell_c.value) and cell_0_jm2.value != 0:
         rx,ry = get_real_pos(grid,-1,0,j,is_h_flip,is_v_flip)
         print("2 alpha' 1a")
         return (rx,ry,cell_c.value)
@@ -835,6 +867,14 @@ def solve_2_alpha_prime(grid,bob_move):
 
     #if 2,j+2 != c => A 2,j+1 c
     cell_2_jp2 = get_norm_cell(grid,2,2,j,is_h_flip,is_v_flip)
+
+    # if cell_2_jp2 is None => A 2,j+1 c
+    if cell_2_jp2 == None:
+        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+        print("2 alpha' 3'")
+        return (rx,ry,cell_c.value)
+
+
     if cell_2_jp2.value != cell_c.value:
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
         print("2 alpha' 3")
@@ -1408,7 +1448,7 @@ def solve_3_beta(grid,bob_move):
         cell_2_jp1 = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
         print("3 beta 0b")
-        return (rx,ry,cell_2_jp1.value)
+        return (rx,ry,cell_2_jp1.color_options[0])
     
     #3 beta 1
     #B 0,j+1 c => A 1,j+1 other
@@ -1596,16 +1636,19 @@ return: the cell at (x,y) on this context
 
 """
 def get_norm_cell(grid,dx,y,j,hori,verti):
-
-    if hori and verti:
-        #print("strategy: dx,y,j , nx,ny ",dx,y,j,2*j-dx,grid.height-1-y)
-        return grid.get_cell(j-dx,grid.height-1-y)
-    elif hori:
-        return grid.get_cell(j+dx,grid.height-1-y)
-    elif verti:
-        return grid.get_cell(j-dx,y)
+    if verti:
+        rx = j-dx
+    else :
+        rx = j+dx
+    if hori:
+        ry = grid.height-1-y
     else:
-        return grid.get_cell(j+dx,y)
+        ry = y
+    
+    if rx < 0 or rx >= grid.width or ry < 0 or ry >= grid.height:
+        return None
+    else:
+        return grid.get_cell(rx,ry)
 
 """
 input: grid, x, y, j, is_hori_flipped, is_verti_flipped

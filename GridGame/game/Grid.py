@@ -158,6 +158,7 @@ class Grid:
             return self.nodes[y][x]
         else:
             raise IndexError(f"Cell position out of bounds ({x},{y})")
+            
     
     """
     #undo need to blank the last move, and restore the color options of the neighbors
