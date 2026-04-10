@@ -43,7 +43,7 @@ class Cell:
         self.is_safe = False
         
         #check if its critical
-        if len(self.color_options) == 1:
+        if len(self.color_options) == 1 and not self.is_safe:
             print(f"Cell at ({self.x}, {self.y}) is color critical")
             self.is_color_critical = True
 
@@ -72,10 +72,7 @@ class Cell:
         #OR 3 neighbors colored with 3 colors but the 4th is neighbor to the last color
         if self.value != 0:
             self.is_safe = True
-        
-        #if len(self.color_options) == 0: # ?????
-        #    self.is_safe = True
-        
+
         neighbor_colors = self.get_neighbor_colors()
         #print(f"CELL 1st test:{len(self.neighbors)<4 } 2nd: {len(neighbor_colors)> len(set(neighbor_colors))} ")
         

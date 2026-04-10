@@ -109,6 +109,11 @@ class GameEngine:
         if event.char == '5':
             self.color_selected = 4
             self.color_var_accessor.set(4)
+
+        if event.char == 'a':
+            self.alice_move()
+        if event.char == 'b':
+            self.bob_move()
         
         
     """

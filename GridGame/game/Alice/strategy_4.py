@@ -366,7 +366,7 @@ def is_1_safe(grid,bob_move):
     #Pas sur de ca mais si config2 != none alors on joue entre 2 block
     if grid.bob_play_on_config["config2"] is not None:
         return False
-    if block is None or x == block.start_col or x == block.end_col:
+    if block is None or (x == block.start_col and x != 0) or x == block.end_col:
         return False
     
     if grid.bob_play_on_config["state"] == "safe" or grid.bob_play_on_config["state"] == "sound":
@@ -713,7 +713,7 @@ def solve_2_alpha(grid,bob_move):
 
     #if 2,j+2 != c => A 2,j+1 c
     cell_2_jp2 = get_norm_cell(grid,2,2,j,is_h_flip,is_v_flip)
-    cell_c = get_norm_cell(grid,2,0,j,is_h_flip,is_v_flip)
+    cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
     if cell_2_jp2.value != cell_c.value:
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
         print("2 alpha 1")
@@ -770,6 +770,7 @@ def solve_2_alpha(grid,bob_move):
         print("2 alpha 6")
         return (rx,ry,cell_cp.value)
 
+    print("2 alpha no condition matched")
     return
 
 # Bob color v of non free 1 colom block alpha
@@ -888,9 +889,9 @@ def is_3_new(grid,bob_move):
     #previous and next column
     if x == 0: #or x == grid.width-1:
         return False
-    list = [(x-1,0),(x-1,1),(x-1,2),(x-1,3),(x+1,0),(x+1,1),(x+1,2),(x+1,3),(x,0),(x,1),(x,2),(x,3)]
+    list = [(x,0),(x,1),(x,2),(x,3)]
     list.remove((x,y))
-    if same_value_grid(grid,list):
+    if same_value_grid(grid,list) and is_column_empty(grid,-1,x,False) and is_column_empty(grid,1,x,False):
         print("Case 3-new")
         return True
     return False
@@ -1031,6 +1032,8 @@ def solve_3_delta(grid,bob_move):
     is_h_flip = grid.bob_play_on_config["is_hori_flipped"]
     is_v_flip = grid.bob_play_on_config["is_vert_flipped"]
     
+    if grid.bob_play_on_config["config2"] == "d":
+        is_v_flip = True
     #fix j
     print(f"3Delta: Bob last move{(x,y)},{is_h_flip},{is_v_flip} ",) 
     j = x+1 if is_v_flip else x-1
@@ -1501,6 +1504,11 @@ def solve_3_alpha(grid,bob_move):
         if (ny == 3 or ny == 0):
             rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
             print("3 alpha 1")
+            #if 2,j+2 = 0 => c or if 2,j = 0 => c'
+            cell_2_j = get_norm_cell(grid,0,2,j,is_h_flip,is_v_flip)
+            if cell_2_j.value != 0:
+                cell = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
+                return (rx,ry,cell.value)
             return (rx,ry,cell_1_jp2.value)
         print("3 alpha 1: condition not met (should not happen if config is correct)")
 

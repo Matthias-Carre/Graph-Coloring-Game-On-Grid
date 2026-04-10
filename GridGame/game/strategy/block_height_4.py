@@ -327,7 +327,7 @@ class BlockHeight4:
         if block_left and block_right == None:
             #EXCEPTION IF j=0 then consider as beta
             if x-1 == 0:
-                return {"config": 'b', "config2": "empty", "is_hori_flipped": True, "is_vert_flipped": False, "j": 0}
+                return {"config": 'b', "config2": "empty", "is_hori_flipped": False, "is_vert_flipped": False, "j": 0}
             
             return {"config": block_left.right_configuration, "config2": "empty", "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": False, "j": block_left.end_col}
         #right
@@ -348,6 +348,7 @@ class BlockHeight4:
                 for cell in col:
                     if not (cell.is_safe or cell.is_sound):#or cell.is_sick
                         print("1. check failed: block at x=", block.start_col, " has a vertex with value ", cell.value)
+                        print("1. Every vertex of a block is safe or sound or sick.")
                         return False
         print("1. passed")
 
@@ -356,9 +357,11 @@ class BlockHeight4:
         for block in self.blocks:
             if block.left_configuration and block.left_configuration not in ['a','b','g','d','p']:
                 print(" 2. check failed: block at x=", block.start_col, " has left border config ", block.left_configuration)
+                print("2. Every border of a block is in configuration α, β, γ, δ or π.")
                 return False
             if block.right_configuration and block.right_configuration not in ['a','b','g','d','p']:
                 print(" 2. check failed: block at x=", block.start_col, " has right border config ", block.right_configuration)
+                print("2. Every border of a block is in configuration α, β, γ, δ or π.")
                 return False
         print("2. passed")
 
@@ -368,11 +371,13 @@ class BlockHeight4:
             a,b,c,d = block.columns[0]
             if a == c and b == d and a != 0 and b != 0:
                 print(" 3. check failed: block at x=", block.start_col, " has left border with 4 vertices colored with only 2 colors")
+                print("3. No border has its 4 vertices colored with only two colors.")
                 return False
             
             e,f,g,h = block.columns[-1]
             if e == g and f == h and e != 0 and f != 0:
                 print(" 3. check failed: block at x=", block.end_col, " has right border with 4 vertices colored with only 2 colors")
+                print("3. No border has its 4 vertices colored with only two colors.")
                 return False
         print("3. passed")
         #4. no vertex of border alpha is doctor
@@ -383,12 +388,14 @@ class BlockHeight4:
                     for cell in col:
                         if cell.is_doctor():
                             print("4. check failed: block at x=", block.start_col, "y=",cell.x, "has left border with a vertex that is doctor")
+                            print("4. No vertex of a border in configuration α is a doctor.")
                             return False
             if block.right_configuration == 'a':
                 for col in block.columns:
                     for cell in col:
                         if cell.is_doctor():
                             print(" 4. check failed: block at x=", block.end_col, " has right border with a vertex that is doctor")
+                            print("4. No vertex of a border in configuration α is a doctor.")
                             return False
         print("4. passed")
         #5. left border alpha has 2 uncolored vertices exepct j of Lambda/Lambda2/Lambda'/Lambda2' 
