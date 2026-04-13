@@ -472,7 +472,7 @@ class Block:
         if  self.same_value_grid(cells_c) and cell_jm2_0.value != 0:
             if self.same_value_grid(cells_0) and cell_jm2_1.value == 0:
                 if(cell_j_0.value != cell_jm2_0.value and cell_j_0.value != 0):
-                    if(cell_jp1_2.value != cell_jm2_0.value and cell_jp1_2.value != 0 and cell_jp1_2.value != cell_j_0.value):
+                    if(cell_jp1_2.value != 0 and cell_jp1_2.value != cell_j_0.value):
                         #print("Block4: Lambda config")
                         #print(f"Block4: Lambda config j={j},{len(self.columns)}")
                         #self.particular_config_j = self.columns[j][0].y

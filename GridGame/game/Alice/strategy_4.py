@@ -462,20 +462,23 @@ def solve_1_safe(grid,bob_move):
         is_v_flip = border_alpha["is_vert_flipped"]
         j = border_alpha["j"]
 
-        cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
-        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("1 safe alpha free")
-        return (rx,ry,cell_c.value)
+        if is_column_empty(grid,1,j,is_v_flip) and is_column_empty(grid,2,j,is_v_flip) :
+            cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
+            rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+            print("1 safe alpha free")
+            return (rx,ry,cell_c.value)
 
     if border_beta is not None:
         is_h_flip = border_beta["is_hori_flipped"]
         is_v_flip = border_beta["is_vert_flipped"]
         j = border_beta["j"]
 
-        cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
-        rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("1 safe beta free")
-        return (rx,ry,cell_c.value)
+        if is_column_empty(grid,1,j,is_v_flip) and is_column_empty(grid,2,j,is_v_flip) :
+
+            cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
+            rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
+            print("1 safe beta free")
+            return (rx,ry,cell_c.value)
 
     #1 beta
     # A 1,j+1 aviable
@@ -491,7 +494,7 @@ def solve_1_safe(grid,bob_move):
         return (rx,ry,cell.color_options[0])
 
     #1 alpha 1
-    # if 1,j+2 != c => A 1,j+1 c
+    # if 1,j+2 != c => A 2,j+1 c
     if border_alpha is not None:
         is_h_flip = border_alpha["is_hori_flipped"]
         is_v_flip = border_alpha["is_vert_flipped"]
@@ -500,22 +503,22 @@ def solve_1_safe(grid,bob_move):
         cell_c = get_norm_cell(grid,0,0,j,is_h_flip,is_v_flip)
         cell_1_jp2 = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
         if cell_1_jp2.value != cell_c.value:
-            rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+            rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
             print("1 safe alpha a")
             return (rx,ry,cell_c.value)
         else:
     #1 alpha 2
-    # else if j+3 empty => A 1,j+1 c'
+    # else if j+3 empty => A 2,j+1 c'
             if is_column_empty(grid,3,j,is_v_flip):
-                cell = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
-                rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+                cell = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
+                rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
                 print("1 safe alpha b")
                 return (rx,ry,cell.color_options[0])
     #1 aplha 3
-    # else (j+3 not empty) => 1,j+1 c'
+    # else (j+3 not empty) => 2,j+1 c'
             else:
-                cell = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
-                rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
+                cell = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
+                rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
                 print("1 safe alpha c")
                 return (rx,ry,cell.color_options[0])
     return

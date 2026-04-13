@@ -260,6 +260,7 @@ class GameEngine:
             is_doc = True
             patient = cell.patients[0]
             other_doc = patient.doctors[0] if patient.doctors[0].x != cell.x else patient.doctors[1]
+
             #print("other doc: ", other_doc.x, other_doc.y)
         else:
             is_doc = False
