@@ -377,7 +377,6 @@ def is_1_safe(grid,bob_move):
 
 def solve_1_safe(grid,bob_move):
 
-    '''Le TEmps de test les autres f'''
 
     # if E sick => Alice color it
     cell_sick = grid.get_first_sick_cell()

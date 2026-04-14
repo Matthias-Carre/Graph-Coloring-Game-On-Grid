@@ -266,7 +266,11 @@ class Grid:
                 for cell in col:
                     if cell.is_safe and cell.value == 0:
                         return cell
-                
+            if block.end_col == self.width-1:
+                for cell in block.columns[-1]:
+                    if cell.is_safe and cell.value == 0:
+                        return cell
+        return None
 
     '''
     Function used in Case 1 safe
