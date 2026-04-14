@@ -313,7 +313,7 @@ class Grid:
         for block in self.blocks.blocks:
             if block.left_configuration == 'a' :
                 return {"config": block.left_configuration, "is_hori_flipped": block.is_left_flipped, "is_vert_flipped": True, "j": block.start_col}
-            if block.right_configuration == 'a':
+            if block.right_configuration == 'a' and block.end_col != self.width-1:
                 return {"config": block.right_configuration, "is_hori_flipped": block.is_right_flipped, "is_vert_flipped": False, "j": block.end_col}
         return None
     
@@ -321,7 +321,7 @@ class Grid:
         for block in self.blocks.blocks:
             if block.left_configuration == 'b' :
                 return {"config": block.left_configuration, "is_hori_flipped": block.is_left_flipped, "is_vert_flipped": True, "j": block.start_col}
-            if block.right_configuration == 'b':
+            if block.right_configuration == 'b' and block.end_col != self.width-1:
                 return {"config": block.right_configuration, "is_hori_flipped": block.is_right_flipped, "is_vert_flipped": False, "j": block.end_col}
         return None
 

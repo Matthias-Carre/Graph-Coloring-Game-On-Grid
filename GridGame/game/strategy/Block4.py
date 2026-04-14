@@ -786,7 +786,9 @@ class Block:
                 print(f"{cell.value} ", end="")
             print()
         print()
-        print(block.particular_config)
+        self.manage_particular_config()
+
+        print(block.particular_configs)
 
 
     #check if all cells in list have same value and is not the val "not_val"

@@ -236,6 +236,13 @@ class BlockHeight4:
                         print("block_height_4: Bob played on config D2' D ")
                         return {"config": "D2'", "config2": None, "is_hori_flipped": config[2], "is_vert_flipped":True,"j": config[1]}
                     
+                    if config[0] == "L" or config[0] == "L2" and (config[1]-2 == x or config[1]-1 == x or config[1] == x):
+                        print("block_height_4: Bob played on config ", config[0])
+                        return {"config": config[0], "config2": None, "is_hori_flipped": config[2], "is_vert_flipped":False,"j": config[1]}
+                    
+                    if config[0] == "L'" or config[0] == "L2'" and (config[1]-2 == x or config[1]-1 == x or config[1] == x or config[1]+1 == x):
+                        print("block_height_4: Bob played on config ", config[0])
+                        return {"config": config[0], "config2": None, "is_hori_flipped": config[2], "is_vert_flipped":False,"j": config[1]}
                     
                     
             #SI ON JOUE DANS UNE BORDURE? 
@@ -308,6 +315,11 @@ class BlockHeight4:
             left_config = block_left.right_configuration
             right_config = block_right.left_configuration
 
+            if left_config == 'd' :
+                return {"config": left_config,"config2": right_config, "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": False, "j": block_left.start_col}
+            if right_config == 'd' :
+                return {"config": right_config,"config2": left_config, "is_hori_flipped": block_right.is_left_flipped, "is_vert_flipped": True, "j": block_right.start_col}
+            
             if left_config == 'g' :
                 return {"config": left_config,"config2": right_config, "is_hori_flipped": block_left.is_right_flipped, "is_vert_flipped": False, "j": block_left.start_col}
             if right_config == 'g' :

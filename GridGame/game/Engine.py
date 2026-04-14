@@ -256,7 +256,9 @@ class GameEngine:
     def change_node_color(self,grid, x, y, color):
         #keep the status of the cell before the move to update the strategy if needed
         cell = grid.get_cell(x,y)
-        if len(cell.patients) > 0:
+
+        #che
+        if len(cell.patients) > 0 and len(cell.patients[0].doctors) > 0:
             is_doc = True
             patient = cell.patients[0]
             other_doc = patient.doctors[0] if patient.doctors[0].x != cell.x else patient.doctors[1]
@@ -268,6 +270,7 @@ class GameEngine:
             other_doc = None
         status_before_move = "safe" if cell.is_safe else "sound" if cell.is_sound else ""
 
+        #check if the move is valid
         if(not(grid.play_move(x, y, color))):
            return 
         if self.strategy is not None:

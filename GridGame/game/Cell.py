@@ -116,7 +116,7 @@ class Cell:
         affected = []
         #sound va me rendre fou 
         safe_doctor_neighbors = []
-        print(f"Cell at ({self.x}, {self.y}) is checking sound cell")
+        #print(f"Cell at ({self.x}, {self.y}) is checking sound cell")
         for neighbor in self.neighbors:
             if neighbor.is_safe and (not neighbor.is_doctor()) and neighbor.value == 0:
                 safe_doctor_neighbors.append(neighbor)

@@ -555,17 +555,17 @@ def solve_2_delta(grid,bob_move):
     dx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
 
 
-    # if (2,j+2) != c' => Alice 1,j+1 c'
-    cell_2_jp2 = get_norm_cell(grid,2,2,j,is_h_flip,is_v_flip)
+    # if (1,j+2) != c' => Alice 1,j+1 c'
+    cell_1_jp2 = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
     cell_cp = get_norm_cell(grid,0,2,j,is_h_flip,is_v_flip)
-    if cell_2_jp2.value != cell_cp.value :
+    if cell_1_jp2.value != cell_cp.value :
         rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-        print("2 Delta a")
+        print("2 delta a")
         return (rx,ry,cell_cp.value)
     # else A 0,j+1 c'
     else:
         rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
-        print("2 Delta b")
+        print("2 delta b")
         return (rx,ry,cell_cp.value)
 
 # Bob play in free border of a b or g
