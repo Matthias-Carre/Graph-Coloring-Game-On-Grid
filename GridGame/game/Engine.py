@@ -49,6 +49,7 @@ class GameEngine:
         self.window.draw_button("Undo",self.undo)
         self.window.draw_button("debug",self.toggle_debug)
         self.window.draw_button("rounds",self.toggle_rounds)
+        self.window.draw_button("print blocks",self.print_blocks)
         self.window.draw_button("Reset",self.reset)
 
         self.window.canvas.bind("<Button-1>", self.on_left_click)
@@ -82,7 +83,7 @@ class GameEngine:
         1-5 : select the color
     """
     def on_key_press(self,event):
-        print("key pressed",event)
+        #print("key pressed",event)
         if event.char == 'u':
             self.undo()
         if event.char == 'l':
@@ -108,6 +109,11 @@ class GameEngine:
         if event.char == '5':
             self.color_selected = 4
             self.color_var_accessor.set(4)
+
+        if event.char == 'a':
+            self.alice_move()
+        if event.char == 'b':
+            self.bob_move()
         
         
     """
@@ -194,9 +200,12 @@ class GameEngine:
             print("Not Alice's turn")
             return
         x, y, color = self.Alice.next_move()  
+        print(f"Alice move: {x}, {y}, color: {color}")
         self.change_node_color(self.grid, x, y, color)
         self.on_update_callback()
 
+        if self.strategy is not None:
+            self.strategy.check_induction_hypothesis()
     """
     check if it's Bob's turn
     If yes, play the move coresponding to Bob's strategy
@@ -206,6 +215,7 @@ class GameEngine:
             print("Not Bob's turn")
             return
         x, y, color = self.Bob.next_move()
+        print(f"Bob move: {x}, {y}, color: {color}")
         self.change_node_color(self.grid, x, y, color)
         self.on_update_callback()
 
@@ -215,7 +225,7 @@ class GameEngine:
     def undo(self):
         print(f"====----====\nUndo last move")
         if(self.grid.undo_move()):
-            self.on_update_callback()
+            #self.on_update_callback()
             if self.strategy is not None:
                 #self.strategy.update_all_blocks()
                 self.strategy.rebuild_from_grid()
@@ -244,15 +254,35 @@ class GameEngine:
 
     """
     def change_node_color(self,grid, x, y, color):
+        #keep the status of the cell before the move to update the strategy if needed
+        cell = grid.get_cell(x,y)
 
+        #che
+        if len(cell.patients) > 0 and len(cell.patients[0].doctors) > 0:
+            is_doc = True
+            patient = cell.patients[0]
+            other_doc = patient.doctors[0] if patient.doctors[0].x != cell.x else patient.doctors[1]
+
+            #print("other doc: ", other_doc.x, other_doc.y)
+        else:
+            is_doc = False
+            patient = None
+            other_doc = None
+        status_before_move = "safe" if cell.is_safe else "sound" if cell.is_sound else ""
+
+        #check if the move is valid
         if(not(grid.play_move(x, y, color))):
            return 
         if self.strategy is not None:
-            self.strategy.move_played(x, y, color, "A" if grid.player == 0 else "B")
+            self.strategy.move_played(x, y, color, "A" if grid.player == 0 else "B",is_doc, status_before_move, patient, other_doc)
 
         if self.grid.player == 1:
             self.grid.round += 1
         self.grid.player = 0 if self.grid.player == 1 else 1
+
+        self.grid.recompute_local_status(x, y, distance=2)
+
+
         return
     
     """
@@ -284,3 +314,8 @@ class GameEngine:
     def toggle_rounds(self):
         self.window.draw.print_rounds = not self.window.draw.print_rounds
         self.on_update_callback()
+
+    def print_blocks(self):
+        for block in self.grid.blocks.blocks:
+            print("Block:")
+            block.print_block()

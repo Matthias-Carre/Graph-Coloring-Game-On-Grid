@@ -27,7 +27,7 @@ class Bob:
         if self.grid.player != 1:
             print("Not Bob's turn")
             return None
-        print("Bob move")
+        print("\n===-- Bob move --===")
         
         last_move = self.grid.last_moves[-1] if self.grid.last_moves else None
         ax, ay, acolor = last_move

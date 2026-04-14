@@ -158,6 +158,7 @@ class Grid:
             return self.nodes[y][x]
         else:
             raise IndexError(f"Cell position out of bounds ({x},{y})")
+            
     
     """
     #undo need to blank the last move, and restore the color options of the neighbors
@@ -240,46 +241,93 @@ class Grid:
     def get_first_sick_cell(self):
         for y in range(self.height):
             for x in range(self.width):
-                if len(self.nodes[y][x].color_options) == 1:
+                if len(self.nodes[y][x].color_options) == 1 and self.nodes[y][x].value == 0:
                     return self.nodes[y][x]
                     
         return None
 
     def get_first_sound_cell(self):
+        
         for y in range(self.height):
             for x in range(self.width):
-                if self.nodes[y][x].is_sound:
-                    return self.nodes[y][x]
+                if self.nodes[y][x].is_sound and not self.nodes[y][x].is_safe:
+                    #if inside a block
+                    if self.blocks.block_at(y) is not None:
+                        return self.nodes[y][x]
                     
         return None
     
     #get the first safe cell not in border
     def get_first_inner_safe_cell(self):
         # le mieux c'est surement de parcourir l'interieur des blocks
-        for block in self.blocks :
+        for block in self.blocks.blocks:
             #col w/o border
             for col in block.columns[1:-1]:
                 for cell in col:
-                    if cell.is_safe:
+                    if cell.is_safe and cell.value == 0:
                         return cell
-                
+            if block.end_col == self.width-1:
+                for cell in block.columns[-1]:
+                    if cell.is_safe and cell.value == 0:
+                        return cell
+        return None
 
+    '''
+    Function used in Case 1 safe
+    return the first border in config X and the flips to normelize it
+    '''
     # get the first border delta
     def get_first_border_delta(self):
+        for block in self.blocks.blocks:
+        
+            if block.right_configuration == 'd':
+                return {"config": block.right_configuration, "is_hori_flipped": block.is_right_flipped, "is_vert_flipped": False, "j": block.end_col}
+            if block.left_configuration == 'd':
+                return {"config": block.left_configuration, "is_hori_flipped": block.is_left_flipped, "is_vert_flipped": True, "j": block.start_col}
         return None
     
     # get the first pi
     def get_first_pi(self):
+        for block in self.blocks.blocks:
+            if block.left_configuration == 'pi':
+                return {"config": block.left_configuration, "is_hori_flipped": block.is_left_flipped, "is_vert_flipped": True, "j": block.start_col}
+            if block.right_configuration == 'pi':
+                return {"config": block.right_configuration, "is_hori_flipped": block.is_right_flipped, "is_vert_flipped": False, "j": block.end_col}
         return None
     
     #get the first gamma
     def get_first_gamma(self):
+        for block in self.blocks.blocks:
+            if block.left_configuration == 'g':
+                return {"config": block.left_configuration, "is_hori_flipped": block.is_left_flipped, "is_vert_flipped": True, "j": block.start_col}
+            if block.right_configuration == 'g':
+                return {"config": block.right_configuration, "is_hori_flipped": block.is_right_flipped, "is_vert_flipped": False, "j": block.end_col}
         return None
     
     #get the first alpha/beta free
     def get_first_alpha_beta_free(self):
+        for block in self.blocks.blocks:
+            if block.left_configuration in ['a','b'] :
+                return {"config": block.left_configuration, "is_hori_flipped": block.is_left_flipped, "is_vert_flipped": True, "j": block.start_col}
+            if block.right_configuration in ['a','b']:
+                return {"config": block.right_configuration, "is_hori_flipped": block.is_right_flipped, "is_vert_flipped": False, "j": block.end_col}
         return None
     
+    def get_first_alpha(self):
+        for block in self.blocks.blocks:
+            if block.left_configuration == 'a' :
+                return {"config": block.left_configuration, "is_hori_flipped": block.is_left_flipped, "is_vert_flipped": True, "j": block.start_col}
+            if block.right_configuration == 'a' and block.end_col != self.width-1:
+                return {"config": block.right_configuration, "is_hori_flipped": block.is_right_flipped, "is_vert_flipped": False, "j": block.end_col}
+        return None
+    
+    def get_first_beta(self):
+        for block in self.blocks.blocks:
+            if block.left_configuration == 'b' :
+                return {"config": block.left_configuration, "is_hori_flipped": block.is_left_flipped, "is_vert_flipped": True, "j": block.start_col}
+            if block.right_configuration == 'b' and block.end_col != self.width-1:
+                return {"config": block.right_configuration, "is_hori_flipped": block.is_right_flipped, "is_vert_flipped": False, "j": block.end_col}
+        return None
 
 
     #test d'une autre logique de save, on garde une zone autour du coup jouer 

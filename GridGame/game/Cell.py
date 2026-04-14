@@ -1,7 +1,7 @@
 
 class Cell:
     def __init__(self, x, y, grid,num_colors=4, value=0):
-        #self.grid = grid
+        self.grid = grid
         self.x = x
         self.y = y
         self.grid_width = grid.width
@@ -43,7 +43,7 @@ class Cell:
         self.is_safe = False
         
         #check if its critical
-        if len(self.color_options) == 1:
+        if len(self.color_options) == 1 and not self.is_safe:
             print(f"Cell at ({self.x}, {self.y}) is color critical")
             self.is_color_critical = True
 
@@ -72,10 +72,7 @@ class Cell:
         #OR 3 neighbors colored with 3 colors but the 4th is neighbor to the last color
         if self.value != 0:
             self.is_safe = True
-        
-        #if len(self.color_options) == 0: # ?????
-        #    self.is_safe = True
-        
+
         neighbor_colors = self.get_neighbor_colors()
         #print(f"CELL 1st test:{len(self.neighbors)<4 } 2nd: {len(neighbor_colors)> len(set(neighbor_colors))} ")
         
@@ -98,6 +95,16 @@ class Cell:
     #check if sound
     #return the list of affected cells
     def check_sound_cell(self):
+        #check if cell is in block
+        if self.grid.blocks:
+            block = self.grid.blocks.block_at(self.y)
+            if block == None:
+                self.is_sound = False
+                return []
+        else:
+            self.is_sound = False
+            return []
+
         if self.is_safe:
             return []
         
@@ -109,6 +116,7 @@ class Cell:
         affected = []
         #sound va me rendre fou 
         safe_doctor_neighbors = []
+        #print(f"Cell at ({self.x}, {self.y}) is checking sound cell")
         for neighbor in self.neighbors:
             if neighbor.is_safe and (not neighbor.is_doctor()) and neighbor.value == 0:
                 safe_doctor_neighbors.append(neighbor)

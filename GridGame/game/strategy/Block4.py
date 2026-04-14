@@ -50,7 +50,7 @@ class Block:
     #check if the block is of type alpha
     # b=c != 0, a and c not doctors and if colored then a != c
     def is_alpha(self):
-        a,b,c,d = self.columns[len(self.columns)-1]
+        a,b,c,d = self.columns[0]
         first = self.alpha_config(a,b,c,d)
         revers = self.alpha_config(d,c,b,a)
 
@@ -66,7 +66,7 @@ class Block:
             self.left_configuration = "a"
 
         #right side
-        a,b,c,d = self.columns[0]
+        a,b,c,d = self.columns[len(self.columns)-1]
         first = self.alpha_config(a,b,c,d)
         revers = self.alpha_config(d,c,b,a)
         if revers:
@@ -84,12 +84,18 @@ class Block:
         # b=c != 0
         if( (b.value == d.value and b.value !=0)):
             #a and c not doctors
-            #print("Block4: check doc")
+            
+            # On test sans les docs 
+            if(a.value != c.value or a.value == 0 or c.value == 0):
+                return True
+            
+            """Avec les docs:
             if((not(a.is_doctor()) and not(c.is_doctor()))):
                 #print("Block4: alpha config b=d=",b.value)
                 #if a and c colored then a != c
                 if(a.value != c.value or a.value == 0 or c.value == 0):
                     return True
+            """
 
     #check if the block is of type beta
     # b = cp and c=0 
@@ -249,7 +255,7 @@ class Block:
             cd = self.grid.get_cell(self.end_col +2,2)
 
             if self.pi_config(a,b,c,d,cd):
-                print("Block4: Pi config 1")
+                #print("Block4: Pi config 1")
                 self.right_configuration = "p"
                 self.flip_config_right = self
                 self.pi_side = "left"
@@ -258,7 +264,7 @@ class Block:
             d, c, b, a = self.columns[len(self.columns)-1]
             cd = self.grid.get_cell(self.end_col +2,1)
             if self.pi_config(a,b,c,d,cd):
-                print("Block4: Pi config 2")
+                #print("Block4: Pi config 2")
                 self.right_configuration = "p"
                 self.flip_config_right = self.flip_horizontal()
                 self.is_right_flipped = True
@@ -272,8 +278,8 @@ class Block:
             #print(f"Pi config A cd={cd.value}, a={a.value},b={b.value},c={c.value},d={d.value}")
 
             if self.pi_config(a,b,c,d,cd):
-                print("Block4: Pi config 3")
-                print("Block4: Pi config left t f")
+                #print("Block4: Pi config 3")
+                #print("Block4: Pi config left t f")
                 self.left_configuration = "p"
                 self.is_left_flipped = False
                 self.flip_config_left = self.flip_vertical()
@@ -284,7 +290,7 @@ class Block:
             cd = self.grid.get_cell(self.start_col -2,1)
             #print("Pi config B:",cd.value)
             if self.pi_config(a,b,c,d,cd):
-                print("Block4: Pi config 4")
+                #print("Block4: Pi config 4")
                 self.left_configuration = "p"
                 fliped = self.flip_vertical()
                 self.flip_config_left = fliped.flip_horizontal()
@@ -466,7 +472,7 @@ class Block:
         if  self.same_value_grid(cells_c) and cell_jm2_0.value != 0:
             if self.same_value_grid(cells_0) and cell_jm2_1.value == 0:
                 if(cell_j_0.value != cell_jm2_0.value and cell_j_0.value != 0):
-                    if(cell_jp1_2.value != cell_jm2_0.value and cell_jp1_2.value != 0 and cell_jp1_2.value != cell_j_0.value):
+                    if(cell_jp1_2.value != 0 and cell_jp1_2.value != cell_j_0.value):
                         #print("Block4: Lambda config")
                         #print(f"Block4: Lambda config j={j},{len(self.columns)}")
                         #self.particular_config_j = self.columns[j][0].y
@@ -531,7 +537,7 @@ class Block:
             if self.same_value_grid(cell_0) and cell_jm2_2.value == 0:
                 if(cell_j_3.value != cell_jm2_3.value and cell_j_3.value != 0):
                     if cell_jp2_2.is_safe:
-                        print("Block4: Lambda' fliped config")
+                        #print("Block4: Lambda' fliped config")
                         self.particular_config_j = self.grid.get_cell(j,3).y
                         res.append(("L'",j,True))
                     
@@ -562,9 +568,9 @@ class Block:
                             #check if j-2,1 or j-2,3 colored and other one empty
                             cell_jm2_3 = self.grid.get_cell(self.start_col -2,3)
                             cell_jm2_1 = self.grid.get_cell(self.start_col -2,1)
-                            print(f"Block4: Lambda2 check j-2,1={cell_jm2_1.value} j-2,3={cell_jm2_3.value}")
+                            #print(f"Block4: Lambda2 check j-2,1={cell_jm2_1.value} j-2,3={cell_jm2_3.value}")
                             if (cell_jm2_1.value == 0 and cell_jm2_3.value != 0) or (cell_jm2_1.value != 0 and cell_jm2_3.value == 0):
-                                print("Block4: Lambda2 config")
+                                #print("Block4: Lambda2 config")
                                 #self.particular_config_j = self.columns[j][0].y
                                 res.append(("L2",j,False))
         
@@ -613,11 +619,11 @@ class Block:
         cells_jm3 = [(j-3,0),(j-3,1),(j-3,2),(j-3,3)]
 
         if  self.same_value_grid(cells_c) and cell_jm2_0.value != 0:
-            print("Lambda_p: same value c")
+            #print("Lambda_p: same value c")
             if self.same_value_grid(cells_0) and cell_j_2.value == 0:
-                print("Lambda_p: same value 0")
+                #print("Lambda_p: same value 0")
                 if(cell_j_0.value != cell_jm2_0.value and cell_j_0.value != 0):
-                    print("Lambda_p: cell j,0 value")
+                    #print("Lambda_p: cell j,0 value")
                     if cell_jp2_1.is_safe:
 
                         #Check if j-3 not empty
@@ -626,7 +632,7 @@ class Block:
                             cell_jm2_3 = self.grid.get_cell(self.start_col -2,3)
                             cell_jm2_1 = self.grid.get_cell(self.start_col -2,1)
                             if (cell_jm2_1.value == 0 and cell_jm2_3.value != 0) or (cell_jm2_1.value != 0 and cell_jm2_3.value == 0):
-                                print("Block4: Lambda2' config")
+                                #print("Block4: Lambda2' config")
                                 self.particular_config_j = self.columns[j][0].y
                                 res.append(("L2'",j,False))
 
@@ -660,41 +666,42 @@ class Block:
 
     #set the left and right configurations of the block
     def check_configurations(self):
-        self.left_configuration = None
+
+        
+        self.left_configuration = None 
         self.right_configuration = None
         self.is_right_flipped = False
         self.is_left_flipped = False
 
-        if self.is_alpha():
-            #print("Block is alpha")
-            self.right_configuration = "a"
-        
-        # if config is alpha and beta => beta
-        if self.is_beta():
-            #print("Block is beta")
-            self.right_configuration = "b"
+        self.is_alpha()
+        self.is_beta()
+        self.is_gamma()
+        self.is_delta()
+        self.is_pi()
 
-        if self.is_gamma():
-            #print("Block is gamma")
-            self.right_configuration = "g"
-        if self.is_delta():
-            #print("Block is delta")
-            self.right_configuration = "d"
-        if self.is_pi():
-            #print("Block is pi")
-            self.right_configuration = "p"
-            
+        """
+        if self.end_col == self.grid.width - 1:
+            self.right_configuration = None
+            self.is_right_flipped = False
 
+        if self.end_col == 0:
+            if self.right_configuration == None:
+                self.right_configuration = "b"
+        """
 
+        if self.end_col == 0:
+            if self.right_configuration == None:
+                self.right_configuration = "b"
         #manage particulars cases
         self.manage_particular_config()
 
-        '''
-        print(f"Block from column {self.start_col} to {self.end_col}, size: {self.size}")
-        print(f"RIGHT {self.right_configuration} LEFT {self.left_configuration}")
+        
+        
+        
+    def print_info(self):
+        print(f"\nBlock from column {self.start_col} to {self.end_col}, size: {self.size}")
+        print(f"Left: {self.left_configuration} Right: {self.right_configuration}")
         print(f"particular config: {self.particular_config}")
-        '''
-
 
     # managment of the particular config fliped or not
     def manage_particular_config(self):
@@ -723,8 +730,7 @@ class Block:
 
         self.particular_configs = particular_configs
         
-
-        print(f"Block4: particular config {particular_configs}")
+        #print(f"Block4: particular config {particular_configs}")
 
     #flip the block on horizontal axis 
     #goal is to apply same strategy after fliping (creating a new block object pointing to same cells)
@@ -770,13 +776,19 @@ class Block:
         if block == None:
             block = self
 
-        print(f"Block from column {block.start_col} to {block.end_col}, size: {block.size}")
+        print(f"Block Start:{block.start_col} End: {block.end_col}, size: {block.size} Left: {block.left_configuration} Right: {block.right_configuration}")
+        print("left:", block.left_configuration,"vertical flip:", block.is_left_flipped, "horizontal flip:", block.is_left_flipped)
+        
+        print("right:", block.right_configuration,"vertical flip:", block.is_right_flipped, "horizontal flip:", block.is_right_flipped)
         for i in range(4):
             for col in block.columns:
                 cell = col[i]
                 print(f"{cell.value} ", end="")
             print()
         print()
+        self.manage_particular_config()
+
+        print(block.particular_configs)
 
 
     #check if all cells in list have same value and is not the val "not_val"

@@ -15,14 +15,31 @@ class Alice:
     
     '''
 
+    #import the strategy depending on the grid size
     def load_strategy(self):
 
         if self.grid.height == 4:
             self.strategy = [
+                #(is_TEST, solve_TEST),
+
+                #Case 1:
                 (is_1_Delta, solve_1_Delta),
                 (is_1_Dp_1, solve_1_Dp_1),
                 (is_1_L, solve_1_L),
-                #(is_1_Lp_1, solve_1_Lp_1),
+                (is_1_Dp_2, solve_1_Dp_2),
+                (is_1_L,solve_1_L),
+                (is_1_Lp, solve_1_Lp),
+                (is_1_doc, solve_1_doc),
+                (is_1_g_doc, solve_1_g_doc),
+                (is_1_safe, solve_1_safe),
+                
+                #Case 2:
+                (is_2_delta, solve_2_delta),
+                (is_2_abgF, solve_2_abgF),
+                (is_2_beta, solve_2_beta),
+                (is_2_gamma, solve_2_gamma),
+                (is_2_alpha, solve_2_alpha),
+                (is_2_aplha_prime, solve_2_alpha_prime),
 
                 #Case 3:
                 (is_3_new, solve_3_new),
@@ -31,6 +48,9 @@ class Alice:
                 (is_3_alpha_F, solve_3_alpha_F),
                 (is_3_beta_F, solve_3_beta_F),
                 (is_3_gamma_F, solve_3_gamma_F),
+                (is_3_gamma, solve_3_gamma),
+                (is_3_beta, solve_3_beta),
+                (is_3_alpha, solve_3_alpha),
 
                 (is_TestConfig,solve_TestConfig)
             ]
@@ -45,7 +65,7 @@ class Alice:
         if self.grid.player != 0:
             print("Not Alice's turn")
             return None
-        print("Alice move")
+        print("\n===-- Alice move --===")
 
         # react to Bob's last move
         

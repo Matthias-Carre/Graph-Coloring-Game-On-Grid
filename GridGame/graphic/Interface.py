@@ -65,7 +65,7 @@ class Interface:
     
     #create and draw a button with text and command
     def draw_button(self, text, command):
-        print("DrawButtonInterface")
+        #print("DrawButtonInterface")
         self.draw.draw_button(text, command)
         self.root.update()
     

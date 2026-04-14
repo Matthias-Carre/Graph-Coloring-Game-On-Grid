@@ -20,7 +20,7 @@ def make_grid(width, colored_cells):
 
     for x, y, color in colored_cells:
         grid.play_move(x, y, color)
-        strategy.move_played(x, y, color, "A")
+        strategy.move_played(x, y, color, "A",is_doc=False,status_before_move="")
 
     return grid, strategy
 
@@ -176,7 +176,7 @@ class TestPi:
         grid, strategy = grid_pi
         # jouer une cellule en colonne 2 pour créer un block voisin
         grid.play_move(3, 0, 3)
-        strategy.move_played(3, 0, 3, "B")
+        strategy.move_played(3, 0, 3, "B",is_doc=False,status_before_move="")
 
         right_block = strategy.block_at(3)
         right_block.print_block()
