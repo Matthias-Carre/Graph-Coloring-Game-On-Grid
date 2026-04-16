@@ -1,3 +1,5 @@
 .vscode/
 __pycache__/
 latex_files/*
+GridGame/.venv/*
+rl_env/

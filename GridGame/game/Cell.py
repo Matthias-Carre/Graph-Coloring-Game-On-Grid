@@ -44,7 +44,7 @@ class Cell:
         
         #check if its critical
         if len(self.color_options) == 1 and not self.is_safe:
-            print(f"Cell at ({self.x}, {self.y}) is color critical")
+            #print(f"Cell at ({self.x}, {self.y}) is color critical")
             self.is_color_critical = True
 
         #is safe?
@@ -59,7 +59,7 @@ class Cell:
         #check if no color options left
         if len(self.color_options) == 0:
             self.is_uncolorable = True
-            print(f"Cell at ({self.x}, {self.y}) has no color options left")
+            #print(f"Cell at ({self.x}, {self.y}) has no color options left")
         
         #print(f"Cell: affected={len(affected)}")
         return affected
@@ -84,12 +84,12 @@ class Cell:
         if len(self.neighbors) == 4 and len(set(self.neighbors_color)) == 3:
             #affected.append(self.clone_cell())
             missing_color = self.color_options[0] if len(self.color_options) > 1 else []
-            print(f"Cell at ({self.x}, {self.y}) is check uncolored neighbor")
+            #print(f"Cell at ({self.x}, {self.y}) is check uncolored neighbor")
             uncolored_neighbor = self.get_uncolored_neighbor()
             if uncolored_neighbor is not None:
                 if missing_color in uncolored_neighbor.neighbors_color:
                     self.is_safe = True
-                    print(f"Cell at ({self.x}, {self.y}) is safe by neighbor colors")
+                    #print(f"Cell at ({self.x}, {self.y}) is safe by neighbor colors")
         return affected
     
     #check if sound

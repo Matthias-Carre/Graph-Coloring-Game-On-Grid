@@ -59,7 +59,7 @@ class Grid:
     def is_move_valid(self, x, y, value):
         for neighbor in self.nodes[y][x].neighbors:
             if neighbor.value == value:
-                print(f"Invalide move {x},{y} val: {value} already in neighbor at ({neighbor.x},{neighbor.y})")
+                #print(f"Invalide move {x},{y} val: {value} already in neighbor at ({neighbor.x},{neighbor.y})")
                 return False
 
         if 0 <= x < self.width and 0 <= y < self.height:
@@ -160,6 +160,14 @@ class Grid:
             raise IndexError(f"Cell position out of bounds ({x},{y})")
             
     
+    def empty_cells(self):
+        empty = []
+        for i in range(self.width):
+            for j in range(self.height):
+                if self.nodes[j][i].value == 0:
+                    empty.append((i,j))
+        return empty
+
     """
     #undo need to blank the last move, and restore the color options of the neighbors
     def undo_move(self):
