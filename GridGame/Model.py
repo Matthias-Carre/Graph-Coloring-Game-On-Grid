@@ -22,8 +22,10 @@ class GraphColoringNet(nn.Module):
             nn.ReLU()
         )
         
+        
         # Size of flattened convolutional features.
         self.flattened_size = 64 * height * width
+        
         
         # Policy head.
         self.actor_head = nn.Sequential(

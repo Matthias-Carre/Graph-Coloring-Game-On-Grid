@@ -19,9 +19,8 @@ rx,ry = get_real_pos(grid,x,y,j,is_h_flip,is_v_flip)
 used to know where Bob played and to translate Alice response
 """
 #exemple de skelet de code pour l'exec
-from logging import config
 
-from matplotlib.pyplot import grid
+
 
 
 def is_TestConfig(grid,bob_move):

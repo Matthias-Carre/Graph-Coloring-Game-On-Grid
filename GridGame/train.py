@@ -1,5 +1,7 @@
 import torch
 import torch.optim as optim
+import argparse
+import os
 from collections import Counter
 from tensordict.nn import TensorDictModule
 from torchrl.envs.libs.gym import GymWrapper
@@ -17,6 +19,27 @@ from tensordict import TensorDict
 # Import custom environment and model.
 from ColoringEnv import GraphColoringEnv
 from Model import GraphColoringNet
+
+
+def save_checkpoint(path, model, optimizer, batch_idx, config):
+    checkpoint_dir = os.path.dirname(path)
+    if checkpoint_dir:
+        os.makedirs(checkpoint_dir, exist_ok=True)
+    checkpoint = {
+        "model_state_dict": model.state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
+        "batch": batch_idx,
+        "config": config,
+    }
+    torch.save(checkpoint, path)
+
+
+def load_checkpoint(path, model, optimizer=None, device="cpu"):
+    checkpoint = torch.load(path, map_location=device)
+    model.load_state_dict(checkpoint["model_state_dict"])
+    if optimizer is not None and "optimizer_state_dict" in checkpoint:
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+    return checkpoint
 
 def run_evaluation_episode(policy, env):
     """
@@ -55,11 +78,27 @@ def run_evaluation_episode(policy, env):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Train graph coloring agent.")
+    parser.add_argument("--resume", action="store_true", help="Resume from checkpoint.")
+    parser.add_argument(
+        "--checkpoint-path",
+        type=str,
+        default="GridGame/checkpoints/latest.pt",
+        help="Path to checkpoint file.",
+    )
+    parser.add_argument(
+        "--save-every",
+        type=int,
+        default=500,
+        help="Save checkpoint every N batches.",
+    )
+    args = parser.parse_args()
+
     # Hyperparameters.
-    WIDTH, HEIGHT, COLORS = 5, 4, 4
+    WIDTH, HEIGHT, COLORS = 4, 4, 4
     LEARNING_RATE = 1e-3
     FRAMES_PER_BATCH = 100    # Steps collected before updating the network
-    TOTAL_FRAMES = 500_000     # Total training steps
+    TOTAL_FRAMES = 200_000     # Total training steps
     GAMMA = 0.99              # Discount factor for future rewards
     
 
@@ -76,7 +115,7 @@ def main():
     print("Creating Actor-Critic network...")
     core_network = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS)
 
-        # Wrappers to split actor and critic outputs.
+    # Wrappers to split actor and critic outputs.
     class ActorWrapper(torch.nn.Module):
         def __init__(self, net):
             super().__init__()
@@ -169,9 +208,29 @@ def main():
 
     optimizer = optim.Adam(core_network.parameters(), lr=LEARNING_RATE)
 
+    config = {
+        "width": WIDTH,
+        "height": HEIGHT,
+        "colors": COLORS,
+        "learning_rate": LEARNING_RATE,
+        "frames_per_batch": FRAMES_PER_BATCH,
+        "total_frames": TOTAL_FRAMES,
+        "gamma": GAMMA,
+    }
+
+    start_batch = 0
+    if args.resume:
+        if os.path.exists(args.checkpoint_path):
+            checkpoint = load_checkpoint(args.checkpoint_path, core_network, optimizer, device="cpu")
+            start_batch = int(checkpoint.get("batch", -1)) + 1
+            print(f"Resumed from {args.checkpoint_path} at batch {start_batch}")
+        else:
+            print(f"Checkpoint not found at {args.checkpoint_path}. Starting fresh.")
+
     # Training loop.
     print("Starting training loop...\n")
     for i, tensordict_data in enumerate(collector):
+        batch_idx = start_batch + i
         
         tensordict_data.set("action", tensordict_data.get("action").squeeze(-1))
         # Compute advantages without gradient tracking.
@@ -195,7 +254,7 @@ def main():
         optimizer.step()
 
         # Logging metrics.
-        if i % 10 == 0:
+        if batch_idx % 100 == 0:
             avg_reward = tensordict_data["next", "reward"].mean().item()
 
             completed_episodes = base_env.completed_episodes
@@ -221,7 +280,7 @@ def main():
                 reasons_str = "no completed episode in this batch"
 
             print(
-                f"Batch {i:4d} | Actor Loss: {actor_loss.item(): 8.3f} | Value Loss: {value_loss.item(): 8.3f} | "
+                f"Batch {batch_idx:4d} | Actor Loss: {actor_loss.item(): 8.3f} | Value Loss: {value_loss.item(): 8.3f} | "
                 f"Avg Step Reward: {avg_reward: 6.3f} | Avg Episode Return: {avg_episode_return: 6.3f} | "
                 f"Avg Episode Len: {avg_episode_length: 6.1f} | Episodes: {num_episodes:4d} | "
                 f"WinRate: {win_rate: 6.2%} | Return[min/max]: {min_episode_return: 6.2f}/{max_episode_return: 6.2f} | "
@@ -231,6 +290,13 @@ def main():
             base_env.completed_episodes.clear()
 
             run_evaluation_episode(policy, eval_env)
+
+            if args.save_every > 0 and batch_idx > 0 and batch_idx % args.save_every == 0:
+                save_checkpoint(args.checkpoint_path, core_network, optimizer, batch_idx, config)
+                print(f"Checkpoint saved: {args.checkpoint_path} (batch {batch_idx})")
+
+    save_checkpoint(args.checkpoint_path, core_network, optimizer, batch_idx, config)
+    print(f"Final checkpoint saved: {args.checkpoint_path}")
 
 
 if __name__ == "__main__":

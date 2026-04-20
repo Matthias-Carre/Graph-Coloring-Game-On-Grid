@@ -11,7 +11,7 @@ from game.Alice.alice import Alice
 
 # input : root window, width of the grid, height of the grid, number of colors
 # out : create the game and start it
-def create_game(root,width=15, height=4,num_colors=4):
+def create_game(root,width=10, height=3,num_colors=4):
     #grid = Grid(width, height, num_colors=4)
     
     #for the cas of the paper
@@ -97,4 +97,4 @@ if __name__ == "__main__":
     #main()
 
     #Commenter au dessus et decommenter en dessous pour passer la selection des parametres
-    create_game(tk.Tk(),width=20, height=4, num_colors=4)
+    create_game(tk.Tk(),width=10, height=3, num_colors=4)

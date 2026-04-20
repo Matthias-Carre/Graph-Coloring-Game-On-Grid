@@ -1,3 +1,4 @@
+from game.Alice.strategy_3 import *
 from game.Alice.strategy_4 import *
 from game.Alice.strategy_random import *
 
@@ -17,8 +18,15 @@ class Alice:
 
     #import the strategy depending on the grid size
     def load_strategy(self):
+        if self.grid.height == 3 and self.grid.num_colors == 4:
+            print("Alice: load strategy for 3*3 grid with 4 colors")
+            self.strategy = [
+                (is_side, solve_side),
+                (is_other, solve_other)
 
-        if self.grid.height == 4:
+                #(is_center, solve_center)
+            ]
+        elif self.grid.height == 4 and self.grid.num_colors == 4:
             self.strategy = [
                 #(is_TEST, solve_TEST),
 
@@ -76,6 +84,7 @@ class Alice:
         print("Alice strategy: Bob: ", self.grid.bob_play_on_config)
         for is_case, solve_case in self.strategy:
             if is_case(self.grid,self.grid.last_Bob_move):
+                print(f"Return Alice: {solve_case(self.grid,self.grid.last_Bob_move)}")
                 return solve_case(self.grid,self.grid.last_Bob_move)
 
         #case test:
