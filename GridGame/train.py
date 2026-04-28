@@ -95,10 +95,10 @@ def main():
     args = parser.parse_args()
 
     # Hyperparameters.
-    WIDTH, HEIGHT, COLORS = 4, 4, 4
+    WIDTH, HEIGHT, COLORS = 5,5, 4
     LEARNING_RATE = 1e-3
     FRAMES_PER_BATCH = 100    # Steps collected before updating the network
-    TOTAL_FRAMES = 200_000     # Total training steps
+    TOTAL_FRAMES = 500_000     # Total training steps
     GAMMA = 0.99              # Discount factor for future rewards
     
 
@@ -194,7 +194,7 @@ def main():
         actor_network=policy,
         critic_network=value_module,
         entropy_bonus=True,
-        entropy_coeff=0.05
+        entropy_coef=0.05
     )
     loss_module.set_keys(advantage="advantage")
 

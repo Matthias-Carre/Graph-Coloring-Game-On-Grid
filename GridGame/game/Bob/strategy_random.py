@@ -17,6 +17,8 @@ def little_smart_bob(grid, bob_move):
             if res is not None and c in res.color_options:
                 return res.y, res.x, c
     #check for cell with only 2 color options
+
+
     for x,y in grid.empty_cells():
         cell = grid.get_cell(x,y)
         if len(cell.color_options) == 2:
@@ -31,6 +33,18 @@ def little_smart_bob(grid, bob_move):
 
     #else return random for now
     return random_move(grid, bob_move)
+
+def kill_if_possible(grid, bob_move):
+    for x,y in grid.empty_cells():
+        cell = grid.get_cell(x,y)
+        if len(cell.color_options) == 1:
+            c = cell.color_options[0]
+            #get the uncolored neighbor of the cc cell
+            res = cell.get_uncolored_neighbor()
+            if res is not None and c in res.color_options:
+                return res.y, res.x, c
+    return random_move(grid, bob_move)
+
 
 # Bob plays a random legal move.
 def random_move(grid, bob_move):

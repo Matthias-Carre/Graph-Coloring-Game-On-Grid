@@ -20,7 +20,7 @@ class Bob:
             ]
         else:
             self.strategy = [
-                (is_any,little_smart_bob),
+                (is_any,kill_if_possible),
                 (is_any,random_move)
             ]
 
