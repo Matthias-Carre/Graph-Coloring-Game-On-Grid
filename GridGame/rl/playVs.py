@@ -1,5 +1,10 @@
 import torch
 import numpy as np
+import sys
+from pathlib import Path
+
+# Add parent directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import environment and model
 from ColoringEnv import GraphColoringEnv
@@ -19,15 +24,16 @@ def decode_action(action, width, num_colors):
 def main():
     # --- 1. CONFIGURATION ---
     # Use the same dimensions as the last training session
-    WIDTH, HEIGHT, COLORS = 5, 5, 4 
+    WIDTH, HEIGHT, COLORS = 4, 4, 4 
     #MODEL_PATH = "GridGame/NN/4x4.pt"
-    MODEL_PATH = "GridGame/checkpoints/latest.pt" 
+    script_dir = Path(__file__).parent.parent
+    MODEL_PATH = str(script_dir / "checkpoints" / "latest.pt")
 
     # --- 2. WAKING UP ALICE ---
     model = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS)
     
     try:
-        checkpoint = torch.load(MODEL_PATH, map_location="cpu", weights_only=True)
+        checkpoint = torch.load(MODEL_PATH, map_location="cpu")
         model.load_state_dict(checkpoint["model_state_dict"])
         model.eval() # Freeze the network in evaluation mode
         print("Brain loaded successfully!")

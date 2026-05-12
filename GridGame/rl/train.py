@@ -15,6 +15,11 @@ from torchrl.modules import ProbabilisticActor, ValueOperator
 from torchrl.modules.distributions import MaskedCategorical
 
 from tensordict import TensorDict
+import sys
+from pathlib import Path
+
+# Add parent directory to path to access game modules
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import custom environment and model.
 from ColoringEnv import GraphColoringEnv
@@ -78,12 +83,16 @@ def run_evaluation_episode(policy, env):
 
 
 def main():
+    # Calculate checkpoint path relative to this script location
+    script_dir = Path(__file__).parent.parent  # GridGame directory
+    default_checkpoint = str(script_dir / "checkpoints" / "latest.pt")
+    
     parser = argparse.ArgumentParser(description="Train graph coloring agent.")
     parser.add_argument("--resume", action="store_true", help="Resume from checkpoint.")
     parser.add_argument(
         "--checkpoint-path",
         type=str,
-        default="GridGame/checkpoints/latest.pt",
+        default=default_checkpoint,
         help="Path to checkpoint file.",
     )
     parser.add_argument(
@@ -95,7 +104,7 @@ def main():
     args = parser.parse_args()
 
     # Hyperparameters.
-    WIDTH, HEIGHT, COLORS = 5,5, 4
+    WIDTH, HEIGHT, COLORS = 4, 4, 4
     LEARNING_RATE = 1e-3
     FRAMES_PER_BATCH = 100    # Steps collected before updating the network
     TOTAL_FRAMES = 500_000     # Total training steps

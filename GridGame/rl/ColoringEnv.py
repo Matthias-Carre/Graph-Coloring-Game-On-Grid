@@ -1,7 +1,11 @@
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
+import sys
+from pathlib import Path
 
+# Add parent directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from game.Grid import Grid
 from game.Bob.bob import Bob
@@ -10,7 +14,7 @@ class GraphColoringEnv(gym.Env):
     """
     Gymnasium environment for graph coloring game.
     """
-    def __init__(self, width=5, height=4, num_colors=4):
+    def __init__(self, width=3, height=3, num_colors=4):
         super(GraphColoringEnv, self).__init__()
         
         self.width = width
