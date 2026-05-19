@@ -67,6 +67,10 @@ class Alice:
                 (is_any,random_move)
             ]
 
+    #return a random valid move (x,y,color) for Alice
+    def next_random_move(self):
+        #print("Alice: random move")
+        return random_move(self.grid, self.grid.last_Bob_move)
 
     #return (x,y,color) of the move that Alice wants to play
     def next_move(self):

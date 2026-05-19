@@ -27,9 +27,9 @@ def main():
     WIDTH, HEIGHT, COLORS = 4, 4, 4 
     #MODEL_PATH = "GridGame/NN/4x4.pt"
     script_dir = Path(__file__).parent.parent
-    MODEL_PATH = str(script_dir / "checkpoints" / "latest.pt")
+    MODEL_PATH = str(script_dir / "checkpoints" / "Bob" / "latest.pt")
 
-    # --- 2. WAKING UP ALICE ---
+    # --- 2. WAKING UP Bob ---
     model = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS)
     
     try:
@@ -46,7 +46,7 @@ def main():
     env.reset() # Initialize empty grid
     
     print("\n" + "="*40)
-    print("  MATCH OF THE CENTURY: YOU vs ALICE  ")
+    print("  MATCH OF THE CENTURY: YOU vs Bob  ")
     print("="*40)
 
     def stop_if_bob_wins():
@@ -62,7 +62,7 @@ def main():
         env.render() # Display current grid state
 
         # ==========================================
-        #             ALICE TURN (AI)
+        #             Bob TURN (AI)
         # ==========================================
 
         # 1. Retrieve current grid vision
@@ -72,21 +72,21 @@ def main():
         obs_tensor = torch.tensor(obs_dict["observation"], dtype=torch.float32).unsqueeze(0)
         mask_tensor = torch.tensor(obs_dict["mask"], dtype=torch.bool).unsqueeze(0)
 
-        # 3. Alice makes a greedy decision (no exploration)
+        # 3. Bob makes a greedy decision (no exploration)
         with torch.no_grad():
             logits, _ = model(obs_tensor)
 
             # Apply Action Masking
             logits = logits.masked_fill(~mask_tensor, -1e8)
 
-            # Alice picks the action with the highest confidence
+            # Bob picks the action with the highest confidence
             best_action = torch.argmax(logits, dim=1).item()
 
         # 4. Translate integer to playable move
         a_x, a_y, a_c = decode_action(best_action, WIDTH, COLORS)
-        print(f"Alice plays: X={a_x}, Y={a_y} with Color={a_c} (Action n°{best_action})")
+        print(f"Bob plays: X={a_x}, Y={a_y} with Color={a_c} (Action n°{best_action})")
 
-        # 5. Apply Alice's move to the grid
+        # 5. Apply Bob's move to the grid
         env.grid.player = 0
         env.grid.play_move(a_x, a_y, a_c)
 
@@ -94,7 +94,7 @@ def main():
             break
 
         env.render()
-        # Check if the board is full after Alice's turn
+        # Check if the board is full after Bob's turn
         if env.is_grid_full() or not np.any(env._get_obs()["mask"]):
             print("\nThe game is over!")
             break
@@ -128,13 +128,13 @@ def main():
             except IndexError:
                 print("Coordinates are out of bounds.")
 
-        # End if no playable move remains for Alice.
+        # End if no playable move remains for Bob.
         if env.is_grid_full() or not np.any(env._get_obs()["mask"]):
             print("\nThe game is over!")
             break
 
     env.render()
-    print("END OF MATCH! (Check who won based on your scoring rules)")
+    print("END OF MATCH!")
 
 if __name__ == "__main__":
     main()

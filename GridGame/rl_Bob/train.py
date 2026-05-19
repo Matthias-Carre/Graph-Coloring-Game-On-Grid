@@ -85,7 +85,7 @@ def run_evaluation_episode(policy, env):
 def main():
     # Calculate checkpoint path relative to this script location
     script_dir = Path(__file__).parent.parent  # GridGame directory
-    default_checkpoint = str(script_dir / "checkpoints" / "latest.pt")
+    default_checkpoint = str(script_dir / "checkpoints"/ "Bob" / "latest.pt")
     
     parser = argparse.ArgumentParser(description="Train graph coloring agent.")
     parser.add_argument("--resume", action="store_true", help="Resume from checkpoint.")
@@ -277,7 +277,7 @@ def main():
                 avg_episode_length = sum(lengths) / len(lengths)
                 min_episode_return = min(returns)
                 max_episode_return = max(returns)
-                win_rate = reasons.get("alice_won", 0) / num_episodes
+                win_rate = reasons.get("bob_loses", 0) / num_episodes
                 reasons_str = ", ".join(f"{k}={v}" for k, v in reasons.items())
             else:
                 num_episodes = 0
@@ -292,7 +292,7 @@ def main():
                 f"Batch {batch_idx:4d} | Actor Loss: {actor_loss.item(): 8.3f} | Value Loss: {value_loss.item(): 8.3f} | "
                 f"Avg Step Reward: {avg_reward: 6.3f} | Avg Episode Return: {avg_episode_return: 6.3f} | "
                 f"Avg Episode Len: {avg_episode_length: 6.1f} | Episodes: {num_episodes:4d} | "
-                f"WinRate: {win_rate: 6.2%} | Return[min/max]: {min_episode_return: 6.2f}/{max_episode_return: 6.2f} | "
+                f"WinRate (Alice): {win_rate: 6.2%} | Return[min/max]: {min_episode_return: 6.2f}/{max_episode_return: 6.2f} | "
                 f"Reasons: {reasons_str}"
             )
 

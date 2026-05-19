@@ -27,7 +27,7 @@ def main():
     WIDTH, HEIGHT, COLORS = 4, 4, 4 
     #MODEL_PATH = "GridGame/NN/4x4.pt"
     script_dir = Path(__file__).parent.parent
-    MODEL_PATH = str(script_dir / "checkpoints" / "latest.pt")
+    MODEL_PATH = str(script_dir / "checkpoints" / "Alice" / "latest.pt")
 
     # --- 2. WAKING UP ALICE ---
     model = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS)
