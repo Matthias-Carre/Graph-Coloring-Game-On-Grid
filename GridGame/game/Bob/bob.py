@@ -40,3 +40,6 @@ class Bob:
         print("Bob: no strategy found, play random")
         return random_move(self.grid,last_move)
 
+    def next_random_move(self):
+
+        return random_move(self.grid,self.grid.last_moves[-1] if self.grid.last_moves else None)

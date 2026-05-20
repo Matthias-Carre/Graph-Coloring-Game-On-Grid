@@ -1,0 +1,9 @@
+python3 -m venv rl_env
+
+source rl_env/bin/activate
+
+deactivate
+
+python3 ./train.py --resume
+
+./eval_random_vs_random.py --width 6 --height 6 --games 1000

@@ -10,6 +10,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from game.Grid import Grid
 from game.Alice.alice import Alice
 
+ALICE_PLAYER = 0
+BOB_PLAYER = 1
+
 class GraphColoringEnv(gym.Env):
     """
     Gymnasium environment for graph coloring game.
@@ -83,13 +86,13 @@ class GraphColoringEnv(gym.Env):
         self.grid = Grid(self.height, self.width, self.num_colors)
         self.Alice = Alice(self.grid)
 
-        self.grid.player = 1 # Alice starts first (player 0)
+        self.grid.player = ALICE_PLAYER  # Alice starts first
         opening_move = self.Alice.next_random_move()
         if opening_move is not None:
             x, y, c = opening_move
             self.grid.play_move(x, y, c)
 
-        self.grid.player = 0  # now it's Bob's turn
+        self.grid.player = BOB_PLAYER  # now it's Bob's turn
         
         return self._get_obs(), {}
 
@@ -107,7 +110,7 @@ class GraphColoringEnv(gym.Env):
         self.current_step += 1
         self.episode_length += 1
         
-        self.grid.player = 1
+        self.grid.player = BOB_PLAYER
         c = (action % self.num_colors) + 1
         cell_idx = action // self.num_colors
         x = cell_idx % self.width
@@ -122,19 +125,20 @@ class GraphColoringEnv(gym.Env):
             self._finish_episode("illegal_move", -10.0)
             return self._get_obs(), -10.0, True, False, {"reason": "illegal_move"}
 
-        # --- 1. Bob plays ---     
+        # --- 1. Bob plays ---
+        cc_cells = self.count_color_critical_cells()
         self.grid.play_move(x, y, c)
         
         # Check for Bob rewards
 
         #if create dead node Happy
         if self.has_uncolorable_cell():
-            self._finish_episode("bob_created_dead_node", 10.0)
-            return self._get_obs(), 10.0, True, False, {"reason": "bob_created_dead_node"}
+            self._finish_episode("bob_created_dead_node", 20.0)
+            return self._get_obs(), 20.0, True, False, {"reason": "bob_created_dead_node"}
 
         #if create Color-Critical node Happy
-        if self.count_color_critical_cells() > 0:
-            reward += 0.5 * self.count_color_critical_cells()
+        if cc_cells < self.count_color_critical_cells():
+            reward += 0.2
 
         # Did Alice win?
         if self.is_grid_full():
@@ -142,17 +146,17 @@ class GraphColoringEnv(gym.Env):
             return self._get_obs(), -15.0, True, False, {"reason": "bob_loses"}
 
         # --- 2. Alice plays ---
-        self.grid.player = 0
+        self.grid.player = ALICE_PLAYER
         Alice_move = self.Alice.next_random_move()
         if Alice_move is not None:
             alice_x, alice_y, alice_c = Alice_move
             self.grid.play_move(alice_x, alice_y, alice_c)
-        self.grid.player = 0
+        self.grid.player = BOB_PLAYER
 
         # Check if Alice kill herself by creating a dead node
         if self.has_uncolorable_cell():
-            self._finish_episode("alice_created_dead_node", 1.0)
-            return self._get_obs(), 1.0, True, False, {"reason": "alice_created_dead_node"}
+            self._finish_episode("alice_created_dead_node", 0.0)
+            return self._get_obs(), 0.0, True, False, {"reason": "alice_created_dead_node"}
 
         # Did Alice fill last cell and win?
         if self.is_grid_full():

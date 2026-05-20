@@ -1,0 +1,125 @@
+from game.Grid import Grid
+import argparse
+from game.Bob.bob import Bob
+from game.Alice.alice import Alice
+
+# Alice Random vs Bob Random
+# with input size, color and number of games to simulate
+def main():
+    parser = argparse.ArgumentParser(
+        description="Run random-vs-random graph coloring matches and report win rates."
+    )
+    parser.add_argument("--width", type=int, default=4, help="Grid width.")
+    parser.add_argument("--height", type=int, default=4, help="Grid height.")
+    parser.add_argument("--colors", type=int, default=4, help="Number of colors.")
+    parser.add_argument("--games", type=int, default=100, help="Number of games to simulate.")
+    
+    args = parser.parse_args()
+
+    #create the grid:
+    grid = Grid(args.width, args.height, args.colors)
+
+    alice = Alice(grid)
+    bob = Bob(grid)
+
+    Alice_win=0
+    Bob_win=0
+
+    Alice_kill_herself=0
+    Bob_kill_Alice=0
+
+    for game in range(args.games):
+        grid = Grid(args.width, args.height, args.colors)
+        alice = Alice(grid)
+        bob = Bob(grid)
+        while True:
+            grid.player = 0
+            alice_move = alice.next_random_move()
+            if alice_move is None:
+                continue
+            x,y,col = alice_move
+            grid.play_move(x, y, col)
+            
+            if is_grid_full(grid):
+                Alice_win += 1
+                break
+            if has_uncolorable_cell(grid):
+                Bob_win += 1
+                Alice_kill_herself += 1
+                break
+
+
+            grid.player = 1
+            bob_move = bob.next_random_move()
+            if bob_move is None:
+                break
+
+            x,y,col = bob_move
+            grid.play_move(x, y, col)
+            if is_grid_full(grid):
+                Alice_win += 1
+                break
+            if has_uncolorable_cell(grid):
+                Bob_win += 1
+                Bob_kill_Alice += 1
+                break
+        if game % 1000 == 0:
+            print(f"Game {game}/{args.games}")
+            render(grid)
+    print(f"On {args.games} games with grid {args.width}x{args.height} and {args.colors} colors:")
+    print(f"Alice wins: {Alice_win} ({100*Alice_win/args.games:.1f}%)")
+    print(f"Bob wins:   {Bob_win} ({100*Bob_win/args.games:.1f}%)")
+    print(f"Alice kills herself: {Alice_kill_herself} ({100*Alice_kill_herself/args.games:.1f}%)")
+    print(f"Bob kills Alice: {Bob_kill_Alice} ({100*Bob_kill_Alice/args.games:.1f}%)")  
+
+    # get random move from alice
+
+
+
+
+def render(grid):
+    """Displays current grid state in terminal."""
+    player_color = {
+        0: "\033[91m",
+        1: "\033[94m",
+    }
+    reset = "\033[0m"
+        
+    # Iterate row by row
+    first_row = ""
+    for i in range(grid.width):
+        first_row += f"{i} "
+    print(f"  {first_row}")
+
+    for j in range(grid.height):
+        row_str = f"{j:2} "
+        for i in range(grid.width):
+            cell = grid.get_cell(i, j)
+            val = cell.get_value()
+
+            if val == 0:
+                row_str += ". "
+                continue
+
+            color = player_color.get(cell.played_by, "")
+            row_str += f"{color}{val}{reset} "
+        print(row_str)
+    print("===================")
+
+def is_grid_full(grid):
+    for j in range(grid.height):
+        for i in range(grid.width):
+            if grid.get_cell(i, j).get_value() == 0:
+                return False
+    return True
+
+def has_uncolorable_cell(grid):
+    for j in range(grid.height):
+        for i in range(grid.width):
+            cell = grid.get_cell(i, j)
+            if cell.is_uncolorable:
+                return True
+    return False
+
+if __name__ == "__main__":
+    main()

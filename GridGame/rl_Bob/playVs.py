@@ -24,7 +24,7 @@ def decode_action(action, width, num_colors):
 def main():
     # --- 1. CONFIGURATION ---
     # Use the same dimensions as the last training session
-    WIDTH, HEIGHT, COLORS = 4, 4, 4 
+    WIDTH, HEIGHT, COLORS = 6, 6, 4 
     #MODEL_PATH = "GridGame/NN/4x4.pt"
     script_dir = Path(__file__).parent.parent
     MODEL_PATH = str(script_dir / "checkpoints" / "Bob" / "latest.pt")
@@ -87,7 +87,7 @@ def main():
         print(f"Bob plays: X={a_x}, Y={a_y} with Color={a_c} (Action n°{best_action})")
 
         # 5. Apply Bob's move to the grid
-        env.grid.player = 0
+        env.grid.player = 1
         env.grid.play_move(a_x, a_y, a_c)
 
         if stop_if_bob_wins():
@@ -113,7 +113,7 @@ def main():
                 # Security check using your grid methods
                 # Modify "env.grid.is_move_valid" if your method has a different name
                 if env.grid.is_move_valid(x, y, c) and env.grid.get_cell(x, y).get_value() == 0:
-                    env.grid.player = 1
+                    env.grid.player = 0
                     env.grid.play_move(x, y, c)
 
                     if stop_if_bob_wins():
