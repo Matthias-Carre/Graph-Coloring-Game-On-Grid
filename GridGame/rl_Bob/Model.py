@@ -46,7 +46,7 @@ class GraphColoringNet(nn.Module):
         features = self.shared_cnn(observation)
         
         # Flatten all dimensions except batch.
-        features_flat = features.view(-1, self.flattened_size)
+        features_flat = features.view(-1, self.flattened_size) 
         
         # Compute policy logits and state value.
         logits = self.actor_head(features_flat)

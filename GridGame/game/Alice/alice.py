@@ -1,6 +1,7 @@
 from game.Alice.strategy_3 import *
 from game.Alice.strategy_4 import *
 from game.Alice.strategy_random import *
+from game.Alice.strategy_survive import *
 
 class Alice:
     def __init__(self,grid):
@@ -71,6 +72,10 @@ class Alice:
     def next_random_move(self):
         #print("Alice: random move")
         return random_move(self.grid, self.grid.last_Bob_move)
+
+    def next_safe_move(self):
+        #print("Alice: safe move")
+        return survive_strategy(self.grid, self.grid.last_Bob_move)
 
     #return (x,y,color) of the move that Alice wants to play
     def next_move(self):

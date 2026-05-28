@@ -96,7 +96,7 @@ class GraphColoringEnv(gym.Env):
         return x, y, c
     
     
-    def step(self, action):
+    def step_v1(self, action):
         self.current_step += 1
         self.episode_length += 1
         
@@ -151,8 +151,8 @@ class GraphColoringEnv(gym.Env):
         self.episode_return += reward
         return self._get_obs(), reward, False, False, {}
     
-
-    def step_backup(self, action):
+    # step_v2
+    def step(self, action):
         self.current_step += 1
         self.episode_length += 1
         

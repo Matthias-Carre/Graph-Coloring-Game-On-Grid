@@ -64,6 +64,27 @@ class Cell:
         #print(f"Cell: affected={len(affected)}")
         return affected
 
+
+    #check if the cell has only one remaining color option to color it
+    def check_color_critical(self):
+        if len(self.color_options) == 1 and not self.is_safe:
+            self.is_color_critical = True
+            return True
+            #print(f"Cell at ({self.x}, {self.y}) is color critical")
+        else:
+            self.is_color_critical = False
+            return False
+    
+    #check if the cell is color critical AND has a neighbor that could be colored with that last color
+    def check_dangerous_color_critical(self):
+        if self.check_color_critical():
+            last_color = self.color_options[0]
+            for neighbor in self.neighbors:
+                if (last_color in neighbor.color_options) and neighbor.value == 0:
+                    return True
+        return False
+                    
+
     def check_safe_cell(self):
         affected = []
 

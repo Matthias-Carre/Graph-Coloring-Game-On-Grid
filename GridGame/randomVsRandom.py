@@ -27,6 +27,7 @@ def main():
 
     Alice_kill_herself=0
     Bob_kill_Alice=0
+    colored_cell_proportion_list = []
 
     for game in range(args.games):
         grid = Grid(args.width, args.height, args.colors)
@@ -34,7 +35,11 @@ def main():
         bob = Bob(grid)
         while True:
             grid.player = 0
-            alice_move = alice.next_random_move()
+
+            # Alice logic
+            alice_move = alice.next_safe_move()
+
+
             if alice_move is None:
                 continue
             x,y,col = alice_move
@@ -50,7 +55,11 @@ def main():
 
 
             grid.player = 1
+
+            #bob logic here
             bob_move = bob.next_random_move()
+
+
             if bob_move is None:
                 break
 
@@ -63,6 +72,8 @@ def main():
                 Bob_win += 1
                 Bob_kill_Alice += 1
                 break
+
+        colored_cell_proportion_list.append(grid.proportion_colored_cells())
         if game % 1000 == 0:
             print(f"Game {game}/{args.games}")
             render(grid)
@@ -70,7 +81,9 @@ def main():
     print(f"Alice wins: {Alice_win} ({100*Alice_win/args.games:.1f}%)")
     print(f"Bob wins:   {Bob_win} ({100*Bob_win/args.games:.1f}%)")
     print(f"Alice kills herself: {Alice_kill_herself} ({100*Alice_kill_herself/args.games:.1f}%)")
-    print(f"Bob kills Alice: {Bob_kill_Alice} ({100*Bob_kill_Alice/args.games:.1f}%)")  
+    print(f"Bob kills Alice: {Bob_kill_Alice} ({100*Bob_kill_Alice/args.games:.1f}%)") 
+    avg_colored_proportion = sum(colored_cell_proportion_list) / len(colored_cell_proportion_list)
+    print(f"Average proportion of colored cells at game end: {avg_colored_proportion}") 
 
     # get random move from alice
 

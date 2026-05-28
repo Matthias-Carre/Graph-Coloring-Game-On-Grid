@@ -104,9 +104,9 @@ def main():
     args = parser.parse_args()
 
     # Hyperparameters.
-    WIDTH, HEIGHT, COLORS = 6, 6, 4
-    LEARNING_RATE = 1e-3
-    FRAMES_PER_BATCH = 100    # Steps collected before updating the network
+    WIDTH, HEIGHT, COLORS = 5, 5, 4
+    LEARNING_RATE = 1e-4
+    FRAMES_PER_BATCH = 50    # Steps collected before updating the network
     TOTAL_FRAMES = 500_000     # Total training steps
     GAMMA = 0.99              # Discount factor for future rewards
     
@@ -120,7 +120,7 @@ def main():
 
     eval_env = GraphColoringEnv(width=WIDTH, height=HEIGHT, num_colors=COLORS)
 
-        # Neural network setup.
+    # Neural network setup.
     print("Creating Actor-Critic network...")
     core_network = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS)
 
@@ -236,6 +236,7 @@ def main():
         else:
             print(f"Checkpoint not found at {args.checkpoint_path}. Starting fresh.")
 
+
     # Training loop.
     print("Starting training loop...\n")
     for i, tensordict_data in enumerate(collector):
@@ -263,7 +264,7 @@ def main():
         optimizer.step()
 
         # Logging metrics.
-        if batch_idx % 100 == 0:
+        if batch_idx % 100 == 0 :
             avg_reward = tensordict_data["next", "reward"].mean().item()
 
             completed_episodes = base_env.completed_episodes
@@ -277,7 +278,7 @@ def main():
                 avg_episode_length = sum(lengths) / len(lengths)
                 min_episode_return = min(returns)
                 max_episode_return = max(returns)
-                win_rate = reasons.get("bob_loses", 0) / num_episodes
+                win_rate = (num_episodes - reasons.get("bob_loses", 0)) / num_episodes
                 reasons_str = ", ".join(f"{k}={v}" for k, v in reasons.items())
             else:
                 num_episodes = 0
@@ -292,7 +293,7 @@ def main():
                 f"Batch {batch_idx:4d} | Actor Loss: {actor_loss.item(): 8.3f} | Value Loss: {value_loss.item(): 8.3f} | "
                 f"Avg Step Reward: {avg_reward: 6.3f} | Avg Episode Return: {avg_episode_return: 6.3f} | "
                 f"Avg Episode Len: {avg_episode_length: 6.1f} | Episodes: {num_episodes:4d} | "
-                f"WinRate (Alice): {win_rate: 6.2%} | Return[min/max]: {min_episode_return: 6.2f}/{max_episode_return: 6.2f} | "
+                f"WinRate (Bob): {win_rate: 6.2%} | Return[min/max]: {min_episode_return: 6.2f}/{max_episode_return: 6.2f} | "
                 f"Reasons: {reasons_str}"
             )
 
