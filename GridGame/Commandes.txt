@@ -7,3 +7,5 @@ deactivate
 python3 ./train.py --resume
 
 ./eval_random_vs_random.py --width 6 --height 6 --games 1000
+
+python3 ./grapgique.py --csv-path ./checkpoints/Alicetraing_metrics.csv
