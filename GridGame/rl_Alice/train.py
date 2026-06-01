@@ -46,6 +46,25 @@ def load_checkpoint(path, model, optimizer=None, device="cpu"):
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
     return checkpoint
 
+def log_metrics_to_file(log_path, batch_idx, num_episodes, win_rate, min_episode_return, 
+                         avg_episode_return, max_episode_return, avg_episode_length,
+                         actor_loss, value_loss, entropy_loss):
+    """
+    Logs training metrics to a CSV file for later analysis and plotting.
+    """
+    log_dir = os.path.dirname(log_path)
+    if log_dir:
+        os.makedirs(log_dir, exist_ok=True)
+    
+    # Write header if file doesn't exist
+    file_exists = os.path.exists(log_path)
+    
+    with open(log_path, 'a') as f:
+        if not file_exists:
+            f.write("batch,num_episodes,win_rate,min_score,avg_score,max_score,avg_length,actor_loss,value_loss,entropy_loss\n")
+        f.write(f"{batch_idx},{num_episodes},{win_rate:.4f},{min_episode_return:.4f},{avg_episode_return:.4f},"
+                f"{max_episode_return:.4f},{avg_episode_length:.4f},{actor_loss:.6f},{value_loss:.6f},{entropy_loss:.6f}\n")
+
 def run_evaluation_episode(policy, env):
     """
     Runs one evaluation episode print the final gird to give an idea of the game
@@ -85,7 +104,8 @@ def run_evaluation_episode(policy, env):
 def main():
     # Calculate checkpoint path relative to this script location
     script_dir = Path(__file__).parent.parent  # GridGame directory
-    default_checkpoint = str(script_dir / "checkpoints" / "latest.pt")
+    default_checkpoint = str(script_dir / "checkpoints" / "Alice" / "latest.pt")
+    default_log_file = str(script_dir / "checkpoints" / "Alice" / "training_metrics.csv")
     
     parser = argparse.ArgumentParser(description="Train graph coloring agent.")
     parser.add_argument("--resume", action="store_true", help="Resume from checkpoint.")
@@ -96,6 +116,12 @@ def main():
         help="Path to checkpoint file.",
     )
     parser.add_argument(
+        "--log-path",
+        type=str,
+        default=default_log_file,
+        help="Path to training metrics log file.",
+    )
+    parser.add_argument(
         "--save-every",
         type=int,
         default=500,
@@ -104,7 +130,7 @@ def main():
     args = parser.parse_args()
 
     # Hyperparameters.
-    WIDTH, HEIGHT, COLORS = 20, 20, 4
+    WIDTH, HEIGHT, COLORS = 15, 15, 4
     LEARNING_RATE = 1e-3
     FRAMES_PER_BATCH = 100    # Steps collected before updating the network
     TOTAL_FRAMES = 500_000     # Total training steps
@@ -297,6 +323,13 @@ def main():
             )
 
             base_env.completed_episodes.clear()
+            
+            # Log metrics to file
+            log_metrics_to_file(
+                args.log_path, batch_idx, num_episodes, win_rate, min_episode_return,
+                avg_episode_return, max_episode_return, avg_episode_length,
+                actor_loss.item(), value_loss.item(), entropy_loss.item()
+            )
 
             run_evaluation_episode(policy, eval_env)
 
