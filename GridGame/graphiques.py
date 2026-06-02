@@ -9,7 +9,8 @@ def load_metrics(csv_path: Path) -> pd.DataFrame:
     if not csv_path.exists():
         raise FileNotFoundError(f"Metrics file not found: {csv_path}")
 
-    df = pd.read_csv(csv_path)
+    # ignore the very first line of the CSV (use skiprows=[0] or skiprows=1)
+    df = pd.read_csv(csv_path, skiprows=1)
     if "batch" not in df.columns:
         raise ValueError("CSV file must contain a 'batch' column")
 
