@@ -48,7 +48,7 @@ def load_checkpoint(path, model, optimizer=None, device="cpu"):
 
 def log_metrics_to_file(log_path, batch_idx, num_episodes, win_rate, min_episode_return, 
                          avg_episode_return, max_episode_return, avg_episode_length,
-                         actor_loss, value_loss, entropy_loss):
+                         actor_loss, value_loss, entropy_loss, HEIGHT, WIDTH, COLORS):
     """
     Logs training metrics to a CSV file for later analysis and plotting.
     """
@@ -60,7 +60,8 @@ def log_metrics_to_file(log_path, batch_idx, num_episodes, win_rate, min_episode
     file_exists = os.path.exists(log_path)
     
     with open(log_path, 'a') as f:
-        if not file_exists:
+        if not file_exists or batch_idx == 0:
+            f.write(f"Alice Training On size: w={WIDTH}, h={HEIGHT}, c={COLORS}\n")
             f.write("batch,num_episodes,win_rate,min_score,avg_score,max_score,avg_length,actor_loss,value_loss,entropy_loss\n")
         f.write(f"{batch_idx},{num_episodes},{win_rate:.4f},{min_episode_return:.4f},{avg_episode_return:.4f},"
                 f"{max_episode_return:.4f},{avg_episode_length:.4f},{actor_loss:.6f},{value_loss:.6f},{entropy_loss:.6f}\n")
@@ -130,7 +131,7 @@ def main():
     args = parser.parse_args()
 
     # Hyperparameters.
-    WIDTH, HEIGHT, COLORS = 5, 5, 4
+    WIDTH, HEIGHT, COLORS = 7, 7, 4
     LEARNING_RATE = 1e-3
     FRAMES_PER_BATCH = 100    # Steps collected before updating the network
     TOTAL_FRAMES = 500_000     # Total training steps
@@ -139,7 +140,7 @@ def main():
 
 
     # Environment setup.
-    print("Initializing environment...")
+    print("Initializing environment...")    
     base_env = GraphColoringEnv(width=WIDTH, height=HEIGHT, num_colors=COLORS)
     # Convert Gymnasium outputs to TensorDict for TorchRL.
     env = GymWrapper(base_env, categorical_action_encoding=True)
@@ -328,7 +329,8 @@ def main():
             log_metrics_to_file(
                 args.log_path, batch_idx, num_episodes, win_rate, min_episode_return,
                 avg_episode_return, max_episode_return, avg_episode_length,
-                actor_loss.item(), value_loss.item(), entropy_loss.item()
+                actor_loss.item(), value_loss.item(), entropy_loss.item(),
+                HEIGHT=HEIGHT, WIDTH=WIDTH, COLORS=COLORS
             )
 
             run_evaluation_episode(policy, eval_env)
