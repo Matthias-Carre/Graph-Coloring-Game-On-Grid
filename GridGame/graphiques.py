@@ -1,24 +1,41 @@
 import argparse
 from pathlib import Path
+import re
 
 import matplotlib.pyplot as plt
 import pandas as pd
 
 
-def load_metrics(csv_path: Path) -> pd.DataFrame:
+def load_metrics(csv_path: Path) -> tuple[pd.DataFrame, str]:
     if not csv_path.exists():
         raise FileNotFoundError(f"Metrics file not found: {csv_path}")
 
-    # ignore the very first line of the CSV (use skiprows=[0] or skiprows=1)
+    # read first line (metadata) and parse player + size
+    with csv_path.open("r", encoding="utf-8") as f:
+        first_line = f.readline().strip()
+
+    title = None
+    # Example: "Alice Training On size: w=7, h=7, c=4"
+    m = re.match(r"^(?P<player>\w+)\s+Training\s+On\s+size:\s*w=(?P<w>\d+),\s*h=(?P<h>\d+),\s*c=(?P<c>\d+)", first_line)
+    if m:
+        player = m.group("player")
+        w = m.group("w")
+        h = m.group("h")
+        c = m.group("c")
+        title = f"{player}  grid {w}x{h}, c={c}"
+    else:
+        title = first_line  # fallback to raw first line if parsing fails
+
+    # ignore the very first line of the CSV (header is on the second line)
     df = pd.read_csv(csv_path, skiprows=1)
     if "batch" not in df.columns:
         raise ValueError("CSV file must contain a 'batch' column")
 
     df = df.sort_values("batch").reset_index(drop=True)
-    return df
+    return df, title
 
 
-def plot_all_on_single_page(df: pd.DataFrame, cols: int = 3) -> None:
+def plot_all_on_single_page(df: pd.DataFrame, cols: int = 3, title: str | None = None) -> None:
     """Plot all relevant metrics on a single window using subplots.
 
     The function looks for standard columns and skips missing ones.
@@ -41,17 +58,17 @@ def plot_all_on_single_page(df: pd.DataFrame, cols: int = 3) -> None:
     fig, axes = plt.subplots(rows, cols, figsize=(5 * cols, 3.5 * rows))
     axes = axes.flatten()
 
-    for idx, (col_name, title) in enumerate(metrics):
+    for idx, (col_name, title_) in enumerate(metrics):
         ax = axes[idx]
         if col_name not in df.columns:
             ax.text(0.5, 0.5, f"{col_name} not found", ha="center")
-            ax.set_title(title)
+            ax.set_title(title_)
             ax.set_xticks([])
             ax.set_yticks([])
             continue
 
         ax.plot(df["batch"], df[col_name], marker="o", linewidth=1.2)
-        ax.set_title(title)
+        ax.set_title(title_)
         ax.set_xlabel("Batch")
         ax.grid(True, alpha=0.3)
 
@@ -84,7 +101,13 @@ def plot_all_on_single_page(df: pd.DataFrame, cols: int = 3) -> None:
     for j in range(n_plots, len(axes)):
         axes[j].axis("off")
 
-    fig.tight_layout()
+    # set a global title if provided
+    if title:
+        fig.suptitle(title, fontsize=14)
+        fig.tight_layout(rect=[0, 0, 1, 0.96])
+    else:
+        fig.tight_layout()
+
     plt.show()
 
 
@@ -105,10 +128,10 @@ def main() -> None:
     args = parser.parse_args()
 
     csv_path = Path(args.csv_path)
-    df = load_metrics(csv_path)
+    df, title = load_metrics(csv_path)
 
     print(f"Loaded {len(df)} rows from {csv_path}")
-    plot_all_on_single_page(df, cols=args.cols)
+    plot_all_on_single_page(df, cols=args.cols, title=title)
 
 
 if __name__ == "__main__":
