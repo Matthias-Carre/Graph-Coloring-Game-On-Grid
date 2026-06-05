@@ -63,6 +63,7 @@ def log_metrics_to_file(log_path, batch_idx, num_episodes, win_rate, min_episode
         if not file_exists or batch_idx == 0:
             f.write(f"Alice Training On size: w={WIDTH}, h={HEIGHT}, c={COLORS}\n")
             f.write("batch,num_episodes,win_rate,min_score,avg_score,max_score,avg_length,actor_loss,value_loss,entropy_loss\n")
+            return
         f.write(f"{batch_idx},{num_episodes},{win_rate:.4f},{min_episode_return:.4f},{avg_episode_return:.4f},"
                 f"{max_episode_return:.4f},{avg_episode_length:.4f},{actor_loss:.6f},{value_loss:.6f},{entropy_loss:.6f}\n")
 
@@ -131,7 +132,7 @@ def main():
     args = parser.parse_args()
 
     # Hyperparameters.
-    WIDTH, HEIGHT, COLORS = 7, 7, 4
+    WIDTH, HEIGHT, COLORS = 10, 10, 4
     LEARNING_RATE = 1e-3
     FRAMES_PER_BATCH = 100    # Steps collected before updating the network
     TOTAL_FRAMES = 500_000     # Total training steps
