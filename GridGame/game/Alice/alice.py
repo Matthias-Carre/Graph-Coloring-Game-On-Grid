@@ -2,6 +2,9 @@ from game.Alice.strategy_3 import *
 from game.Alice.strategy_4 import *
 from game.Alice.strategy_random import *
 from game.Alice.strategy_survive import *
+from game.Alice.euristic1 import *
+
+CustomStrategy = True
 
 class Alice:
     def __init__(self,grid):
@@ -77,6 +80,10 @@ class Alice:
         #print("Alice: safe move")
         return survive_strategy(self.grid, self.grid.last_Bob_move)
 
+    def next_euristic_move(self):
+        #print("Alice: heuristic move")
+        return critical_strategy(self.grid, self.grid.last_Bob_move)
+
     #return (x,y,color) of the move that Alice wants to play
     def next_move(self):
         if self.grid.player != 0:
@@ -89,6 +96,12 @@ class Alice:
         #first move
         if(self.grid.round == 1):
             return (0,1,1)
+        
+        #For custom strategy:
+
+
+        if CustomStrategy:
+            self.next_euristic_move(self.grid, self.grid.last_Bob_move)
         
         print("Alice strategy: Bob: ", self.grid.bob_play_on_config)
         for is_case, solve_case in self.strategy:
