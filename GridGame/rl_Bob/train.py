@@ -133,7 +133,7 @@ def main():
     args = parser.parse_args()
 
     # Hyperparameters.
-    WIDTH, HEIGHT, COLORS = 5, 5, 4
+    WIDTH, HEIGHT, COLORS = 6, 6, 4
     LEARNING_RATE = 1e-4
     FRAMES_PER_BATCH = 50    # Steps collected before updating the network
     TOTAL_FRAMES = 500_000     # Total training steps

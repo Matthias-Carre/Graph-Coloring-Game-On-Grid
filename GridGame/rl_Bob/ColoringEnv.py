@@ -79,6 +79,7 @@ class GraphColoringEnv(gym.Env):
 
     #reinitializes the environement to start a new episode
     def reset(self, seed=None, options=None):
+        seed = seed or np.random.randint(0, 10000)
         super().reset(seed=seed)
         self.current_step = 0
         self.episode_return = 0.0
