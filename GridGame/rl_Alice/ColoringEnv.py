@@ -125,12 +125,12 @@ class GraphColoringEnv(gym.Env):
 
         # Did Alice win?
         if self.is_grid_full():
-            self._finish_episode("alice_won", 15.0)
-            return self._get_obs(), 15.0, True, False, {"reason": "alice_won"}
+            self._finish_episode("alice_won", 20.0)
+            return self._get_obs(), 20.0, True, False, {"reason": "alice_won"}
 
         # --- 2. Bob plays ---
         self.grid.player = 1
-        bob_move = self.bob.next_move()
+        bob_move = self.bob.next_random_move()
         if bob_move is not None:
             bob_x, bob_y, bob_c = bob_move
             self.grid.play_move(bob_x, bob_y, bob_c)
@@ -143,8 +143,8 @@ class GraphColoringEnv(gym.Env):
 
         # Did Alice win after Bob's move (rare but possible if Bob fills last cell)
         if self.is_grid_full():
-            self._finish_episode("alice_won", 15.0)
-            return self._get_obs(), 15.0, True, False, {"reason": "alice_won"}
+            self._finish_episode("alice_won", 20.0)
+            return self._get_obs(), 20.0, True, False, {"reason": "alice_won"}
 
         # Survival reward + safe bonus already included
         reward += 0.2
@@ -182,8 +182,8 @@ class GraphColoringEnv(gym.Env):
         # Check if Alice created a dead node
         # Alice should NEVER create a dead node == giving the win to Bob (unless last move possible)
         if self.has_uncolorable_cell():
-            self._finish_episode("alice_created_dead_node", -20.0)
-            return self._get_obs(), -20.0, True, False, {"reason": "alice_created_dead_node"}
+            self._finish_episode("alice_created_dead_node", -5.0)
+            return self._get_obs(), -5.0, True, False, {"reason": "alice_created_dead_node"}
 
         # Count safe cells after move and award bonus
         # Intuition: Alice should try to make the most cells safe every move 
@@ -209,12 +209,12 @@ class GraphColoringEnv(gym.Env):
 
         # Did Alice win?
         if self.is_grid_full():
-            self._finish_episode("alice_won", 15.0)
-            return self._get_obs(), 15.0, True, False, {"reason": "alice_won"}
+            self._finish_episode("alice_won", 20.0)
+            return self._get_obs(), 20.0, True, False, {"reason": "alice_won"}
 
         # --- 2. Bob plays ---
         self.grid.player = 1
-        bob_move = self.bob.next_move()
+        bob_move = self.bob.next_random_move()
         if bob_move is not None:
             bob_x, bob_y, bob_c = bob_move
             self.grid.play_move(bob_x, bob_y, bob_c)
