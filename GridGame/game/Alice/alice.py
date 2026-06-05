@@ -2,6 +2,9 @@ from game.Alice.strategy_3 import *
 from game.Alice.strategy_4 import *
 from game.Alice.strategy_random import *
 from game.Alice.strategy_survive import *
+from game.Alice.euristic1 import *
+
+CustomStrat = True
 
 class Alice:
     def __init__(self,grid):
@@ -84,6 +87,11 @@ class Alice:
             return None
         print("\n===-- Alice move --===")
 
+        if CustomStrat:
+            next_move = play_same_in_diag(self.grid, self.grid.last_Bob_move)
+            if next_move is not None:
+                print("Alice strategy: play same color in diagonal")
+                return next_move
         # react to Bob's last move
         
         #first move
