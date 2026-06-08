@@ -80,6 +80,11 @@ class Alice:
         #print("Alice: safe move")
         return survive_strategy(self.grid, self.grid.last_Bob_move)
 
+    def next_euristic1_move(self):
+        next_move = critical_strategy(self.grid, self.grid.last_Bob_move)
+        return next_move
+        
+        
     #return (x,y,color) of the move that Alice wants to play
     def next_move(self):
         if self.grid.player != 0:
@@ -87,11 +92,6 @@ class Alice:
             return None
         print("\n===-- Alice move --===")
 
-        if CustomStrat:
-            next_move = play_same_in_diag(self.grid, self.grid.last_Bob_move)
-            if next_move is not None:
-                print("Alice strategy: play same color in diagonal")
-                return next_move
         # react to Bob's last move
         
         #first move

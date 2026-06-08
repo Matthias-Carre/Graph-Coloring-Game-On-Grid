@@ -58,6 +58,9 @@ class Grid:
 
     # check if the move respect the coloring property
     def is_move_valid(self, x, y, value):
+        if x < 0 or x >= self.width or y < 0 or y >= self.height:
+            #print(f"Move out of bounds: ({x}, {y})")
+            return False
         for neighbor in self.nodes[y][x].neighbors:
             if neighbor.value == value:
                 #print(f"Invalide move {x},{y} val: {value} already in neighbor at ({neighbor.x},{neighbor.y})")
