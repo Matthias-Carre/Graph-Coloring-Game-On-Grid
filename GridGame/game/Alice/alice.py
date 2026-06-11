@@ -1,5 +1,10 @@
+from game.Alice.strategy_3 import *
 from game.Alice.strategy_4 import *
 from game.Alice.strategy_random import *
+from game.Alice.strategy_survive import *
+from game.Alice.euristic1 import *
+
+CustomStrat = True
 
 class Alice:
     def __init__(self,grid):
@@ -17,8 +22,15 @@ class Alice:
 
     #import the strategy depending on the grid size
     def load_strategy(self):
+        if self.grid.height == 3 and self.grid.num_colors == 4:
+            print("Alice: load strategy for 3*3 grid with 4 colors")
+            self.strategy = [
+                (is_side, solve_side),
+                (is_other, solve_other)
 
-        if self.grid.height == 4:
+                #(is_center, solve_center)
+            ]
+        elif self.grid.height == 4 and self.grid.num_colors == 4:
             self.strategy = [
                 #(is_TEST, solve_TEST),
 
@@ -59,7 +71,20 @@ class Alice:
                 (is_any,random_move)
             ]
 
+    #return a random valid move (x,y,color) for Alice
+    def next_random_move(self):
+        #print("Alice: random move")
+        return random_move(self.grid, self.grid.last_Bob_move)
 
+    def next_safe_move(self):
+        #print("Alice: safe move")
+        return survive_strategy(self.grid, self.grid.last_Bob_move)
+
+    def next_euristic1_move(self):
+        next_move = critical_strategy(self.grid, self.grid.last_Bob_move)
+        return next_move
+        
+        
     #return (x,y,color) of the move that Alice wants to play
     def next_move(self):
         if self.grid.player != 0:
@@ -76,6 +101,7 @@ class Alice:
         print("Alice strategy: Bob: ", self.grid.bob_play_on_config)
         for is_case, solve_case in self.strategy:
             if is_case(self.grid,self.grid.last_Bob_move):
+                print(f"Return Alice: {solve_case(self.grid,self.grid.last_Bob_move)}")
                 return solve_case(self.grid,self.grid.last_Bob_move)
 
         #case test:

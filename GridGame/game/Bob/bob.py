@@ -20,14 +20,24 @@ class Bob:
             ]
         else:
             self.strategy = [
+                (is_any,kill_if_possible),
                 (is_any,random_move)
             ]
+
+    # Bob create cc vertex and make it uncolorable if excist
+    def next_move_euristic(self):
+        if self.grid.player != 1:
+            print("Not Bob's turn")
+            return None
+        return little_smart_bob(self.grid,self.grid.last_moves[-1] if self.grid.last_moves else None)
+        
+        
 
     def next_move(self):
         if self.grid.player != 1:
             print("Not Bob's turn")
             return None
-        print("\n===-- Bob move --===")
+        #print("\n===-- Bob move --===")
         
         last_move = self.grid.last_moves[-1] if self.grid.last_moves else None
         ax, ay, acolor = last_move
@@ -39,3 +49,6 @@ class Bob:
         print("Bob: no strategy found, play random")
         return random_move(self.grid,last_move)
 
+    def next_random_move(self):
+
+        return random_move(self.grid,self.grid.last_moves[-1] if self.grid.last_moves else None)

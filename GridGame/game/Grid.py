@@ -56,10 +56,14 @@ class Grid:
             for j in range(self.height):
                 self.nodes[j][i].check_sound_cell()
 
+    # check if the move respect the coloring property
     def is_move_valid(self, x, y, value):
+        if x < 0 or x >= self.width or y < 0 or y >= self.height:
+            #print(f"Move out of bounds: ({x}, {y})")
+            return False
         for neighbor in self.nodes[y][x].neighbors:
             if neighbor.value == value:
-                print(f"Invalide move {x},{y} val: {value} already in neighbor at ({neighbor.x},{neighbor.y})")
+                #print(f"Invalide move {x},{y} val: {value} already in neighbor at ({neighbor.x},{neighbor.y})")
                 return False
 
         if 0 <= x < self.width and 0 <= y < self.height:
@@ -67,6 +71,19 @@ class Grid:
                 if self.nodes[y][x].value == 0:
                     return True
         return False
+    
+    #check if the move will kill Alice
+    def is_move_kill_alice(self, x, y, value):
+        #check if the move will create a dead node
+        for neighbor in self.nodes[y][x].neighbors:
+            if neighbor.value == 0 and value in neighbor.color_options and len(neighbor.color_options) == 1:
+                return True
+        return False
+    
+            
+
+
+
 
     def get_col(self, col_index):
         if 0 <= col_index < self.width:
@@ -160,6 +177,14 @@ class Grid:
             raise IndexError(f"Cell position out of bounds ({x},{y})")
             
     
+    def empty_cells(self):
+        empty = []
+        for i in range(self.width):
+            for j in range(self.height):
+                if self.nodes[j][i].value == 0:
+                    empty.append((i,j))
+        return empty
+
     """
     #undo need to blank the last move, and restore the color options of the neighbors
     def undo_move(self):
@@ -272,6 +297,27 @@ class Grid:
                         return cell
         return None
 
+
+    # return the number of color critical cells
+    def get_number_of_cc_cells(self):
+        count = 0
+        for row in self.nodes:
+            for cell in row:
+                if cell.check_color_critical():
+                     count += 1
+        return count
+
+
+    # return the number of dangerous color critical cells
+    def get_number_of_dangerous_cc_cells(self):
+        count = 0
+        for row in self.nodes:
+            for cell in row:
+                if cell.check_dangerous_color_critical():
+                     count += 1
+        return count
+
+
     '''
     Function used in Case 1 safe
     return the first border in config X and the flips to normelize it
@@ -329,6 +375,16 @@ class Grid:
                 return {"config": block.right_configuration, "is_hori_flipped": block.is_right_flipped, "is_vert_flipped": False, "j": block.end_col}
         return None
 
+    def proportion_colored_cells(self):
+        colored_cells = 0
+        total_cells = self.width * self.height
+        
+        for row in self.nodes:
+            for cell in row:
+                if cell.value != 0:
+                    colored_cells += 1
+        
+        return colored_cells / total_cells if total_cells > 0 else 0
 
     #test d'une autre logique de save, on garde une zone autour du coup jouer 
     # on grade les co des elements voisin pour les restorer apres sans garder les objets 

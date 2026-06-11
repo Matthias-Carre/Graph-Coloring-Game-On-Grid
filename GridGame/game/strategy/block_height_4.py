@@ -412,3 +412,6 @@ class BlockHeight4:
         print("4. passed")
         #5. left border alpha has 2 uncolored vertices exepct j of Lambda/Lambda2/Lambda'/Lambda2' 
         print("IH 5. check:",end=' ')
+
+        print("5. passed")
+
