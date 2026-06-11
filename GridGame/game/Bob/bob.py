@@ -24,6 +24,15 @@ class Bob:
                 (is_any,random_move)
             ]
 
+    # Bob create cc vertex and make it uncolorable if excist
+    def next_move_euristic(self):
+        if self.grid.player != 1:
+            print("Not Bob's turn")
+            return None
+        return little_smart_bob(self.grid,self.grid.last_moves[-1] if self.grid.last_moves else None)
+        
+        
+
     def next_move(self):
         if self.grid.player != 1:
             print("Not Bob's turn")

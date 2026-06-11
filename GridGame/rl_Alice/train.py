@@ -132,11 +132,11 @@ def main():
     args = parser.parse_args()
 
     # Hyperparameters.
-    WIDTH, HEIGHT, COLORS = 10, 10, 4
-    LEARNING_RATE = 1e-3
+    WIDTH, HEIGHT, COLORS = 5, 5, 4
+    LEARNING_RATE = 1e-2
     FRAMES_PER_BATCH = 100    # Steps collected before updating the network
     TOTAL_FRAMES = 500_000     # Total training steps
-    GAMMA = 0.99              # Discount factor for future rewards
+    GAMMA = 0.99           # Discount factor for future rewards
     
 
 
