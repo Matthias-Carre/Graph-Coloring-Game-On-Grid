@@ -46,27 +46,6 @@ def load_checkpoint(path, model, optimizer=None, device="cpu"):
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
     return checkpoint
 
-def log_metrics_to_file(log_path, batch_idx, num_episodes, win_rate, min_episode_return, 
-                         avg_episode_return, max_episode_return, avg_episode_length,
-                         actor_loss, value_loss, entropy_loss, HEIGHT, WIDTH, COLORS):
-    """
-    Logs training metrics to a CSV file for later analysis and plotting.
-    """
-    log_dir = os.path.dirname(log_path)
-    if log_dir:
-        os.makedirs(log_dir, exist_ok=True)
-    
-    # Write header if file doesn't exist
-    file_exists = os.path.exists(log_path)
-    
-    with open(log_path, 'a') as f:
-        if not file_exists or batch_idx == 0:
-            f.write(f"Alice Training On size: w={WIDTH}, h={HEIGHT}, c={COLORS}\n")
-            f.write("batch,num_episodes,win_rate,min_score,avg_score,max_score,avg_length,actor_loss,value_loss,entropy_loss\n")
-            return
-        f.write(f"{batch_idx},{num_episodes},{win_rate:.4f},{min_episode_return:.4f},{avg_episode_return:.4f},"
-                f"{max_episode_return:.4f},{avg_episode_length:.4f},{actor_loss:.6f},{value_loss:.6f},{entropy_loss:.6f}\n")
-
 def run_evaluation_episode(policy, env):
     """
     Runs one evaluation episode print the final gird to give an idea of the game
@@ -106,8 +85,7 @@ def run_evaluation_episode(policy, env):
 def main():
     # Calculate checkpoint path relative to this script location
     script_dir = Path(__file__).parent.parent  # GridGame directory
-    default_checkpoint = str(script_dir / "checkpoints" / "Alice" / "latest.pt")
-    default_log_file = str(script_dir / "checkpoints" / "Alice" / "training_metrics.csv")
+    default_checkpoint = str(script_dir / "checkpoints" / "latest.pt")
     
     parser = argparse.ArgumentParser(description="Train graph coloring agent.")
     parser.add_argument("--resume", action="store_true", help="Resume from checkpoint.")
@@ -118,12 +96,6 @@ def main():
         help="Path to checkpoint file.",
     )
     parser.add_argument(
-        "--log-path",
-        type=str,
-        default=default_log_file,
-        help="Path to training metrics log file.",
-    )
-    parser.add_argument(
         "--save-every",
         type=int,
         default=500,
@@ -132,20 +104,16 @@ def main():
     args = parser.parse_args()
 
     # Hyperparameters.
-<<<<<<< HEAD
-    WIDTH, HEIGHT, COLORS = 5, 5, 4
-=======
-    WIDTH, HEIGHT, COLORS = 10, 10, 4
->>>>>>> 6630fbb5313340410c2da3fb008851a34aa08c78
+    WIDTH, HEIGHT, COLORS = 4, 4, 4
     LEARNING_RATE = 1e-3
     FRAMES_PER_BATCH = 100    # Steps collected before updating the network
     TOTAL_FRAMES = 500_000     # Total training steps
-    GAMMA = 0.99           # Discount factor for future rewards
+    GAMMA = 0.99              # Discount factor for future rewards
     
 
 
     # Environment setup.
-    print("Initializing environment...")    
+    print("Initializing environment...")
     base_env = GraphColoringEnv(width=WIDTH, height=HEIGHT, num_colors=COLORS)
     # Convert Gymnasium outputs to TensorDict for TorchRL.
     env = GymWrapper(base_env, categorical_action_encoding=True)
@@ -329,20 +297,10 @@ def main():
             )
 
             base_env.completed_episodes.clear()
-            
-            # Log metrics to file
-            log_metrics_to_file(
-                args.log_path, batch_idx, num_episodes, win_rate, min_episode_return,
-                avg_episode_return, max_episode_return, avg_episode_length,
-                actor_loss.item(), value_loss.item(), entropy_loss.item(),
-                HEIGHT=HEIGHT, WIDTH=WIDTH, COLORS=COLORS
-            )
 
             run_evaluation_episode(policy, eval_env)
 
-            if batch_idx % args.save_every == 0:
-                if batch_idx == 0:
-                    save_checkpoint(args.checkpoint_path, core_network, optimizer, batch_idx, config)
+            if args.save_every > 0 and batch_idx > 0 and batch_idx % args.save_every == 0:
                 save_checkpoint(args.checkpoint_path, core_network, optimizer, batch_idx, config)
                 print(f"Checkpoint saved: {args.checkpoint_path} (batch {batch_idx})")
 
