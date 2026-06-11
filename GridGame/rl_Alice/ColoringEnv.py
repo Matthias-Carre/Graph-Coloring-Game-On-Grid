@@ -132,8 +132,8 @@ class GraphColoringEnv(gym.Env):
         # --- 2. Bob plays ---
         self.grid.player = 1
         
-        bob_move = self.bob.next_random_move()
-        #bob_move = self.bob.next_move_euristic()
+        #bob_move = self.bob.next_random_move()
+        bob_move = self.bob.next_move_euristic()
         
         if bob_move is not None:
             bob_x, bob_y, bob_c = bob_move

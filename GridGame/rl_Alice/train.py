@@ -133,7 +133,7 @@ def main():
 
     # Hyperparameters.
     WIDTH, HEIGHT, COLORS = 5, 5, 4
-    LEARNING_RATE = 1e-2
+    LEARNING_RATE = 1e-3
     FRAMES_PER_BATCH = 100    # Steps collected before updating the network
     TOTAL_FRAMES = 500_000     # Total training steps
     GAMMA = 0.99           # Discount factor for future rewards
@@ -336,7 +336,9 @@ def main():
 
             run_evaluation_episode(policy, eval_env)
 
-            if args.save_every > 0 and batch_idx > 0 and batch_idx % args.save_every == 0:
+            if batch_idx % args.save_every == 0:
+                if batch_idx == 0:
+                    save_checkpoint(args.checkpoint_path, core_network, optimizer, batch_idx, config)
                 save_checkpoint(args.checkpoint_path, core_network, optimizer, batch_idx, config)
                 print(f"Checkpoint saved: {args.checkpoint_path} (batch {batch_idx})")
 
