@@ -18,15 +18,9 @@ class GraphColoringNet(nn.Module):
         self.shared_cnn = nn.Sequential(
             nn.Conv2d(in_channels, 32, kernel_size=3,padding=1),
             nn.ReLU(),
-<<<<<<< HEAD
-            nn.Conv2d(32, 64, kernel_size=3,padding=1),
-            nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3,padding=1),
-=======
             nn.Conv2d(32, 64, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Conv2d(64, 64, kernel_size=3, padding=1),
->>>>>>> 6630fbb5313340410c2da3fb008851a34aa08c78
             nn.ReLU()
         )
         

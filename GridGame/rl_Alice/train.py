@@ -126,17 +126,13 @@ def main():
     parser.add_argument(
         "--save-every",
         type=int,
-        default=500,
+        default=100,
         help="Save checkpoint every N batches.",
     )
     args = parser.parse_args()
 
     # Hyperparameters.
-<<<<<<< HEAD
     WIDTH, HEIGHT, COLORS = 5, 5, 4
-=======
-    WIDTH, HEIGHT, COLORS = 10, 10, 4
->>>>>>> 6630fbb5313340410c2da3fb008851a34aa08c78
     LEARNING_RATE = 1e-3
     FRAMES_PER_BATCH = 100    # Steps collected before updating the network
     TOTAL_FRAMES = 500_000     # Total training steps

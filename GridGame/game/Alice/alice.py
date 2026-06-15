@@ -4,11 +4,7 @@ from game.Alice.strategy_random import *
 from game.Alice.strategy_survive import *
 from game.Alice.euristic1 import *
 
-<<<<<<< HEAD
 CustomStrat = True
-=======
-CustomStrategy = True
->>>>>>> 6630fbb5313340410c2da3fb008851a34aa08c78
 
 class Alice:
     def __init__(self,grid):
@@ -84,18 +80,11 @@ class Alice:
         #print("Alice: safe move")
         return survive_strategy(self.grid, self.grid.last_Bob_move)
 
-<<<<<<< HEAD
     def next_euristic1_move(self):
         next_move = critical_strategy(self.grid, self.grid.last_Bob_move)
         return next_move
         
         
-=======
-    def next_euristic_move(self):
-        #print("Alice: heuristic move")
-        return critical_strategy(self.grid, self.grid.last_Bob_move)
-
->>>>>>> 6630fbb5313340410c2da3fb008851a34aa08c78
     #return (x,y,color) of the move that Alice wants to play
     def next_move(self):
         if self.grid.player != 0:

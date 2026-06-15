@@ -12,7 +12,7 @@ from Model import GraphColoringNet
 model = GraphColoringNet(width=5, height=5, num_colors=4)
 
 # 2. Charger ton cerveau entraîné
-checkpoint = torch.load("checkpoints/latest.pt", map_location="cpu")
+checkpoint = torch.load("checkpoints/Alice/latest.pt", map_location="cpu")
 model.load_state_dict(checkpoint["model_state_dict"])
 model.eval() # Mode évaluation
 

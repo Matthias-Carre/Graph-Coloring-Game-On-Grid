@@ -2,8 +2,8 @@ import torch
 import sys
 from pathlib import Path
 
-HEIGHT = 4
-WIDTH = 4
+HEIGHT = 5
+WIDTH = 5
 NUM_COLORS = 4
 
 # Add parent directory to path
@@ -16,7 +16,7 @@ from Model import GraphColoringNet
 model = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=NUM_COLORS)
 
 # 2. Charger ton cerveau entraîné
-checkpoint = torch.load("checkpoints/latest.pt", map_location="cpu")
+checkpoint = torch.load("checkpoints/Alice/latest.pt", map_location="cpu")
 model.load_state_dict(checkpoint["model_state_dict"])
 model.eval() # Mode évaluation
 

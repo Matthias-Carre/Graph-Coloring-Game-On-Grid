@@ -1,6 +1,7 @@
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
+import torch
 import sys
 from pathlib import Path
 
@@ -9,6 +10,16 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from game.Grid import Grid
 from game.Bob.bob import Bob
+from Model import GraphColoringNet
+
+# ==========================================
+# TOGGLE BOB'S BEHAVIOR HERE heuristic / nn / rand
+# ==========================================
+#BOB_MODE = "heuristic" 
+BOB_MODE = "nn" 
+
+BOB_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Bob" / "latest.pt")
+
 
 class GraphColoringEnv(gym.Env):
     """
@@ -49,6 +60,19 @@ class GraphColoringEnv(gym.Env):
         self.episode_length = 0
         self.completed_episodes = []
 
+        # Load Bob's neural network if mode is active
+        self.bob_nn = None
+        if BOB_MODE == "nn":
+            self.bob_nn = GraphColoringNet(width=self.width, height=self.height, num_colors=self.num_colors)
+            try:
+                checkpoint = torch.load(BOB_NN_PATH, map_location="cpu")
+                self.bob_nn.load_state_dict(checkpoint["model_state_dict"])
+                self.bob_nn.eval() # Freeze the network
+                print(f"Environment initialized: Bob's NN successfully loaded from {BOB_NN_PATH}")
+            except FileNotFoundError:
+                print(f"Warning: Bob's model not found at {BOB_NN_PATH}. Falling back to heuristic.")
+                self.bob_nn = None
+
     def _finish_episode(self, reason, reward):
         """Store the completed episode statistics for later logging."""
         self.completed_episodes.append({
@@ -64,7 +88,7 @@ class GraphColoringEnv(gym.Env):
         for i in range(self.width):
             for j in range(self.height):
                 val = self.grid.get_cell(i, j).get_value()
-                # val est dans [0, num_colors]
+                # val is in [0, num_colors]
                 obs[val, j, i] = 1.0 
                 
         return {
@@ -86,7 +110,6 @@ class GraphColoringEnv(gym.Env):
         
         return self._get_obs(), {}
 
-
     def _action_to_move(self, action: int):
         """Converts action index to (x, y, color)."""
         c = (action % self.num_colors) + 1
@@ -95,8 +118,21 @@ class GraphColoringEnv(gym.Env):
         y = cell_idx // self.width
         return x, y, c
     
+    def _get_bob_nn_move(self):
+        """Queries the trained neural network for Bob's best move."""
+        obs_dict = self._get_obs()
+        
+        obs_tensor = torch.tensor(obs_dict["observation"], dtype=torch.float32).unsqueeze(0)
+        mask_tensor = torch.tensor(obs_dict["mask"], dtype=torch.bool).unsqueeze(0)
+        
+        with torch.no_grad():
+            logits, _ = self.bob_nn(obs_tensor)
+            logits = logits.masked_fill(~mask_tensor, -1e8)
+            best_action = torch.argmax(logits, dim=1).item()
+            
+        return self._action_to_move(best_action)
     
-    #setp with rewards only on lose or win
+    # Step with rewards only on lose or win
     def step(self, action):
         self.current_step += 1
         self.episode_length += 1
@@ -111,7 +147,6 @@ class GraphColoringEnv(gym.Env):
 
         # --- Safety check ---
         if not self.grid.is_move_valid(x, y, c) or self.grid.get_cell(x, y).get_value() != 0:
-            #print(f"ColoringEnv: Illegal move attempted at ({x}, {y}) with color {c}.")
             self._finish_episode("illegal_move", -10.0)
             return self._get_obs(), -10.0, True, False, {"reason": "illegal_move"}
 
@@ -119,31 +154,26 @@ class GraphColoringEnv(gym.Env):
         self.grid.play_move(x, y, c)
         
         # Check if Alice created a dead node
-        # Alice should NEVER create a dead node == giving the win to Bob (unless last move possible)
         if self.has_uncolorable_cell():
             self._finish_episode("alice_created_dead_node", -10.0)
             return self._get_obs(), -10.0, True, False, {"reason": "alice_created_dead_node"}
 
         # Did Alice win?
         if self.is_grid_full():
-<<<<<<< HEAD
             self._finish_episode("alice_won", 10.0)
             return self._get_obs(), 10.0, True, False, {"reason": "alice_won"}
 
         # --- 2. Bob plays ---
         self.grid.player = 1
         
-        #bob_move = self.bob.next_random_move()
-        bob_move = self.bob.next_move_euristic()
+        # Determine Bob's move based on selected mode
+        bob_move = None
+        if BOB_MODE == "nn" and self.bob_nn is not None:
+            bob_move = self._get_bob_nn_move()
+        else:
+            bob_move = self.bob.next_move_euristic()
+            # bob_move = self.bob.next_random_move()
         
-=======
-            self._finish_episode("alice_won", 20.0)
-            return self._get_obs(), 20.0, True, False, {"reason": "alice_won"}
-
-        # --- 2. Bob plays ---
-        self.grid.player = 1
-        bob_move = self.bob.next_random_move()
->>>>>>> 6630fbb5313340410c2da3fb008851a34aa08c78
         if bob_move is not None:
             bob_x, bob_y, bob_c = bob_move
             self.grid.play_move(bob_x, bob_y, bob_c)
@@ -154,18 +184,11 @@ class GraphColoringEnv(gym.Env):
             self._finish_episode("bob_created_dead_node", -10.0)
             return self._get_obs(), -10.0, True, False, {"reason": "bob_created_dead_node"}
 
-        # Did Alice win after Bob's move (rare but possible if Bob fills last cell)
+        # Did Alice win after Bob's move
         if self.is_grid_full():
-<<<<<<< HEAD
             self._finish_episode("alice_won", 10.0)
             return self._get_obs(), 10.0, True, False, {"reason": "alice_won"}
-=======
-            self._finish_episode("alice_won", 20.0)
-            return self._get_obs(), 20.0, True, False, {"reason": "alice_won"}
->>>>>>> 6630fbb5313340410c2da3fb008851a34aa08c78
 
-        # Survival reward + safe bonus already included
-        
         self.episode_return += reward
         return self._get_obs(), reward, False, False, {}
     
@@ -184,44 +207,33 @@ class GraphColoringEnv(gym.Env):
 
         # --- Safety check ---
         if not self.grid.is_move_valid(x, y, c) or self.grid.get_cell(x, y).get_value() != 0:
-            #print(f"ColoringEnv: Illegal move attempted at ({x}, {y}) with color {c}.")
             self._finish_episode("illegal_move", -10.0)
             return self._get_obs(), -10.0, True, False, {"reason": "illegal_move"}
 
         # --- 1. Alice plays ---
-
-        # Count safe cells before move
         safe_count_before = self.count_safe_cells()
         color_critical_before = self.count_color_critical_cells()
-        #print(f"Step {self.current_step}: nmb of safe before: {safe_count_before}")
         
         self.grid.play_move(x, y, c)
         
         # Check if Alice created a dead node
-        # Alice should NEVER create a dead node == giving the win to Bob (unless last move possible)
         if self.has_uncolorable_cell():
             self._finish_episode("alice_created_dead_node", -5.0)
             return self._get_obs(), -5.0, True, False, {"reason": "alice_created_dead_node"}
 
         # Count safe cells after move and award bonus
-        # Intuition: Alice should try to make the most cells safe every move 
         safe_count_after = self.count_safe_cells()
-        #print(f"Step {self.current_step}: nmb of safe after: {safe_count_after}")
         if safe_count_after > safe_count_before:
-            #print(f"Alice created safe cells! ")
             safe_bonus = 1
         elif safe_count_after < safe_count_before:
             safe_bonus = -0.5
         else:
             safe_bonus = 0.0
         
-
-        # Try : if E cc cell we want her to color it, else Bob will win
+        # Try: if E cc cell we want her to color it, else Bob will win
         color_critical_count = self.count_color_critical_cells()
         if color_critical_count < color_critical_before:
-            #print(f"Alice created color-critical cells! ")
             safe_bonus += 3.0
-
 
         reward += safe_bonus
 
@@ -232,14 +244,15 @@ class GraphColoringEnv(gym.Env):
 
         # --- 2. Bob plays ---
         self.grid.player = 1
-<<<<<<< HEAD
         
-        #bob_move = self.bob.next_move()
-        bob_move = self.bob.next_random_move()
+        # Determine Bob's move based on selected mode
+        bob_move = None
+        if BOB_MODE == "nn" and self.bob_nn is not None:
+            bob_move = self._get_bob_nn_move()
+        else:
+            # bob_move = self.bob.next_move()
+            bob_move = self.bob.next_random_move()
         
-=======
-        bob_move = self.bob.next_random_move()
->>>>>>> 6630fbb5313340410c2da3fb008851a34aa08c78
         if bob_move is not None:
             bob_x, bob_y, bob_c = bob_move
             self.grid.play_move(bob_x, bob_y, bob_c)
@@ -250,33 +263,25 @@ class GraphColoringEnv(gym.Env):
             self._finish_episode("bob_created_dead_node", -20.0)
             return self._get_obs(), -10.0, True, False, {"reason": "bob_created_dead_node"}
 
-        # Did Alice win after Bob's move (rare but possible if Bob fills last cell)
+        # Did Alice win after Bob's move
         if self.is_grid_full():
             self._finish_episode("alice_won", 15.0)
             return self._get_obs(), 15.0, True, False, {"reason": "alice_won"}
 
-        # Survival reward + safe bonus already included
         reward += 0.2
         self.episode_return += reward
         return self._get_obs(), reward, False, False, {}
 
-
-
-
     def action_masks(self):
         """Returns boolean mask of legal actions."""
-        # np.bool_ is kept for Gymnasium/TorchRL compatibility
         mask = np.zeros(self.total_actions, dtype=np.bool_)
         
         for i in range(self.width):
             for j in range(self.height):
-                # Action only possible on empty cell
                 if self.grid.get_cell(i, j).get_value() == 0:
                     for c in range(self.num_colors):
                         color_to_test = c + 1
-                        # Verify color legality on cell
                         if self.grid.is_move_valid(i, j, color_to_test):
-                            # Reverse conversion (x, y, color) -> action index
                             action_idx = (j * self.width + i) * self.num_colors + c
                             mask[action_idx] = True
                             
@@ -294,15 +299,12 @@ class GraphColoringEnv(gym.Env):
         """Displays current grid state in terminal."""
         print(f"\n=== Tour {self.current_step} ===")
         
-        # Display color based on player who colored cell
-        # Alice (0): red, Bob (1): blue
         player_color = {
             0: "\033[91m",
             1: "\033[94m",
         }
         reset = "\033[0m"
         
-        # Iterate row by row
         first_row = ""
         for i in range(self.width):
             first_row += f"{i} "
@@ -345,37 +347,28 @@ class GraphColoringEnv(gym.Env):
         return count
 
     def has_uncolorable_cell(self):
-        """
-        Iterates through all empty cells.
-        Returns True if any cell accepts no more colors.
-        """
+        """Iterates through all empty cells to check for dead nodes."""
         for i in range(self.width):
             for j in range(self.height):
-                # Only check empty cells
                 if self.grid.get_cell(i, j).get_value() == 0:
                     can_be_colored = False
                     for c in range(1, self.num_colors + 1):
                         if self.grid.is_move_valid(i, j, c):
                             can_be_colored = True
-                            break # At least one color is possible, move to next cell
+                            break 
                     
-                    # If all colors tested and none valid
                     if not can_be_colored:
-                        return True # Node is dead
+                        return True 
         return False
 
 
 if __name__ == "__main__":
     print("Graph Coloring environment test...")
-    # Reduced size for easier console reading
     env = GraphColoringEnv(width=8, height=4, num_colors=4)
     obs, info = env.reset()
     
     done = False
     total_reward = 0
-    
-    # Optionnel : affichage de l'état initial
-    # env.render() 
     
     while not done:
         mask = env.action_masks()
@@ -390,13 +383,9 @@ if __name__ == "__main__":
         obs, reward, terminated, truncated, info = env.step(action)
         total_reward += reward
         done = terminated or truncated
-        
-        # Optional: display after each move
-        # env.render() 
 
     print(f"\nGame ended. Total reward: {total_reward}")
     print(f"End reason: {info.get('reason', 'Unknown')}")
     
-    # Display final grid
     print("\n--- FINAL GRID ---")
     env.render()
