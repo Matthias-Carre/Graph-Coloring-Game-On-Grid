@@ -126,7 +126,7 @@ def main():
     parser.add_argument(
         "--save-every",
         type=int,
-        default=100,
+        default=500,
         help="Save checkpoint every N batches.",
     )
     args = parser.parse_args()
@@ -151,6 +151,35 @@ def main():
         # Neural network setup.
     print("Creating Actor-Critic network...")
     core_network = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS)
+
+
+
+
+    #================================
+    # TEST : setting a custom filter 
+    #================================
+    import numpy as np
+    # Create a filter initialized with 0.0
+    custom_filter = np.full((COLORS + 1, 3, 3), 0.0, dtype=np.float32)
+
+    # Define the expected pattern
+    custom_filter[1, 0, 1] = 0.2
+    custom_filter[2, 1, 0] = 0.2
+    custom_filter[0, 1, 1] = 0.2
+    custom_filter[3, 1, 2] = 0.2
+    custom_filter[0, 2, 1] = 0.2
+
+    # Convert to tensor and inject into the first filter
+    custom_tensor = torch.tensor(custom_filter)
+    with torch.no_grad():
+        core_network.shared_cnn[0].weight[0] = custom_tensor
+        core_network.shared_cnn[0].bias[0] = 0.0
+
+
+
+
+
+
 
     # Wrappers to split actor and critic outputs.
     class ActorWrapper(torch.nn.Module):

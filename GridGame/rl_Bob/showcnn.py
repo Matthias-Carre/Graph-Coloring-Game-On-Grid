@@ -57,16 +57,13 @@ def matrix_to_obs(matrix, num_colors=4):
 
 
 def main():
-    WIDTH, HEIGHT, COLORS = 8, 8, 4
+    WIDTH, HEIGHT, COLORS = 5, 5, 4
 
-    matrice = [[0, 0, 0, 0, 0, 0, 4, 0],
-               [0, 0, 3, 0, 0, 3, 0, 1],
-               [0, 1, 0, 0, 0, 0, 0, 0],
-               [0, 0, 2, 0, 0, 0, 0, 0],
-               [0, 0, 0, 0, 0, 0, 0, 0],
-               [0, 0, 3, 0, 0, 0, 0, 0],
-               [0, 1, 0, 0, 0, 0, 0, 0],
-               [0, 0, 2, 0, 0, 0, 0, 0]]
+    matrice = [[0, 0, 1, 0, 0],
+               [0, 2, 0, 3, 0],
+               [0, 0, 0, 1, 0],
+               [0, 0, 2, 0, 3],
+               [0, 0, 0, 0, 0]]
     
     # 1. Observation creation and PyTorch conversion
     obs_numpy = matrix_to_obs(matrice, COLORS)
@@ -75,6 +72,7 @@ def main():
     # 2. Loading Bob's brain
     script_dir = Path(__file__).parent.parent
     MODEL_PATH = str(script_dir / "Models" / "Bob8x8.pt")
+    MODEL_PATH = str(script_dir / "checkpoints" / "Bob" / "latest.pt")
     
     model = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS)
     try:

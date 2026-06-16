@@ -15,8 +15,8 @@ from Model import GraphColoringNet
 # ==========================================
 # TOGGLE BOB'S BEHAVIOR HERE heuristic / nn / rand
 # ==========================================
-#BOB_MODE = "heuristic" 
-BOB_MODE = "nn" 
+BOB_MODE = "heuristic" 
+#BOB_MODE = "nn" 
 
 BOB_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Bob" / "latest.pt")
 

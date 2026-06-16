@@ -68,26 +68,34 @@ def plot_all_on_single_page(df: pd.DataFrame, cols: int = 3, title: str | None =
         ax.set_xlabel("Batch")
         ax.grid(True, alpha=0.3)
 
-    # Combined score vs win_rate
+# Plot avg_score and win_rate on twin axes
     comb_idx = len(metrics)
     if comb_idx < len(axes):
         ax_comb = axes[comb_idx]
-        score_column = None
-        for candidate in ("max_score", "avg_score"):
-            if candidate in df.columns:
-                score_column = candidate
-                break
+        
+        # Target columns
+        score_col = "avg_score"
+        win_col = "win_rate"
 
-        if score_column is not None and "win_rate" in df.columns:
+        if score_col in df.columns and win_col in df.columns:
             ax_score = ax_comb
             ax_win = ax_score.twinx()
-            ax_score.plot(df["batch"], df[score_column], color="tab:blue", marker="o", linewidth=1.5)
-            ax_win.plot(df["batch"], df["win_rate"], color="tab:orange", marker="s", linewidth=1.5)
-            ax_score.set_title(f"{score_column} and win rate vs batch")
+            
+            # Plot average score on the primary y-axis
+            ax_score.plot(df["batch"], df[score_col], color="tab:blue", marker="o", linewidth=1.5)
+            
+            # Plot win rate on the secondary y-axis
+            ax_win.plot(df["batch"], df[win_col], color="tab:orange", marker="s", linewidth=1.5)
+            
+            # Set titles and labels
+            ax_score.set_title("Average Score and Win Rate vs Batch")
             ax_score.set_xlabel("Batch")
-            ax_score.set_ylabel(score_column)
-            ax_win.set_ylabel("Win rate")
+            ax_score.set_ylabel("Average Score")
+            
+            ax_win.set_ylabel("Win Rate")
             ax_win.set_ylim(0, 1)
+            
+            # Enable grid for the primary axis
             ax_score.grid(True, alpha=0.3)
         else:
             ax_comb.text(0.5, 0.5, "No score or win_rate found", ha="center")

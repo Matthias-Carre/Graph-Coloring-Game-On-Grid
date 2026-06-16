@@ -1,0 +1,4 @@
+Alice Training On size: w=5, h=5, c=4
+batch,num_episodes,win_rate,min_score,avg_score,max_score,avg_length,actor_loss,value_loss,entropy_loss
+100,1819,0.1220,-10.0000,-7.5591,10.0000,5.4948,-0.030690,4.718576,-0.023017
+200,1088,0.5634,-10.0000,1.2684,10.0000,9.1893,-0.098102,1.020179,-0.012660
