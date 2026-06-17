@@ -1,3 +1,5 @@
+import random
+
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
@@ -15,8 +17,8 @@ from Model import GraphColoringNet
 # ==========================================
 # TOGGLE BOB'S BEHAVIOR HERE heuristic / nn / rand
 # ==========================================
-BOB_MODE = "heuristic" 
-#BOB_MODE = "nn" 
+#BOB_MODE = "heuristic" 
+BOB_MODE = "nn" 
 
 BOB_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Bob" / "latest.pt")
 
@@ -118,19 +120,34 @@ class GraphColoringEnv(gym.Env):
         y = cell_idx // self.width
         return x, y, c
     
-    def _get_bob_nn_move(self):
-        """Queries the trained neural network for Bob's best move."""
+
+    def _get_bob_nn_move(self, epsilon=0.8):
+        """Queries the trained neural network for Bob's best move, with epsilon-greedy randomness."""
         obs_dict = self._get_obs()
         
+        # Epsilon-greedy: Play a random valid move with probability 'epsilon'
+        if random.random() < epsilon:
+            mask = obs_dict["mask"]
+            # Extract indices of all legal actions where the mask is True
+            valid_actions = [i for i, is_valid in enumerate(mask) if is_valid]
+            
+            if valid_actions:  # Fallback check to ensure the list is not empty
+                random_action = random.choice(valid_actions)
+                #print(f"Bob: Played random move (epsilon {epsilon})") # Optional debug
+                return self._action_to_move(random_action)
+        
+        # Exploitation: Play the best move according to the neural network
         obs_tensor = torch.tensor(obs_dict["observation"], dtype=torch.float32).unsqueeze(0)
         mask_tensor = torch.tensor(obs_dict["mask"], dtype=torch.bool).unsqueeze(0)
         
         with torch.no_grad():
             logits, _ = self.bob_nn(obs_tensor)
+            # Penalize illegal moves
             logits = logits.masked_fill(~mask_tensor, -1e8)
             best_action = torch.argmax(logits, dim=1).item()
             
         return self._action_to_move(best_action)
+    
     
     # Step with rewards only on lose or win
     def step(self, action):

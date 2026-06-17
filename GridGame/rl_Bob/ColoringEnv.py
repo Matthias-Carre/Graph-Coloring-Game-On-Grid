@@ -16,8 +16,8 @@ from Model import GraphColoringNet
 # TOGGLE ALICE'S BEHAVIOR HERE heuristic / nn / rand
 # ==========================================
 
-ALICE_MODE = "heuristic" 
-#ALICE_MODE = "nn" 
+#ALICE_MODE = "heuristic" 
+ALICE_MODE = "nn" 
 
 ALICE_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Alice" / "latest.pt")
 

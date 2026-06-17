@@ -317,6 +317,7 @@ def main():
         # Backpropagation.
         optimizer.zero_grad()
         total_loss.backward()
+                
         optimizer.step()
 
         # Logging metrics.
