@@ -16,8 +16,8 @@ from Model import GraphColoringNet
 # TOGGLE ALICE'S BEHAVIOR HERE heuristic / nn / rand
 # ==========================================
 
-#ALICE_MODE = "heuristic" 
-ALICE_MODE = "nn" 
+ALICE_MODE = "heuristic" 
+#ALICE_MODE = "nn" 
 
 ALICE_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Alice" / "latest.pt")
 
@@ -133,7 +133,7 @@ class GraphColoringEnv(gym.Env):
         if ALICE_MODE == "nn" and self.alice_nn is not None:
             opening_move = self._get_alice_nn_move()
         else:
-            opening_move = self.Alice.next_random_move()
+            opening_move = self.Alice.next_euristic1_move()
             
         if opening_move is not None:
             x, y, c = opening_move
@@ -188,6 +188,7 @@ class GraphColoringEnv(gym.Env):
             if DEBUG:
                 print("Bob created a dead node!")
             self._finish_episode("bob_created_dead_node", 20.0)
+            #self.render()
             return self._get_obs(), 20.0, True, False, {"reason": "bob_created_dead_node"}
 
       
@@ -220,6 +221,7 @@ class GraphColoringEnv(gym.Env):
             if DEBUG:
                 print("Alice created a dead node!")
             self._finish_episode("alice_created_dead_node", 5.0)
+            #self.render()
             return self._get_obs(), 5.0, True, False, {"reason": "alice_created_dead_node"}
 
         # Did Alice fill last cell and win?

@@ -17,8 +17,8 @@ from Model import GraphColoringNet
 # ==========================================
 # TOGGLE BOB'S BEHAVIOR HERE heuristic / nn / rand
 # ==========================================
-#BOB_MODE = "heuristic" 
-BOB_MODE = "nn" 
+BOB_MODE = "heuristic" 
+#BOB_MODE = "nn" 
 
 BOB_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Bob" / "latest.pt")
 
@@ -121,7 +121,7 @@ class GraphColoringEnv(gym.Env):
         return x, y, c
     
 
-    def _get_bob_nn_move(self, epsilon=0.8):
+    def _get_bob_nn_move(self, epsilon=0.2):
         """Queries the trained neural network for Bob's best move, with epsilon-greedy randomness."""
         obs_dict = self._get_obs()
         

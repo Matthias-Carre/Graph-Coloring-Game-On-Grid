@@ -11,7 +11,9 @@ def is_any(grid, bob_move):
 # random move if no other option
 import random
 
+
 def euristic_move(grid, bob_move):
+
     # Collect all valid moves for cc cell heuristic
     valid_cc_moves = []
     for x, y in grid.empty_cells():
@@ -26,6 +28,29 @@ def euristic_move(grid, bob_move):
     if valid_cc_moves:
         return random.choice(valid_cc_moves)
     
+
+    #check if exist a cell where you can create 2 cc cell beside it 
+    #print(f"empty cells: {list(grid.empty_cells())}")
+    for x, y in grid.empty_cells():
+        cell = grid.get_cell(x, y)
+        if len(cell.color_options) == 2 and cell.number_of_neighbors() == 4:
+            #print(f"cell with 2 color options and 4 neighbors : ({cell.y}, {cell.x})")
+            empty_neighbors = cell.get_empty_neighbors()
+            for neighbor in empty_neighbors:
+                neighbors_2 = neighbor.get_empty_neighbors()
+                for neighbor_2 in neighbors_2:
+                    # Ensure it's not the original cell
+                    if neighbor_2.number_of_neighbors() == 4 and len(neighbor_2.color_options) == 2 and (neighbor_2.x != cell.x or neighbor_2.y != cell.y):
+                        
+                        # "neighbor" as 2 neighbors with only 2 color options
+                        # if existe same color for those 2 we use it
+                        #print(f"TEST n1: ({cell.color_options}, {neighbor_2.color_options})")
+                        colors = set(cell.color_options).intersection(set(neighbor_2.color_options))
+                        #print(f"TEST color: {colors}")  
+                        if colors:
+                            return neighbor.y, neighbor.x, colors.pop()  # Return the first color from the intersection         
+
+
     # Collect all valid moves for cells with exactly 2 color options
     valid_two_colors_moves = []
     for x, y in grid.empty_cells():
@@ -50,6 +75,10 @@ def euristic_move(grid, bob_move):
             colors = cell.color_options
             res = cell.get_uncolored_neighbor()
             if res is not None and cell.number_of_neighbors() == 4:
+                # pick random color:
+                chosen_color = random.choice(colors)
+                if chosen_color in res.color_options:
+                    valid_non_safe_moves.append((res.y, res.x, chosen_color))
                 if colors[0] in res.color_options:
                     valid_non_safe_moves.append((res.y, res.x, colors[0]))
                 elif len(colors) > 1 and colors[1] in res.color_options:
