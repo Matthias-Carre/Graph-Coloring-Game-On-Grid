@@ -133,6 +133,7 @@ class GraphColoringEnv(gym.Env):
         if ALICE_MODE == "nn" and self.alice_nn is not None:
             opening_move = self._get_alice_nn_move()
         else:
+            
             opening_move = self.Alice.next_euristic1_move()
             
         if opening_move is not None:
@@ -207,6 +208,9 @@ class GraphColoringEnv(gym.Env):
         if ALICE_MODE == "nn" and self.alice_nn is not None:
             Alice_move = self._get_alice_nn_move()
         else:
+            #random
+            #Alice_move = self.Alice.next_random_move()
+            #euristic
             Alice_move = self.Alice.next_euristic1_move()
             
         if Alice_move is not None:

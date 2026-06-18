@@ -31,7 +31,36 @@ def eurisitic_move(grid, bob_move):
                         #print(f"euristic_move: creating 2 safe cells by playing ({x}, {y}, {color})")
                         return (x, y, color)
             
+    # else play a move that dose not give oportunity to Bob to kill Alice
+    # playing a cell with c where neighbor has allready c in neighbors
     
+    for x, y in grid.empty_cells():
+        cell = grid.get_cell(x, y)
+        
+        for color in cell.color_options:
+            is_already_neighbor_color = True
+            for neighbor in cell.neighbors:
+                if neighbor.value == 0 and color in neighbor.color_options:
+                    is_already_neighbor_color = False
+            
+            if is_already_neighbor_color:
+                if grid.is_move_valid(x, y, color):
+                    #print(f"euristic_move: playing cell ({x}, {y}, {color}) that does not give opportunity to Bob to kill Alice")
+                    return (x, y, color)
+    # and play c dose not create a cc cell
+    for x, y in grid.empty_cells():
+        cell = grid.get_cell(x, y)
+        
+        for color in cell.color_options:
+            creates_cc = False
+            for neighbor in cell.neighbors:            
+                if neighbor.value == 0 and color in neighbor.color_options and len(neighbor.color_options)==2:
+                    creates_cc = True
+            if not creates_cc:
+                if grid.is_move_valid(x, y, color):
+                    #print(f"euristic_move: playing cell ({x}, {y}, {color}) that does not create a color critical cell")
+                    return (x, y, color)
+    print("euristic_move: no move found, playing survive strategy")                
     return survive_strategy(grid, bob_move)
     
 
