@@ -32,6 +32,11 @@ class Bob:
         return euristic_move(self.grid,self.grid.last_moves[-1] if self.grid.last_moves else None)
         
         
+    def kill_if_possible(self):
+        if self.grid.player != 1:
+            print("Not Bob's turn")
+            return None
+        return kill_if_possible(self.grid,self.grid.last_moves[-1] if self.grid.last_moves else None)
 
     def next_move(self):
         if self.grid.player != 1:

@@ -58,7 +58,7 @@ def main():
             grid.player = 1
 
             #bob logic here
-            bob_move = bob.next_random_move()
+            bob_move = bob.kill_if_possible()
 
 
             if bob_move is None:
