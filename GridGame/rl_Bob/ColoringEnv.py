@@ -1,3 +1,5 @@
+import random
+
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
@@ -211,7 +213,11 @@ class GraphColoringEnv(gym.Env):
             #random
             #Alice_move = self.Alice.next_random_move()
             #euristic
-            Alice_move = self.Alice.next_euristic1_move()
+            epsilon = 0.4  # 10% chance to play random
+            if random.random() < epsilon:
+                Alice_move = self.Alice.next_random_move()
+            else:
+                Alice_move = self.Alice.next_euristic1_move()
             
         if Alice_move is not None:
             alice_x, alice_y, alice_c = Alice_move

@@ -17,7 +17,7 @@ def main():
     args = parser.parse_args()
 
     #create the grid:
-    grid = Grid(args.w, args.h, args.colors)
+    grid = Grid(args.h, args.w, args.colors)
 
     alice = Alice(grid)
     bob = Bob(grid)
@@ -30,7 +30,8 @@ def main():
     colored_cell_proportion_list = []
 
     for game in range(args.games):
-        grid = Grid(args.w, args.h, args.colors)
+        start = True
+        grid = Grid(args.h, args.w, args.colors)
         alice = Alice(grid)
         bob = Bob(grid)
         while True:
@@ -38,7 +39,12 @@ def main():
 
             # Alice logic
             #alice_move = alice.next_safe_move()
+            
             alice_move = alice.next_euristic1_move()
+
+            if start:
+                start = False
+                alice_move = (2,2,1)
 
             if alice_move is None:
                 continue

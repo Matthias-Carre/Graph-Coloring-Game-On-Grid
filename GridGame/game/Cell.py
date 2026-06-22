@@ -161,11 +161,11 @@ class Cell:
         #at minimum border cells have 2 neighbors
         result = 2
         #not in the x borders
-        if not (self.x == 0 or self.x ==  self.grid_width -1):
+        if not (self.x == 0 or self.x == self.grid_height -1):
             result += 1
 
         #not in the y borders
-        if not (self.y == 0 or self.y ==  self.grid_height -1):
+        if not (self.y == 0 or self.y ==  self.grid_width -1):
             result += 1
         return result
 

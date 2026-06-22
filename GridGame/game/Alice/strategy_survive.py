@@ -7,6 +7,7 @@ def is_any(grid, bob_move):
 DEBUG = False
 
 
+
 #euristic
 def eurisitic_move(grid, bob_move):
 
@@ -18,6 +19,7 @@ def eurisitic_move(grid, bob_move):
             
             for color in cell.color_options:
                 if grid.is_move_valid(x, y, color) and not is_move_creating_cc(grid, x, y, color):
+                    
                     if DEBUG:
                         print(f"euristic_move: playing color critical cell ({x}, {y}, {color})")
                     return (x, y, color)
@@ -26,17 +28,21 @@ def eurisitic_move(grid, bob_move):
             #print("CC cell not managed")
             
             
-            
+    # else if cc we play the neighbor of the cc cell that does not create a cc cell
     for x, y in grid.empty_cells():
         cell = grid.get_cell(x, y)
         if cell.check_color_critical():
             for neighbor_cell in cell.neighbors:
                 if neighbor_cell.value == 0:
+                    n_x, n_y = neighbor_cell.y, neighbor_cell.x
+                    
                     for color in neighbor_cell.color_options:
-                        if not is_move_creating_cc(grid, neighbor_cell.x, neighbor_cell.y, color) and grid.is_move_valid(neighbor_cell.x, neighbor_cell.y, color):
+
+                        if not is_move_creating_cc(grid, n_x, n_y, color) and grid.is_move_valid(n_x, n_y, color):
+                        
                             if DEBUG:
                                 print(f"euristic_move: playing neighbor of color critical cell ({neighbor_cell.x}, {neighbor_cell.y}, {color})")
-                            return (neighbor_cell.x, neighbor_cell.y, color)
+                            return (n_x, n_y, color)
             
             print("problem euristic_move: color critical cell not managed")
             
@@ -53,6 +59,7 @@ def eurisitic_move(grid, bob_move):
                     if neighbor.value == 0 and color not in neighbor.color_options and neighbor.number_of_neighbors() == 4:
                         future_safe_count += 1
                 if future_safe_count >= 2:
+                    #print(f"euristic_move: 2safe: {is_move_creating_cc(grid, x, y, color)}")
                     if grid.is_move_valid(x, y, color) and not is_move_creating_cc(grid, x, y, color):
                         if DEBUG:
                             print(f"euristic_move: creating 2 safe cells by playing ({x}, {y}, {color})")
@@ -114,8 +121,10 @@ def eurisitic_move(grid, bob_move):
 
 
 def is_move_creating_cc(grid, x,y,c):
+    #print(f"checking if move ({x}, {y}, {c}) creates a color critical cell")
     cell = grid.get_cell(x, y)
     for neighbor in cell.neighbors:
+        #print(f"val: {neighbor.value}, safe: {neighbor.is_safe}, num_neighbors: {neighbor.number_of_neighbors()}, color_options: {neighbor.color_options}")
         if neighbor.value == 0 and not(neighbor.is_safe) and neighbor.number_of_neighbors() == 4 and c in neighbor.color_options and len(neighbor.color_options)<=2:
             return True
     if grid.is_move_kill_alice(x, y, c):
