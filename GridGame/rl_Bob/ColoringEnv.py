@@ -213,7 +213,7 @@ class GraphColoringEnv(gym.Env):
             #random
             #Alice_move = self.Alice.next_random_move()
             #euristic
-            epsilon = 0.4  # 10% chance to play random
+            epsilon = 0.4  # chance to play random
             if random.random() < epsilon:
                 Alice_move = self.Alice.next_random_move()
             else:

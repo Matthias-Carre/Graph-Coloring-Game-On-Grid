@@ -44,7 +44,7 @@ def eurisitic_move(grid, bob_move):
                                 print(f"euristic_move: playing neighbor of color critical cell ({neighbor_cell.x}, {neighbor_cell.y}, {color})")
                             return (n_x, n_y, color)
             
-            print("problem euristic_move: color critical cell not managed")
+            #print("problem euristic_move: color critical cell not managed")
             
         
         
