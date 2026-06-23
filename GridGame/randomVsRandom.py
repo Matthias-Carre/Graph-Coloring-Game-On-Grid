@@ -9,15 +9,15 @@ def main():
     parser = argparse.ArgumentParser(
         description="Run random-vs-random graph coloring matches and report win rates."
     )
-    parser.add_argument("--width", type=int, default=4, help="Grid width.")
-    parser.add_argument("--height", type=int, default=4, help="Grid height.")
+    parser.add_argument("--w", type=int, default=4, help="Grid width.")
+    parser.add_argument("--h", type=int, default=4, help="Grid height.")
     parser.add_argument("--colors", type=int, default=4, help="Number of colors.")
     parser.add_argument("--games", type=int, default=100, help="Number of games to simulate.")
     
     args = parser.parse_args()
 
     #create the grid:
-    grid = Grid(args.width, args.height, args.colors)
+    grid = Grid(args.h, args.w, args.colors)
 
     alice = Alice(grid)
     bob = Bob(grid)
@@ -30,15 +30,21 @@ def main():
     colored_cell_proportion_list = []
 
     for game in range(args.games):
-        grid = Grid(args.width, args.height, args.colors)
+        start = True
+        grid = Grid(args.h, args.w, args.colors)
         alice = Alice(grid)
         bob = Bob(grid)
         while True:
             grid.player = 0
 
             # Alice logic
-            alice_move = alice.next_safe_move()
+            #alice_move = alice.next_safe_move()
+            
+            alice_move = alice.next_euristic1_move()
 
+            if start:
+                start = False
+                alice_move = (2,2,1)
 
             if alice_move is None:
                 continue
@@ -46,6 +52,7 @@ def main():
             grid.play_move(x, y, col)
             
             if is_grid_full(grid):
+                
                 Alice_win += 1
                 break
             if has_uncolorable_cell(grid):
@@ -57,7 +64,7 @@ def main():
             grid.player = 1
 
             #bob logic here
-            bob_move = bob.next_random_move()
+            bob_move = bob.kill_if_possible()
 
 
             if bob_move is None:
@@ -69,6 +76,10 @@ def main():
                 Alice_win += 1
                 break
             if has_uncolorable_cell(grid):
+                #show the grid
+                print("BOB win:")
+                render(grid)
+                print(f"------")                
                 Bob_win += 1
                 Bob_kill_Alice += 1
                 break
@@ -77,7 +88,7 @@ def main():
         if game % 1000 == 0:
             print(f"Game {game}/{args.games}")
             render(grid)
-    print(f"On {args.games} games with grid {args.width}x{args.height} and {args.colors} colors:")
+    print(f"On {args.games} games with grid {args.w}x{args.h} and {args.colors} colors:")
     print(f"Alice wins: {Alice_win} ({100*Alice_win/args.games:.1f}%)")
     print(f"Bob wins:   {Bob_win} ({100*Bob_win/args.games:.1f}%)")
     print(f"Alice kills herself: {Alice_kill_herself} ({100*Alice_kill_herself/args.games:.1f}%)")

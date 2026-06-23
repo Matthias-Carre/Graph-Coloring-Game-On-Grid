@@ -68,7 +68,7 @@ class Alice:
             ]
         else:
             self.strategy = [
-                (is_any,random_move)
+                (is_any,eurisitic_move)
             ]
 
     #return a random valid move (x,y,color) for Alice
@@ -81,7 +81,7 @@ class Alice:
         return survive_strategy(self.grid, self.grid.last_Bob_move)
 
     def next_euristic1_move(self):
-        next_move = critical_strategy(self.grid, self.grid.last_Bob_move)
+        next_move = eurisitic_move(self.grid, self.grid.last_Bob_move)
         return next_move
         
         
@@ -97,6 +97,12 @@ class Alice:
         #first move
         if(self.grid.round == 1):
             return (0,1,1)
+        
+        #For custom strategy:
+
+
+        #if CustomStrategy:
+        #    self.next_euristic_move(self.grid, self.grid.last_Bob_move)
         
         print("Alice strategy: Bob: ", self.grid.bob_play_on_config)
         for is_case, solve_case in self.strategy:

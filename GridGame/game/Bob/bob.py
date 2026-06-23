@@ -20,7 +20,7 @@ class Bob:
             ]
         else:
             self.strategy = [
-                (is_any,kill_if_possible),
+                (is_any,euristic_move),
                 (is_any,random_move)
             ]
 
@@ -29,9 +29,14 @@ class Bob:
         if self.grid.player != 1:
             print("Not Bob's turn")
             return None
-        return little_smart_bob(self.grid,self.grid.last_moves[-1] if self.grid.last_moves else None)
+        return euristic_move(self.grid,self.grid.last_moves[-1] if self.grid.last_moves else None)
         
         
+    def kill_if_possible(self):
+        if self.grid.player != 1:
+            print("Not Bob's turn")
+            return None
+        return kill_if_possible(self.grid,self.grid.last_moves[-1] if self.grid.last_moves else None)
 
     def next_move(self):
         if self.grid.player != 1:

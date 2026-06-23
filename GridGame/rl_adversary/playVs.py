@@ -24,10 +24,10 @@ def decode_action(action, width, num_colors):
 def main():
     # --- 1. CONFIGURATION ---
     # Use the same dimensions as the last training session
-    WIDTH, HEIGHT, COLORS = 5, 5, 4 
+    WIDTH, HEIGHT, COLORS = 4, 4, 4 
     #MODEL_PATH = "GridGame/NN/4x4.pt"
     script_dir = Path(__file__).parent.parent
-    MODEL_PATH = str(script_dir / "checkpoints" / "Alice" / "latest.pt")
+    MODEL_PATH = str(script_dir / "checkpoints" / "latest.pt")
 
     # --- 2. WAKING UP ALICE ---
     model = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS)

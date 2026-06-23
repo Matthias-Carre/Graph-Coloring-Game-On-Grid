@@ -63,7 +63,7 @@ def main():
     
     # Determine the default model path
     script_dir = Path(__file__).parent.parent
-    default_model_path = str(script_dir / "Models" / "Alice2.pt")
+    default_model_path = str(script_dir / "checkpoints" / "Alice" / "latest.pt")
     
     parser.add_argument(
         "--path",
@@ -75,11 +75,12 @@ def main():
 
     WIDTH, HEIGHT, COLORS = 5, 5, 4
 
-    matrice = [[0, 0, 0, 0, 0],
-               [0, 0, 3, 0, 0],
-               [0, 1, 0, 0, 0],
-               [0, 0, 2, 0, 0],
-               [0, 0, 0, 0, 4]]
+
+    matrice = [[0, 0, 1, 0, 0],
+               [0, 2, 0, 3, 0],
+               [0, 0, 0, 1, 0],
+               [0, 0, 2, 0, 3],
+               [4, 0, 0, 0, 0]]
 
     # 1. Observation creation and PyTorch conversion
     obs_numpy = matrix_to_obs(matrice, COLORS)
