@@ -188,7 +188,9 @@ class GraphColoringEnv(gym.Env):
         if BOB_MODE == "nn" and self.bob_nn is not None:
             bob_move = self._get_bob_nn_move()
         else:
-            bob_move = self.bob.next_move_euristic()
+            
+            bob_move = self.bob.next_random_move()
+            #bob_move = self.bob.next_move_euristic()
             # bob_move = self.bob.next_random_move()
         
         if bob_move is not None:

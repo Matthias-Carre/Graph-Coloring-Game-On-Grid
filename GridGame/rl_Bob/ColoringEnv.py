@@ -1,9 +1,9 @@
 import random
-
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 import torch
+from torch.distributions import Categorical
 import sys
 from pathlib import Path
 
@@ -94,7 +94,7 @@ class GraphColoringEnv(gym.Env):
         for i in range(self.width):
             for j in range(self.height):
                 val = self.grid.get_cell(i, j).get_value()
-                # val est dans [0, num_colors]
+                # val is in [0, num_colors]
                 obs[val, j, i] = 1.0 
                 
         return {
@@ -102,19 +102,30 @@ class GraphColoringEnv(gym.Env):
             "mask": self.action_masks()
         }
 
-    def _get_alice_nn_move(self):
-        """Queries the trained neural network for Alice's best move."""
+    def _get_alice_nn_move(self, epsilon=0.2):
+        """Queries the trained neural network for Alice's best move, combining epsilon-greedy with categorical sampling."""
         obs_dict = self._get_obs()
+        mask = obs_dict["mask"]
         
+        # Epsilon-greedy: play a completely random valid move with probability 'epsilon'
+        if random.random() < epsilon:
+            valid_actions = [i for i, is_valid in enumerate(mask) if is_valid]
+            if valid_actions: 
+                random_action = random.choice(valid_actions)
+                return self._action_to_move(random_action)
+        
+        # Exploitation via sampling: play a move based on the neural network's probability distribution
         obs_tensor = torch.tensor(obs_dict["observation"], dtype=torch.float32).unsqueeze(0)
-        mask_tensor = torch.tensor(obs_dict["mask"], dtype=torch.bool).unsqueeze(0)
+        mask_tensor = torch.tensor(mask, dtype=torch.bool).unsqueeze(0)
         
         with torch.no_grad():
             logits, _ = self.alice_nn(obs_tensor)
             logits = logits.masked_fill(~mask_tensor, -1e8)
-            best_action = torch.argmax(logits, dim=1).item()
             
-        return self._action_to_move(best_action)
+            dist = Categorical(logits=logits)
+            sampled_action = dist.sample().item()
+            
+        return self._action_to_move(sampled_action)
 
     def reset(self, seed=None, options=None):
         seed = seed or np.random.randint(0, 10000)
