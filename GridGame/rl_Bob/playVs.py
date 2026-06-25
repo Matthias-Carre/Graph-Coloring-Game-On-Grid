@@ -24,8 +24,9 @@ def decode_action(action, width, num_colors):
 def main():
     # --- 1. CONFIGURATION ---
     # Use the same dimensions as the last training session
-    WIDTH, HEIGHT, COLORS = 5, 5, 4 
+    WIDTH, HEIGHT, COLORS = 6, 6, 4 
     #MODEL_PATH = "GridGame/NN/4x4.pt"
+    MODEL_PATH = "NN/24_06_Bob5x5_equivarience_bellecurbe/latest.pt"
     script_dir = Path(__file__).parent.parent
     MODEL_PATH = str(script_dir / "checkpoints" / "Bob" / "latest.pt")
 

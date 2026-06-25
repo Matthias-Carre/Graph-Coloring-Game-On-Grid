@@ -114,7 +114,7 @@ def eurisitic_move(grid, bob_move):
                     if DEBUG:
                         print(f"euristic_move: playing cell ({x}, {y}, {color}) that does not create a color critical cell")
                     return (x, y, color)
-    print("euristic_move: no move found, playing survive strategy")
+    #print("euristic_move: no move found, playing survive strategy")
     return survive_strategy(grid, bob_move)
     
 

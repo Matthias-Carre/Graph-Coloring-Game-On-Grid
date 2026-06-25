@@ -23,6 +23,10 @@ class GraphColoringNet(nn.Module):
         self.shared_cnn = enn.SequentialModule(
             enn.R2Conv(self.in_type, self.hidden_type, kernel_size=3, padding=1),
             enn.ReLU(self.hidden_type, inplace=True),
+            
+            enn.R2Conv(self.hidden_type, self.hidden_type, kernel_size=3, padding=1),
+            enn.ReLU(self.hidden_type, inplace=True),
+            
             enn.R2Conv(self.hidden_type, self.hidden_type, kernel_size=3, padding=1),
             enn.ReLU(self.hidden_type, inplace=True)
         )

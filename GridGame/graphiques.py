@@ -68,37 +68,37 @@ def plot_all_on_single_page(df: pd.DataFrame, cols: int = 3, title: str | None =
         ax.set_xlabel("Batch")
         ax.grid(True, alpha=0.3)
 
-# Plot avg_score and win_rate on twin axes
+    # Plot avg_length and win_rate on twin axes
     comb_idx = len(metrics)
     if comb_idx < len(axes):
         ax_comb = axes[comb_idx]
         
         # Target columns
-        score_col = "avg_score"
+        length_col = "avg_length"
         win_col = "win_rate"
 
-        if score_col in df.columns and win_col in df.columns:
-            ax_score = ax_comb
-            ax_win = ax_score.twinx()
+        if length_col in df.columns and win_col in df.columns:
+            ax_length = ax_comb
+            ax_win = ax_length.twinx()
             
-            # Plot average score on the primary y-axis
-            ax_score.plot(df["batch"], df[score_col], color="tab:blue", marker="o", linewidth=1.5)
+            # Plot average length on the primary y-axis
+            ax_length.plot(df["batch"], df[length_col], color="tab:blue", marker="o", linewidth=1.5)
             
             # Plot win rate on the secondary y-axis
             ax_win.plot(df["batch"], df[win_col], color="tab:orange", marker="s", linewidth=1.5)
             
             # Set titles and labels
-            ax_score.set_title("Average Score and Win Rate vs Batch")
-            ax_score.set_xlabel("Batch")
-            ax_score.set_ylabel("Average Score")
+            ax_length.set_title("Average Length and Win Rate vs Batch")
+            ax_length.set_xlabel("Batch")
+            ax_length.set_ylabel("Average Episode Length")
             
             ax_win.set_ylabel("Win Rate")
             ax_win.set_ylim(0, 1)
             
             # Enable grid for the primary axis
-            ax_score.grid(True, alpha=0.3)
+            ax_length.grid(True, alpha=0.3)
         else:
-            ax_comb.text(0.5, 0.5, "No score or win_rate found", ha="center")
+            ax_comb.text(0.5, 0.5, "No length or win_rate found", ha="center")
             ax_comb.set_title("Comparison")
 
     # Hide any unused axes
