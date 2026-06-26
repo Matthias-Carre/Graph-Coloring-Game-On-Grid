@@ -20,6 +20,7 @@ from Model import GraphColoringNet
 
 ALICE_MODE = "heuristic" 
 #ALICE_MODE = "nn" 
+LOGICS = ["random", "heuristic1", "nn"]  # List of available logics for Alice
 
 ALICE_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Alice" / "latest.pt")
 
@@ -38,6 +39,7 @@ class GraphColoringEnv(gym.Env):
         self.width = width
         self.height = height
         self.num_colors = num_colors
+        
         
         # Action space: choice of a cell and a color
         # Total actions = (width * height) * number_of_colors
@@ -67,6 +69,9 @@ class GraphColoringEnv(gym.Env):
         self.episode_length = 0
         self.move_history = []
         self.completed_episodes = []
+
+        # logic parameters
+        self.current_logic = None
 
         # Load Alice's neural network if mode is active
         self.alice_nn = None
@@ -141,13 +146,19 @@ class GraphColoringEnv(gym.Env):
 
         self.grid.player = ALICE_PLAYER  # Alice starts first
         
+        self.current_logic = random.choice(LOGICS)
+        
         # Determine Alice's opening move based on selected mode
         opening_move = None
         if ALICE_MODE == "nn" and self.alice_nn is not None:
             opening_move = self._get_alice_nn_move()
         else:
-            
-            opening_move = self.Alice.next_euristic1_move()
+            if self.current_logic == "random":
+                opening_move = self.Alice.next_random_move()
+            elif self.current_logic == "heuristic1":
+                opening_move = self.Alice.next_euristic1_move()
+            elif self.current_logic == "nn" and self.alice_nn is not None:
+                opening_move = self._get_alice_nn_move()
             
         if opening_move is not None:
             x, y, c = opening_move
@@ -218,17 +229,16 @@ class GraphColoringEnv(gym.Env):
         
         # Determine Alice's move based on selected mode
         Alice_move = None
-        if ALICE_MODE == "nn" and self.alice_nn is not None:
+        
+        epsilon = 0.5  # chance to play random
+        
+        if self.current_logic == "heuristic1" and random.random() >= epsilon:
+            Alice_move = self.Alice.next_euristic1_move()
+        elif self.current_logic == "nn" and self.alice_nn is not None:
             Alice_move = self._get_alice_nn_move()
         else:
-            #random
-            #Alice_move = self.Alice.next_random_move()
-            #euristic
-            epsilon = 0.7  # chance to play random
-            if random.random() < epsilon:
-                Alice_move = self.Alice.next_random_move()
-            else:
-                Alice_move = self.Alice.next_euristic1_move()
+        #elif self.current_logic == "random":
+            Alice_move = self.Alice.next_random_move()
             
         if Alice_move is not None:
             alice_x, alice_y, alice_c = Alice_move
