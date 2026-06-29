@@ -19,6 +19,7 @@ from Model import GraphColoringNet
 # ==========================================
 BOB_MODE = "heuristic" 
 #BOB_MODE = "nn" 
+LOGICS = ["heuristic", "nn", "rand"]
 
 BOB_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Bob" / "latest.pt")
 
@@ -100,6 +101,7 @@ class GraphColoringEnv(gym.Env):
 
     def reset(self, seed=None, options=None):
         """Reinitializes environment at episode start."""
+        seed = seed or np.random.randint(0, 10000)
         super().reset(seed=seed)
         self.current_step = 0
         self.episode_return = 0.0
@@ -109,6 +111,10 @@ class GraphColoringEnv(gym.Env):
         self.grid = Grid(self.height, self.width, self.num_colors)
         self.bob = Bob(self.grid)
         self.grid.player = 0  # Player 0 starts
+        
+        self.current_logic = random.choice(LOGICS)
+        
+        
         
         return self._get_obs(), {}
 
@@ -185,18 +191,15 @@ class GraphColoringEnv(gym.Env):
         
         # Determine Bob's move based on selected mode
         bob_move = None
-        if BOB_MODE == "nn" and self.bob_nn is not None:
-            bob_move = self._get_bob_nn_move()
+        
+        epsilon = 0.2  
+        
+        if self.current_logic == "heuristic" and random.random() >= epsilon:
+            bob_move = self.bob.next_move_euristic()
+        elif self.current_logic == "nn" and self.bob_nn is not None :
+            bob_move = self._get_bob_nn_move(epsilon=epsilon)
         else:
-            # bob as a chance to play randomly
-            epsilon = 0.1 
-            if random.random() < epsilon:
-                bob_move = self.bob.next_random_move()
-            else:
-                bob_move = self.bob.next_move_euristic()
-            
-            #bob_move = self.bob.next_move_euristic()
-            #bob_move = self.bob.next_random_move()
+            bob_move = self.bob.next_random_move()
         
         if bob_move is not None:
             bob_x, bob_y, bob_c = bob_move

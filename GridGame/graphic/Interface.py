@@ -10,6 +10,7 @@ class Interface:
         self.on_click = engine.on_click
         self.draw = None
         self.selected_color = engine.color_selected
+        self._buttons = {}  # named buttons registry
         engine.on_update_callback = self.draw_grid
         
 
@@ -64,10 +65,17 @@ class Interface:
         self.draw.draw_grid()
     
     #create and draw a button with text and command
-    def draw_button(self, text, command):
-        #print("DrawButtonInterface")
-        self.draw.draw_button(text, command)
+    def draw_button(self, text, command, name=None):
+        btn = self.draw.draw_button(text, command)
+        if name:
+            self._buttons[name] = btn
         self.root.update()
+        return btn
+
+    def update_button_text(self, name, new_text):
+        """Met à jour le texte d'un bouton enregistré par son nom."""
+        if name in self._buttons:
+            self._buttons[name].config(text=new_text)
     
     #draw all buttons needed for the game interface
     def draw_buttons(self):

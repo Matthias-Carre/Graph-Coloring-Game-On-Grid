@@ -59,8 +59,8 @@ class Draw:
 
     #function to draw a button with text and command
     def draw_button(self, text, command):
-        button = tk.Button(self.button_frame, text=text, command=command).pack(side="left", padx=5)
-        #button.place(x=pos_x, y=pos_y)
+        button = tk.Button(self.button_frame, text=text, command=command)
+        button.pack(side="left", padx=5)
         return button
 
     #change to select another style of grid drawing 
