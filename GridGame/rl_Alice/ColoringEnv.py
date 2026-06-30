@@ -19,7 +19,7 @@ from Model import GraphColoringNet
 # ==========================================
 BOB_MODE = "heuristic" 
 #BOB_MODE = "nn" 
-LOGICS = ["heuristic", "nn", "rand"]
+LOGICS = ["rand"] #["heuristic", "rand"]
 
 BOB_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Bob" / "latest.pt")
 
@@ -192,7 +192,7 @@ class GraphColoringEnv(gym.Env):
         # Determine Bob's move based on selected mode
         bob_move = None
         
-        epsilon = 0.2  
+        epsilon = 0.4
         
         if self.current_logic == "heuristic" and random.random() >= epsilon:
             bob_move = self.bob.next_move_euristic()
