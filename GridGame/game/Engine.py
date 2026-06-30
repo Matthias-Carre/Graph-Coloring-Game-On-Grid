@@ -25,8 +25,8 @@ class GameEngine:
 
         self.reset = None
         # NN / mode selection
-        self.bob_mode = "heuristic"   # "random" | "heuristic" | "nn"
-        self.alice_mode = "heuristic" # "random" | "heuristic" | "nn"
+        self.bob_mode = "heuristic"   # "random" | "heuristic" | "nn" | "strategy"
+        self.alice_mode = "heuristic" # "random" | "heuristic" | "nn" | "strategy"
         self.bob_nn = None
         self.alice_nn = None
         # for latex file
@@ -134,9 +134,16 @@ class GameEngine:
     def on_left_click(self,event):
         
         #print("click",event)
-        x = event.x
-        y = event.y
-        ratio = min(self.window_width / self.grid.width, self.window_height / self.grid.height)
+        draw = self.window.draw
+        ratio = draw.cell_ratio
+        if ratio <= 0:
+            return
+        x = event.x - draw.origin_x
+        y = event.y - draw.origin_y
+
+        if x < 0 or y < 0 or x >= draw.grid_pixel_width or y >= draw.grid_pixel_height:
+            return
+
         i = int(x // ratio)
         j = int(y // ratio)
 
@@ -164,9 +171,16 @@ class GameEngine:
     """
     def on_right_click(self,event):
         #print("right click",event)
-        x = event.x
-        y = event.y
-        ratio = min(self.window_width / self.grid.width, self.window_height / self.grid.height)
+        draw = self.window.draw
+        ratio = draw.cell_ratio
+        if ratio <= 0:
+            return
+        x = event.x - draw.origin_x
+        y = event.y - draw.origin_y
+
+        if x < 0 or y < 0 or x >= draw.grid_pixel_width or y >= draw.grid_pixel_height:
+            return
+
         i = int(x // ratio)
         j = int(y // ratio)
 
@@ -189,9 +203,16 @@ class GameEngine:
     """
     def on_x_press(self,event):
         #print("button3 pressed",event)
-        x = event.x
-        y = event.y
-        ratio = min(self.window_width / self.grid.width, self.window_height / self.grid.height)
+        draw = self.window.draw
+        ratio = draw.cell_ratio
+        if ratio <= 0:
+            return
+        x = event.x - draw.origin_x
+        y = event.y - draw.origin_y
+
+        if x < 0 or y < 0 or x >= draw.grid_pixel_width or y >= draw.grid_pixel_height:
+            return
+
         i = int(x // ratio)
         j = int(y // ratio)
 
@@ -214,6 +235,8 @@ class GameEngine:
             move = self.Alice.next_random_move()
         elif self.alice_mode == "nn" and self.alice_nn is not None:
             move = self._nn_move(self.alice_nn)
+        elif self.alice_mode == "strategy":
+            move = self.Alice.next_move()
         else:  # heuristic
             move = self.Alice.next_euristic1_move()
         if move is None:
@@ -237,6 +260,8 @@ class GameEngine:
             move = self.Bob.next_random_move()
         elif self.bob_mode == "nn" and self.bob_nn is not None:
             move = self._nn_move(self.bob_nn)
+        elif self.bob_mode == "strategy":
+            move = self.Bob.next_move()
         else:  # heuristic
             move = self.Bob.next_move_euristic()
         if move is None:
@@ -350,9 +375,9 @@ class GameEngine:
     # ------------------------------------------------------------------
     # Mode selection: random / heuristic / nn
     # ------------------------------------------------------------------
-    _BOB_MODES = ["random", "heuristic", "nn"]
-    _ALICE_MODES = ["random", "heuristic", "nn"]
-    _MODE_LABELS = {"random": "Random", "heuristic": "Heuristic", "nn": "NN"}
+    _BOB_MODES = ["random", "heuristic", "nn", "strategy"]
+    _ALICE_MODES = ["random", "heuristic", "nn", "strategy"]
+    _MODE_LABELS = {"random": "Random", "heuristic": "Heuristic", "nn": "NN", "strategy": "Strategy"}
 
     def toggle_bob_mode(self):
         idx = self._BOB_MODES.index(self.bob_mode)

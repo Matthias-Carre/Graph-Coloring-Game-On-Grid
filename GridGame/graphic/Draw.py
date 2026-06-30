@@ -14,6 +14,11 @@ class Draw:
         self.print_status = False
         self.print_rounds = True
         self.round = 1 
+        self.cell_ratio = 1.0
+        self.origin_x = 0.0
+        self.origin_y = 0.0
+        self.grid_pixel_width = 0.0
+        self.grid_pixel_height = 0.0
         self.button_frame =  tk.Frame(self.root)
         self.button_frame.pack(pady=10)
 
@@ -88,25 +93,37 @@ class Draw:
 
     #draw the grid on the canvas as we do on the paper
     def draw_gridV2(self):
-        if(self.height / self.width > self.grid.height/self.grid.width):
-            ratio = self.width / self.grid.width
-        else:
-            ratio = self.height / self.grid.height
-            
-        #ratio = min(self.width / self.grid.width, self.height / self.grid.height)        
-        self.draw_rectangle(0,0,self.width,self.height,"white")
-        for i in range(self.grid.width):
-            self.draw_rectangle(i*(ratio),0,1,self.height,"black")
+        self.width = self.canvas.winfo_width()
+        self.height = self.canvas.winfo_height()
+        if self.width <= 1 or self.height <= 1:
+            return
 
+        ratio = min(self.width / self.grid.width, self.height / self.grid.height)
+        self.cell_ratio = ratio
+        self.grid_pixel_width = ratio * self.grid.width
+        self.grid_pixel_height = ratio * self.grid.height
+        self.origin_x = (self.width - self.grid_pixel_width) / 2
+        self.origin_y = (self.height - self.grid_pixel_height) / 2
+
+        self.draw_rectangle(0, 0, self.width, self.height, "white")
+
+        # Draw a complete centered grid to avoid stretching the last row/column.
+        for i in range(self.grid.width + 1):
+            x = self.origin_x + i * ratio
+            self.draw_rectangle(x, self.origin_y, 1, self.grid_pixel_height, "black")
+
+        for j in range(self.grid.height + 1):
+            y = self.origin_y + j * ratio
+            self.draw_rectangle(self.origin_x, y, self.grid_pixel_width, 1, "black")
+
+        cell_font = max(8, int(ratio / 1.5))
+        for i in range(self.grid.width):
             for j in range(self.grid.height):
-                self.draw_rectangle(0,j*(ratio),self.width,1,"black")
-                #print("Draw ratio",ratio)
-                x = i * ratio
-                y = j * ratio
-                #print("Draw x y",x,y)
+                x = self.origin_x + i * ratio
+                y = self.origin_y + j * ratio
                 cell = self.grid.get_cell(i, j)
-                self.draw_text(x + ratio / 2, y + ratio / 2, cell.get_value() if cell.get_value()!=0 else "","Blue" if cell.played_by == 1 else "Red",font=("Arial",int(ratio/1.5)))
-                self.draw_text(x + ratio / 2, y + ratio / 2, "X" if cell.is_uncolorable else "","black",font=("Arial",int(ratio/1.5)))
+                self.draw_text(x + ratio / 2, y + ratio / 2, cell.get_value() if cell.get_value()!=0 else "", "Blue" if cell.played_by == 1 else "Red", font=("Arial", cell_font))
+                self.draw_text(x + ratio / 2, y + ratio / 2, "X" if cell.is_uncolorable else "", "black", font=("Arial", cell_font))
                 if(self.print_status):
                     state = cell.get_status()
                     self.draw_text(x + ratio / 6, y + ratio / 6, state, color="green", font=("Arial", 8))

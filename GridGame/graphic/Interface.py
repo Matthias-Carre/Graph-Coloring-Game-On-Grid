@@ -42,11 +42,12 @@ class Interface:
         canvas = tk.Canvas(self.root, width=w, height=h, bg="white")
         self.canvas = canvas
 
-        draw = Draw( window_width,window_height, self.grid,self.root,canvas)
+        draw = Draw(w, h, self.grid, self.root, canvas)
         self.draw = draw
 
         draw.draw_window()
         self.draw_grid()
+        self.canvas.bind("<Configure>", self.on_canvas_resize)
         #creation of the canvas and button/color selection
         canvas.bind("<Button-1>", self.on_click)
         self.engine.color_var_accessor = draw.color_selected
@@ -81,6 +82,16 @@ class Interface:
     def draw_buttons(self):
         #self.draw_button("test",self.test_print())
         return 
+
+    def on_canvas_resize(self, event):
+        # Keep Draw dimensions in sync with the actual canvas size.
+        if self.draw is None:
+            return
+        if event.width <= 1 or event.height <= 1:
+            return
+        self.draw.width = event.width
+        self.draw.height = event.height
+        self.draw_grid()
 
     def test_print(self,msg=""):
         print("InterTestPrint:",msg)

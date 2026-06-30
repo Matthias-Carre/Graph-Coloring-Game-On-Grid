@@ -15,6 +15,7 @@ class GraphColoringNet(nn.Module):
         
         # Define symmetry group for 4 discrete rotations.
         self.r2_act = gspaces.flipRot2dOnR2(N=4)
+        self.r2_act = gspaces.flipRot2dOnR2(N=4)
         
         self.in_type = enn.FieldType(self.r2_act, in_channels * [self.r2_act.trivial_repr])
         self.hidden_type = enn.FieldType(self.r2_act, 32 * [self.r2_act.regular_repr])
@@ -89,12 +90,14 @@ class GraphColoringNet(nn.Module):
         # We avoid escnn's GroupPooling here because its in-place operations conflict with TorchRL's vmap.
         
         # features.tensor shape is (Batch, 128, Height, Width)
-        # We have 32 representations, each consisting of 4 rotation channels.
+        # We have 32 representations, each consisting of 8 rotation channels.
         raw_critic_tensor = features.tensor
         B, C, H, W = raw_critic_tensor.shape
         
         # Reshape to isolate the 4 rotations: (Batch, 32, 4, Height, Width)
         # 8 for D4
+        reshaped_tensor = raw_critic_tensor.view(B, 32, 8, H, W)
+        # Reshape to isolate the 8 rotations: (Batch, 32, 8, Height, Width)
         reshaped_tensor = raw_critic_tensor.view(B, 32, 8, H, W)
         
         # Take the maximum over the rotation dimension (dim=2) to achieve invariance
