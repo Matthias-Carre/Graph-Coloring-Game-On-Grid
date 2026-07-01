@@ -19,7 +19,7 @@ from Model import GraphColoringNet
 # ==========================================
 BOB_MODE = "heuristic" 
 #BOB_MODE = "nn" 
-LOGICS = ["rand"] #["heuristic", "rand"]
+LOGICS = ["heuristic"] #["heuristic", "rand","nn"]
 
 BOB_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Bob" / "latest.pt")
 

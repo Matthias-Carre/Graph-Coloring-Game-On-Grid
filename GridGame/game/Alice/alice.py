@@ -90,13 +90,15 @@ class Alice:
         if self.grid.player != 0:
             print("Not Alice's turn")
             return None
-        print("\n===-- Alice move --===")
+        #print("\n===-- Alice move --===")
 
         # react to Bob's last move
         
         #first move
         if(self.grid.round == 1):
+            self.grid.round += 1
             return (0,1,1)
+            
         
         #For custom strategy:
 

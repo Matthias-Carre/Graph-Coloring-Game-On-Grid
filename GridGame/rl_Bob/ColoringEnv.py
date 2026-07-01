@@ -21,6 +21,7 @@ from Model import GraphColoringNet
 ALICE_MODE = "heuristic" 
 #ALICE_MODE = "nn" 
 LOGICS = ["random", "heuristic1", "nn"]  # List of available logics for Alice
+LOGICS = ["algo"]  
 
 ALICE_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Alice" / "latest.pt")
 
@@ -156,9 +157,9 @@ class GraphColoringEnv(gym.Env):
             if self.current_logic == "random":
                 opening_move = self.Alice.next_random_move()
             elif self.current_logic == "heuristic1":
-                opening_move = self.Alice.next_euristic1_move()
+                opening_move = self.Alice.next_random_move()
             elif self.current_logic == "nn" and self.alice_nn is not None:
-                opening_move = self._get_alice_nn_move()
+                opening_move = self.Alice.next_random_move()
             
         if opening_move is not None:
             x, y, c = opening_move
@@ -230,12 +231,15 @@ class GraphColoringEnv(gym.Env):
         # Determine Alice's move based on selected mode
         Alice_move = None
         
-        epsilon = 0.5  # chance to play random
+        epsilon = 0.0  # chance to play random
         
         if self.current_logic == "heuristic1" and random.random() >= epsilon:
             Alice_move = self.Alice.next_euristic1_move()
         elif self.current_logic == "nn" and self.alice_nn is not None:
             Alice_move = self._get_alice_nn_move()
+        elif self.current_logic == "algo" and random.random() >= epsilon:
+            Alice_move = self.Alice.next_move()
+                
         else:
         #elif self.current_logic == "random":
             Alice_move = self.Alice.next_random_move()
