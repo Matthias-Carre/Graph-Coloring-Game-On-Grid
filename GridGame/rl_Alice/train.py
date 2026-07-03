@@ -102,6 +102,12 @@ def run_evaluation_episode(policy, env):
     print("="*30 + "\n")
 
 
+# save the latest.pt if exists to avoid overwriting it
+def backup_latest_checkpoint(checkpoint_path):
+    if os.path.exists(checkpoint_path):
+        backup_path = checkpoint_path.replace("latest.pt", "latest_backup.pt")
+        torch.save(torch.load(checkpoint_path), backup_path)
+        print(f"Backup of latest checkpoint saved to {backup_path}")
 
 def main():
     # Calculate checkpoint path relative to this script location
@@ -132,12 +138,14 @@ def main():
     args = parser.parse_args()
 
     # Hyperparameters.
-    WIDTH, HEIGHT, COLORS = 5, 5, 3
+    WIDTH, HEIGHT, COLORS = 20, 5, 4
     LEARNING_RATE = 1e-3
     FRAMES_PER_BATCH = 100    # Steps collected before updating the network
     TOTAL_FRAMES = 1_000_000     # Total training steps
     GAMMA = 0.99           # Discount factor for future rewards
     
+    # Backup the latest checkpoint if it exists.
+    backup_latest_checkpoint(args.checkpoint_path)
 
 
     # Environment setup.

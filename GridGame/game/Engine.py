@@ -8,8 +8,8 @@ from game.latexForm import save_grid_latex
 
 class GameEngine:
     def __init__(self,grid,root,Alice=None,Bob=None):
-        self.window_width = 1600
-        self.window_height = 800
+        self.window_width = 2000
+        self.window_height = 1600
         self.grid = grid
         self.root = root
         self.state = GameState(grid)

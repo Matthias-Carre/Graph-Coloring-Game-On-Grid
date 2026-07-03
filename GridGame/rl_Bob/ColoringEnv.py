@@ -20,8 +20,7 @@ from Model import GraphColoringNet
 
 ALICE_MODE = "heuristic" 
 #ALICE_MODE = "nn" 
-LOGICS = ["random", "heuristic1", "nn"]  # List of available logics for Alice
-LOGICS = ["algo"]  
+LOGICS = ["random","heuristic1"] #["random", "heuristic1", "nn"]  # List of available logics for Alice
 
 ALICE_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Alice" / "latest.pt")
 
@@ -231,7 +230,7 @@ class GraphColoringEnv(gym.Env):
         # Determine Alice's move based on selected mode
         Alice_move = None
         
-        epsilon = 0.0  # chance to play random
+        epsilon = 0.2  # chance to play random
         
         if self.current_logic == "heuristic1" and random.random() >= epsilon:
             Alice_move = self.Alice.next_euristic1_move()

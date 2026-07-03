@@ -5,6 +5,7 @@ from game.Alice.strategy_survive import *
 from game.Alice.euristic1 import *
 
 CustomStrat = True
+DEBUG = False
 
 class Alice:
     def __init__(self,grid):
@@ -106,10 +107,12 @@ class Alice:
         #if CustomStrategy:
         #    self.next_euristic_move(self.grid, self.grid.last_Bob_move)
         
-        print("Alice strategy: Bob: ", self.grid.bob_play_on_config)
+        if DEBUG:
+            print("Alice strategy: Bob: ", self.grid.bob_play_on_config)
         for is_case, solve_case in self.strategy:
             if is_case(self.grid,self.grid.last_Bob_move):
-                print(f"Return Alice: {solve_case(self.grid,self.grid.last_Bob_move)}")
+                if DEBUG:
+                    print(f"Return Alice: {solve_case(self.grid,self.grid.last_Bob_move)}")
                 return solve_case(self.grid,self.grid.last_Bob_move)
 
         #case test:
