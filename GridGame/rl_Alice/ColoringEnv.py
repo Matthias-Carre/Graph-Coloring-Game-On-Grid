@@ -18,8 +18,8 @@ from Model import GraphColoringNet
 # TOGGLE BOB'S BEHAVIOR HERE heuristic / nn / rand
 # ==========================================
 BOB_MODE = "heuristic" 
-#BOB_MODE = "nn" 
-LOGICS = ["heuristic", "random"] #["heuristic", "rand","nn"]
+BOB_MODE = "nn" 
+LOGICS = ["heuristic", "random", "nn"] #["heuristic", "rand","nn"]
 
 BOB_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Bob" / "latest.pt")
 
@@ -127,20 +127,20 @@ class GraphColoringEnv(gym.Env):
         return x, y, c
     
 
-    def _get_bob_nn_move(self, epsilon=0.2):
+    def _get_bob_nn_move(self):
         """Queries the trained neural network for Bob's best move, with epsilon-greedy randomness."""
         obs_dict = self._get_obs()
         
         # Epsilon-greedy: Play a random valid move with probability 'epsilon'
-        if random.random() < epsilon:
-            mask = obs_dict["mask"]
-            # Extract indices of all legal actions where the mask is True
-            valid_actions = [i for i, is_valid in enumerate(mask) if is_valid]
+        
+        mask = obs_dict["mask"]
+        # Extract indices of all legal actions where the mask is True
+        valid_actions = [i for i, is_valid in enumerate(mask) if is_valid]
             
-            if valid_actions:  # Fallback check to ensure the list is not empty
-                random_action = random.choice(valid_actions)
-                #print(f"Bob: Played random move (epsilon {epsilon})") # Optional debug
-                return self._action_to_move(random_action)
+        if valid_actions:  # Fallback check to ensure the list is not empty
+            random_action = random.choice(valid_actions)
+            #print(f"Bob: Played random move (epsilon {epsilon})") # Optional debug
+            return self._action_to_move(random_action)
         
         # Exploitation: Play the best move according to the neural network
         obs_tensor = torch.tensor(obs_dict["observation"], dtype=torch.float32).unsqueeze(0)
@@ -197,7 +197,7 @@ class GraphColoringEnv(gym.Env):
         if self.current_logic == "heuristic" and random.random() >= epsilon:
             bob_move = self.bob.next_move_euristic()
         elif self.current_logic == "nn" and self.bob_nn is not None :
-            bob_move = self._get_bob_nn_move(epsilon=epsilon)
+            bob_move = self._get_bob_nn_move()
         else:
             bob_move = self.bob.next_random_move()
         

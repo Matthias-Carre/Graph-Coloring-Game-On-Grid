@@ -21,6 +21,7 @@ from Model import GraphColoringNet
 ALICE_MODE = "heuristic" 
 #ALICE_MODE = "nn" 
 LOGICS = ["random","heuristic1"] #["random", "heuristic1", "nn"]  # List of available logics for Alice
+#LOGICS = ["nn"]
 
 ALICE_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Alice" / "latest.pt")
 
@@ -107,17 +108,16 @@ class GraphColoringEnv(gym.Env):
             "mask": self.action_masks()
         }
 
-    def _get_alice_nn_move(self, epsilon=0.2):
+    def _get_alice_nn_move(self):
         """Queries the trained neural network for Alice's best move, combining epsilon-greedy with categorical sampling."""
         obs_dict = self._get_obs()
         mask = obs_dict["mask"]
         
-        # Epsilon-greedy: play a completely random valid move with probability 'epsilon'
-        if random.random() < epsilon:
-            valid_actions = [i for i, is_valid in enumerate(mask) if is_valid]
-            if valid_actions: 
-                random_action = random.choice(valid_actions)
-                return self._action_to_move(random_action)
+        
+        valid_actions = [i for i, is_valid in enumerate(mask) if is_valid]
+        if valid_actions: 
+            random_action = random.choice(valid_actions)
+            return self._action_to_move(random_action)
         
         # Exploitation via sampling: play a move based on the neural network's probability distribution
         obs_tensor = torch.tensor(obs_dict["observation"], dtype=torch.float32).unsqueeze(0)
