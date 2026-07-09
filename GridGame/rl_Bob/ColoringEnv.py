@@ -218,6 +218,34 @@ class ColoringEnv:
 
         return self._get_obs(), reward, False
     
+    def render(self):
+        print(f"\n=== Tour {self.current_step} ===")
+        player_color = {
+            0: "\033[91m",
+            1: "\033[94m",
+        }
+        reset = "\033[0m"
+        
+        first_row = ""
+        for i in range(self.width):
+            first_row += f"{i} "
+        print(f"  {first_row}")
+
+        for j in range(self.height):
+            row_str = f"{j} "
+            for i in range(self.width):
+                cell = self.grid.get_cell(i, j)
+                val = cell.get_value()
+
+                if val == 0:
+                    row_str += ". "
+                    continue
+
+                color = player_color.get(cell.played_by, "")
+                row_str += f"{color}{val}{reset} "
+            print(row_str)
+
+
     def action_masks(self):
         # Generate valid action mask
         mask = np.zeros(self.total_actions, dtype=np.bool_)
