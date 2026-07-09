@@ -9,6 +9,7 @@ from collections import Counter, deque
 import sys
 from pathlib import Path
 
+# Add parent directory to path to access game modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from model import GraphColoringDQN
@@ -28,7 +29,7 @@ def save_checkpoint(path, model, optimizer, episode_idx, config):
     torch.save(checkpoint, path)
 
 def load_checkpoint(path, model, optimizer=None, device="cpu"):
-    # Load model and optimizer states
+    # Load model and optimizer states from a file
     checkpoint = torch.load(path, map_location=device)
     model.load_state_dict(checkpoint["model_state_dict"])
     if optimizer is not None and "optimizer_state_dict" in checkpoint:
@@ -38,12 +39,13 @@ def load_checkpoint(path, model, optimizer=None, device="cpu"):
 def log_metrics_to_file(log_path, episode_idx, num_episodes, win_rate, min_episode_return, 
                          avg_episode_return, max_episode_return, avg_episode_length,
                          dqn_loss, HEIGHT, WIDTH, COLORS):
-    # Write metrics to log
+    # Logs training metrics to a CSV file for later analysis
     log_dir = os.path.dirname(log_path)
     if log_dir:
         os.makedirs(log_dir, exist_ok=True)
     
     file_exists = os.path.exists(log_path)
+    
     with open(log_path, 'a') as f:
         if not file_exists or episode_idx <= num_episodes:
             f.write(f"Bob Training On size: w={WIDTH}, h={HEIGHT}, c={COLORS}\n")
@@ -52,8 +54,40 @@ def log_metrics_to_file(log_path, episode_idx, num_episodes, win_rate, min_episo
             f.write(f"{episode_idx},{num_episodes},{win_rate:.4f},{min_episode_return:.4f},{avg_episode_return:.4f},"
                 f"{max_episode_return:.4f},{avg_episode_length:.4f},{dqn_loss:.6f}\n")
 
+def run_evaluation_episode(policy_net, env):
+    # Runs one evaluation episode to print the final grid state
+    print("\n" + "="*30)
+    print("EVALUATION: FINAL GRID")
+    print("="*30)
+    
+    state = env.reset()
+    done = False
+    total_reward = 0.0
+    reason = "Unknown"
+    
+    while not done:
+        # Query policy for the best action (exploit only, epsilon=0)
+        action = get_action(state, policy_net, epsilon=0.0)
+        if action is None:
+            reason = "No valid moves"
+            break
+            
+        state, reward, done = env.step(action)
+        total_reward += reward
+        
+        if done:
+            if reward >= 10.0:
+                reason = "bob_wins"
+            else:
+                reason = "alice_wins / grid_full"
+        
+    # Print the raw grid array to visualize the final state
+    print(f"Final Grid Array: {env.grid}")
+    print(f"End Reason: {reason} | Final Reward: {total_reward:.2f}")
+    print("="*30 + "\n")
+
 def get_action(state, policy_net, epsilon):
-    # Epsilon-greedy selection
+    # Epsilon-greedy logic with action masking
     mask = state["mask"]
     valid_actions = torch.where(mask)[0]
     
@@ -71,7 +105,7 @@ def get_action(state, policy_net, epsilon):
     return action
 
 def main():
-    # Setup configuration
+    # Setup paths and arguments
     script_dir = Path(__file__).parent.parent 
     default_checkpoint = str(script_dir / "checkpoints" / "Bob" / "latest.pt")
     default_log_file = str(script_dir / "checkpoints" / "Bob" / "training_metrics.csv")
@@ -83,6 +117,7 @@ def main():
     parser.add_argument("--save-every", type=int, default=500, help="Save checkpoint every N episodes.")
     args = parser.parse_args()
 
+    # Hyperparameters
     WIDTH, HEIGHT, COLORS = 5, 5, 4
     LEARNING_RATE = 1e-3
     GAMMA = 0.95
@@ -95,9 +130,11 @@ def main():
     TARGET_UPDATE = 50
     LOG_INTERVAL = 100
     
+    print("Initializing environment...")
     env = ColoringEnv(width=WIDTH, height=HEIGHT, num_colors=COLORS)
-    
-    # Feature size updated to match coordinates addition (Classes + X + Y)
+    eval_env = ColoringEnv(width=WIDTH, height=HEIGHT, num_colors=COLORS)
+
+    print("Creating GNN-DQN network...")
     num_node_features = (COLORS + 1) + 2
     policy_net = GraphColoringDQN(num_node_features, hidden_size=64, num_colors=COLORS)
     target_net = GraphColoringDQN(num_node_features, hidden_size=64, num_colors=COLORS)
@@ -118,10 +155,16 @@ def main():
     }
 
     start_episode = 1
-    if args.resume and os.path.exists(args.checkpoint_path):
-        checkpoint = load_checkpoint(args.checkpoint_path, policy_net, optimizer)
-        start_episode = int(checkpoint.get("episode", 0)) + 1
+    if args.resume:
+        if os.path.exists(args.checkpoint_path):
+            checkpoint = load_checkpoint(args.checkpoint_path, policy_net, optimizer, device="cpu")
+            start_episode = int(checkpoint.get("episode", 0)) + 1
+            print(f"Resumed from {args.checkpoint_path} at episode {start_episode}")
+        else:
+            print(f"Checkpoint not found at {args.checkpoint_path}. Starting fresh.")
 
+    print("Starting training loop...\n")
+    
     completed_episodes_data = []
     recent_losses = []
 
@@ -146,29 +189,24 @@ def main():
             memory.append((state, action, reward, next_state, done))
             state = next_state
             
-            # Vectorized optimization step using PyG Batch
+            # Vectorized optimization step
             if len(memory) >= BATCH_SIZE:
                 batch_data = random.sample(memory, BATCH_SIZE)
                 
-                # Prepare graph structures
                 states_list = [Data(x=b[0]["x"], edge_index=b[0]["edge_index"]) for b in batch_data]
                 next_states_list = [Data(x=b[3]["x"], edge_index=b[3]["edge_index"]) for b in batch_data]
                 
                 batched_states = Batch.from_data_list(states_list)
                 batched_next_states = Batch.from_data_list(next_states_list)
                 
-                # Prepare tensors
                 actions = torch.tensor([b[1] for b in batch_data], dtype=torch.long)
                 rewards = torch.tensor([b[2] for b in batch_data], dtype=torch.float32)
                 dones = torch.tensor([b[4] for b in batch_data], dtype=torch.bool)
-                
                 next_masks = torch.stack([b[3]["mask"] for b in batch_data])
 
-                # Get current Q values
                 all_q_values = policy_net(batched_states.x, batched_states.edge_index, batch_size=BATCH_SIZE)
                 q_values = all_q_values.gather(1, actions.unsqueeze(1)).squeeze(1)
                 
-                # Get target Q values
                 with torch.no_grad():
                     next_all_q_values = target_net(batched_next_states.x, batched_next_states.edge_index, batch_size=BATCH_SIZE)
                     next_masked_q = next_all_q_values.masked_fill(~next_masks, float('-inf'))
@@ -178,7 +216,6 @@ def main():
                     
                     targets = rewards + GAMMA * max_next_q * (~dones).float()
                 
-                # Compute loss and step
                 loss = F.smooth_l1_loss(q_values, targets)
                 
                 optimizer.zero_grad()
@@ -188,33 +225,69 @@ def main():
                 
                 episode_loss += loss.item()
                 
-        if reward >= 10.0: reason = "bob_wins"
-        elif reward <= -10.0: reason = "bob_loses"
-        else: reason = "timeout"
+        # Deduce end reason
+        if reward >= 10.0:
+            reason = "bob_wins"
+        elif reward <= -10.0:
+            reason = "bob_loses"
+        else:
+            reason = "timeout"
 
-        completed_episodes_data.append({"return": total_reward, "length": steps, "reason": reason})
-        if steps > 0: recent_losses.append(episode_loss / steps)
+        # Record episode data
+        completed_episodes_data.append({
+            "return": total_reward,
+            "length": steps,
+            "reason": reason
+        })
+        if steps > 0:
+            recent_losses.append(episode_loss / steps)
             
         epsilon = max(EPSILON_END, epsilon * EPSILON_DECAY)
         
         if episode % TARGET_UPDATE == 0:
             target_net.load_state_dict(policy_net.state_dict())
             
+        # Logging metrics and evaluation
         if episode % LOG_INTERVAL == 0:
-            num_episodes_log = len(completed_episodes_data)
             returns = [ep["return"] for ep in completed_episodes_data]
+            lengths = [ep["length"] for ep in completed_episodes_data]
             reasons = Counter(ep["reason"] for ep in completed_episodes_data)
             
+            num_episodes = len(completed_episodes_data)
+            avg_episode_return = sum(returns) / num_episodes if num_episodes > 0 else 0
+            avg_episode_length = sum(lengths) / num_episodes if num_episodes > 0 else 0
+            min_episode_return = min(returns) if num_episodes > 0 else 0
+            max_episode_return = max(returns) if num_episodes > 0 else 0
+            
+            win_rate = reasons.get("bob_wins", 0) / num_episodes if num_episodes > 0 else 0
             avg_loss = sum(recent_losses) / len(recent_losses) if recent_losses else 0
-            print(f"Episode {episode:5d} | DQN Loss: {avg_loss: 8.3f}")
+            reasons_str = ", ".join(f"{k}={v}" for k, v in reasons.items())
+            
+            print(
+                f"Episode {episode:5d} | DQN Loss: {avg_loss: 8.3f} | "
+                f"Avg Episode Return: {avg_episode_return: 6.3f} | "
+                f"Avg Episode Len: {avg_episode_length: 6.1f} | Episodes: {num_episodes:4d} | "
+                f"WinRate (Bob): {win_rate: 6.2%} | Return[min/max]: {min_episode_return: 6.2f}/{max_episode_return: 6.2f} | "
+                f"Reasons: {reasons_str}"
+            )
+            
+            log_metrics_to_file(
+                args.log_path, episode, num_episodes, win_rate, min_episode_return,
+                avg_episode_return, max_episode_return, avg_episode_length,
+                avg_loss, HEIGHT=HEIGHT, WIDTH=WIDTH, COLORS=COLORS
+            )
+            
+            run_evaluation_episode(policy_net, eval_env)
             
             completed_episodes_data.clear()
             recent_losses.clear()
             
             if args.save_every > 0 and episode % args.save_every == 0:
                 save_checkpoint(args.checkpoint_path, policy_net, optimizer, episode, config)
+                print(f"Checkpoint saved: {args.checkpoint_path} (episode {episode})")
 
     save_checkpoint(args.checkpoint_path, policy_net, optimizer, episode, config)
+    print(f"Final checkpoint saved: {args.checkpoint_path}")
 
 if __name__ == "__main__":
     main()
