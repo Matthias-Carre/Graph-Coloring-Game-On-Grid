@@ -19,8 +19,8 @@ from Model import GraphColoringNet
 # ==========================================
 
 ALICE_MODE = "heuristic" 
-#ALICE_MODE = "nn" 
-LOGICS = ["random","heuristic1"] #["random", "heuristic1", "nn"]  # List of available logics for Alice
+ALICE_MODE = "nn" 
+LOGICS = ["random","heuristic1","nn"] #["random", "heuristic1", "nn"]  # List of available logics for Alice
 #LOGICS = ["nn"]
 
 ALICE_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Alice" / "latest.pt")
