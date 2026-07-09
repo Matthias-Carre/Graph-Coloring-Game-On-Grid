@@ -9,7 +9,7 @@ class GraphColoringDQN(nn.Module):
         
         self.num_colors = num_colors
         
-        # Define the MLP for the first GIN layer
+        # Define MLP for first GIN layer
         mlp1 = nn.Sequential(
             nn.Linear(num_node_features, hidden_size),
             nn.ReLU(),
@@ -17,7 +17,7 @@ class GraphColoringDQN(nn.Module):
         )
         self.gin1 = GINConv(mlp1)
         
-        # Define the MLP for the second GIN layer
+        # Define MLP for second GIN layer
         mlp2 = nn.Sequential(
             nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
@@ -25,10 +25,10 @@ class GraphColoringDQN(nn.Module):
         )
         self.gin2 = GINConv(mlp2)
         
-        # Linear head projecting hidden features to Q-values for each color
+        # Linear head for Q-values
         self.q_head = nn.Linear(hidden_size, num_colors)
 
-    def forward(self, x, edge_index):
+    def forward(self, x, edge_index, batch_size=1):
         # Extract topological embeddings
         h = self.gin1(x, edge_index)
         h = F.relu(h)
@@ -36,10 +36,7 @@ class GraphColoringDQN(nn.Module):
         h = F.relu(h)
         
         # Compute Q-values per node
-        # Output shape: [num_nodes, num_colors]
         q_values_per_node = self.q_head(h)
         
-        # Flatten to match the 1D action space: [num_nodes * num_colors]
-        q_values_flat = q_values_per_node.view(-1)
-        
-        return q_values_flat
+        # Reshape to keep batch dimension separate from actions
+        return q_values_per_node.view(batch_size, -1)
