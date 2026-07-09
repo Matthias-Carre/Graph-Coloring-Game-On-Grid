@@ -1,354 +1,285 @@
 import torch
 import torch.optim as optim
+import torch.nn.functional as F
 import argparse
 import os
-from collections import Counter
-from tensordict.nn import TensorDictModule
-from torchrl.envs.libs.gym import GymWrapper
-from torchrl.collectors import SyncDataCollector
-
-from torchrl.objectives import A2CLoss
-from torchrl.objectives.value import GAE
-from torchrl.modules import ProbabilisticActor, ValueOperator
-from torchrl.modules.distributions import MaskedCategorical
-
-from tensordict import TensorDict
+import random
+from collections import Counter, deque
 import sys
 from pathlib import Path
 
 # Add parent directory to path to access game modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# Import custom environment and model.
-from ColoringEnv import GraphColoringEnv
-from Model import GraphColoringNet
+from model import GraphColoringDQN
+from ColoringEnv import ColoringEnv
 
-
-def save_checkpoint(path, model, optimizer, batch_idx, config):
+def save_checkpoint(path, model, optimizer, episode_idx, config):
+    # Ensure directory exists before saving
     checkpoint_dir = os.path.dirname(path)
     if checkpoint_dir:
         os.makedirs(checkpoint_dir, exist_ok=True)
     checkpoint = {
         "model_state_dict": model.state_dict(),
         "optimizer_state_dict": optimizer.state_dict(),
-        "batch": batch_idx,
+        "episode": episode_idx,
         "config": config,
     }
     torch.save(checkpoint, path)
 
-
 def load_checkpoint(path, model, optimizer=None, device="cpu"):
+    # Load model and optimizer states from a file
     checkpoint = torch.load(path, map_location=device)
     model.load_state_dict(checkpoint["model_state_dict"])
     if optimizer is not None and "optimizer_state_dict" in checkpoint:
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
     return checkpoint
 
-def log_metrics_to_file(log_path, batch_idx, num_episodes, win_rate, min_episode_return, 
+def log_metrics_to_file(log_path, episode_idx, num_episodes, win_rate, min_episode_return, 
                          avg_episode_return, max_episode_return, avg_episode_length,
-                         actor_loss, value_loss, entropy_loss, HEIGHT, WIDTH, COLORS):
-    """
-    Logs training metrics to a CSV file for later analysis and plotting.
-    """
+                         dqn_loss, HEIGHT, WIDTH, COLORS):
+    # Logs training metrics to a CSV file for later analysis
     log_dir = os.path.dirname(log_path)
     if log_dir:
         os.makedirs(log_dir, exist_ok=True)
     
-    # Write header if file doesn't exist
     file_exists = os.path.exists(log_path)
     
     with open(log_path, 'a') as f:
-        if not file_exists or batch_idx == 0:
+        if not file_exists or episode_idx <= num_episodes:
             f.write(f"Bob Training On size: w={WIDTH}, h={HEIGHT}, c={COLORS}\n")
-            f.write("batch,num_episodes,win_rate,min_score,avg_score,max_score,avg_length,actor_loss,value_loss,entropy_loss\n")
+            f.write("episode,num_episodes,win_rate,min_score,avg_score,max_score,avg_length,dqn_loss\n")
         if num_episodes > 0:
-            f.write(f"{batch_idx},{num_episodes},{win_rate:.4f},{min_episode_return:.4f},{avg_episode_return:.4f},"
-                f"{max_episode_return:.4f},{avg_episode_length:.4f},{actor_loss:.6f},{value_loss:.6f},{entropy_loss:.6f}\n")
+            f.write(f"{episode_idx},{num_episodes},{win_rate:.4f},{min_episode_return:.4f},{avg_episode_return:.4f},"
+                f"{max_episode_return:.4f},{avg_episode_length:.4f},{dqn_loss:.6f}\n")
 
-
-def run_evaluation_episode(policy, env):
-    """
-    Runs one evaluation episode print the final gird to give an idea of the game
-    """
+def run_evaluation_episode(policy_net, env):
+    # Runs one evaluation episode to print the final grid state
     print("\n" + "="*30)
     print("EVALUATION: FINAL GRID")
     print("="*30)
     
-    obs_dict, _ = env.reset()
+    state = env.reset()
     done = False
     total_reward = 0.0
+    reason = "Unknown"
     
-    # Play the full episode without intermediate rendering.
     while not done:
-        # Convert observations to TensorDict format.
-        obs_tensor = torch.tensor(obs_dict["observation"], dtype=torch.float32).unsqueeze(0)
-        mask_tensor = torch.tensor(obs_dict["mask"], dtype=torch.bool).unsqueeze(0)
-        td = TensorDict({"observation": obs_tensor, "mask": mask_tensor}, batch_size=[1])
-        
-        # Query policy for the next action.
-        with torch.no_grad():
-            result = policy(td)
-            action = result["action"].item()
+        # Query policy for the best action (exploit only, epsilon=0)
+        action = get_action(state, policy_net, epsilon=0.0)
+        if action is None:
+            reason = "No valid moves"
+            break
             
-        # Step the environment.
-        obs_dict, reward, terminated, truncated, info = env.step(action)
+        state, reward, done = env.step(action)
         total_reward += reward
-        done = terminated or truncated
         
-    # Render only the final state.
-    env.render()
-    print(f"End Reason: {info.get('reason', 'Unknown')} | Final Reward: {total_reward:.2f}")
+        if done:
+            if reward >= 10.0:
+                reason = "bob_wins"
+            else:
+                reason = "alice_wins / grid_full"
+        
+    # Print the raw grid array to visualize the final state
+    print(f"Final Grid Array: {env.grid}")
+    print(f"End Reason: {reason} | Final Reward: {total_reward:.2f}")
     print("="*30 + "\n")
 
+def get_action(state, policy_net, epsilon):
+    # Epsilon-greedy logic with action masking
+    mask = state["mask"]
+    valid_actions = torch.where(mask)[0]
+    
+    if len(valid_actions) == 0:
+        return None 
+        
+    if random.random() < epsilon:
+        action = random.choice(valid_actions.tolist())
+    else:
+        with torch.no_grad():
+            q_values = policy_net(state["x"], state["edge_index"])
+            masked_q_values = q_values.masked_fill(~mask, float('-inf'))
+            action = masked_q_values.argmax().item()
+            
+    return action
 
 def main():
-    # Calculate checkpoint path relative to this script location
-    script_dir = Path(__file__).parent.parent  # GridGame directory
-    default_checkpoint = str(script_dir / "checkpoints"/ "Bob" / "latest.pt")
+    # Setup paths and arguments
+    script_dir = Path(__file__).parent.parent 
+    default_checkpoint = str(script_dir / "checkpoints" / "Bob" / "latest.pt")
     default_log_file = str(script_dir / "checkpoints" / "Bob" / "training_metrics.csv")
     
-    parser = argparse.ArgumentParser(description="Train graph coloring agent.")
+    parser = argparse.ArgumentParser(description="Train GNN-DQN graph coloring agent.")
     parser.add_argument("--resume", action="store_true", help="Resume from checkpoint.")
-    parser.add_argument(
-        "--checkpoint-path",
-        type=str,
-        default=default_checkpoint,
-        help="Path to checkpoint file.",
-    )
-    parser.add_argument(
-        "--log-path",
-        type=str,
-        default=default_log_file,
-        help="Path to training metrics log file.",
-    )
-    parser.add_argument(
-        "--save-every",
-        type=int,
-        default=500,
-        help="Save checkpoint every N batches.",
-    )
+    parser.add_argument("--checkpoint-path", type=str, default=default_checkpoint, help="Path to checkpoint file.")
+    parser.add_argument("--log-path", type=str, default=default_log_file, help="Path to metrics log file.")
+    parser.add_argument("--save-every", type=int, default=500, help="Save checkpoint every N episodes.")
     args = parser.parse_args()
 
-    # Hyperparameters.
-    WIDTH, HEIGHT, COLORS = 20, 5, 4
+    # Hyperparameters
+    WIDTH, HEIGHT, COLORS = 5, 5, 4
     LEARNING_RATE = 1e-3
-    FRAMES_PER_BATCH = 100    # Steps collected before updating the network
-    TOTAL_FRAMES = 500_000     # Total training steps
-    GAMMA = 0.95              # Discount factor for future rewards
+    GAMMA = 0.95
+    EPSILON_START = 1.0
+    EPSILON_END = 0.05
+    EPSILON_DECAY = 0.995
+    BATCH_SIZE = 64
+    MEMORY_SIZE = 50000
+    TOTAL_EPISODES = 10_000
+    TARGET_UPDATE = 50
+    LOG_INTERVAL = 100
     
-    # Environment setup.
     print("Initializing environment...")
-    base_env = GraphColoringEnv(width=WIDTH, height=HEIGHT, num_colors=COLORS)
-    # Convert Gymnasium outputs to TensorDict for TorchRL.
-    env = GymWrapper(base_env, categorical_action_encoding=True)
-    eval_env = GraphColoringEnv(width=WIDTH, height=HEIGHT, num_colors=COLORS)
+    env = ColoringEnv(width=WIDTH, height=HEIGHT, num_colors=COLORS)
+    eval_env = ColoringEnv(width=WIDTH, height=HEIGHT, num_colors=COLORS)
 
-    # Neural network setup.
-    print("Creating Actor-Critic network (escnn)...")
-    core_network = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS)
+    print("Creating GNN-DQN network...")
+    num_node_features = COLORS + 1
+    policy_net = GraphColoringDQN(num_node_features, hidden_size=64, num_colors=COLORS)
+    target_net = GraphColoringDQN(num_node_features, hidden_size=64, num_colors=COLORS)
+    target_net.load_state_dict(policy_net.state_dict())
+    target_net.eval()
 
-    # =========================================================================
-    # REMOVED: Custom manual filter injection.
-    # escnn uses steerable basis functions to construct weights dynamically. 
-    # Directly overwriting weight tensors with arbitrary values breaks the 
-    # geometric constraints and equivariance properties of the G-CNN.
-    # The network will learn the optimal symmetrical filters natively.
-    # =========================================================================
-
-    # Wrappers to split actor and critic outputs.
-    class ActorWrapper(torch.nn.Module):
-        def __init__(self, net):
-            super().__init__()
-            self.net = net
-            
-        def forward(self, obs, mask): 
-            logits, _ = self.net(obs)
-            
-            # Handle the case where the model creates an artificial batch dimension.
-            if obs.dim() == 3 and logits.dim() == 2:
-                logits = logits.squeeze(0)  # [1, A] -> [A]
-                
-            # Align mask shape with logits when needed.
-            if mask.dim() < logits.dim():
-                mask = mask.unsqueeze(0).expand_as(logits)
-
-            # Set illegal actions to a very negative value.
-            logits = logits.masked_fill(~mask.bool(), -1e8)
-            return logits
-
-    class CriticWrapper(torch.nn.Module):
-        def __init__(self, net):
-            super().__init__()
-            self.net = net
-            
-        def forward(self, obs):
-            _, value = self.net(obs)
-            
-            # Apply the same batch-dimension guard for value output.
-            if obs.dim() == 3 and value.dim() == 2:
-                value = value.squeeze(0)
-                
-            return value
-        
-    # Actor module: takes observation and action mask.
-    actor_module = TensorDictModule(
-        module=ActorWrapper(core_network),
-        in_keys=["observation", "mask"], 
-        out_keys=["logits"]
-    )
-    
-    # Probabilistic actor: samples actions from masked logits.
-    policy = ProbabilisticActor(
-        module=actor_module,
-        in_keys=["logits", "mask"],
-        out_keys=["action"],
-        distribution_class=MaskedCategorical,
-        return_log_prob=True
-    )
-
-    # Critic module: estimates state value from observation.
-    value_module = ValueOperator(
-        module=CriticWrapper(core_network),
-        in_keys=["observation"],
-        out_keys=["state_value"]
-    )
-    
-    # Data collector.
-    print("Setting up SyncDataCollector...")
-    collector = SyncDataCollector(
-        env,
-        policy,
-        frames_per_batch=FRAMES_PER_BATCH,
-        total_frames=TOTAL_FRAMES,
-        device="cpu" 
-    )
-
-    # Loss and advantage modules.
-    # A2C objective with entropy regularization.
-    loss_module = A2CLoss(
-        actor_network=policy,
-        critic_network=value_module,
-        entropy_bonus=True,
-        entropy_coef=0.05
-    )
-    loss_module.set_keys(advantage="advantage")
-
-    # Generalized Advantage Estimation (Gt - V(s)).
-    advantage_module = GAE(
-        gamma=GAMMA,
-        lmbda=0.95,
-        value_network=value_module,
-        average_gae=True
-    )
-
-    optimizer = optim.Adam(core_network.parameters(), lr=LEARNING_RATE)
+    optimizer = optim.Adam(policy_net.parameters(), lr=LEARNING_RATE)
+    memory = deque(maxlen=MEMORY_SIZE)
+    epsilon = EPSILON_START
 
     config = {
         "width": WIDTH,
         "height": HEIGHT,
         "colors": COLORS,
         "learning_rate": LEARNING_RATE,
-        "frames_per_batch": FRAMES_PER_BATCH,
-        "total_frames": TOTAL_FRAMES,
+        "batch_size": BATCH_SIZE,
         "gamma": GAMMA,
     }
 
-    start_batch = 0
+    start_episode = 1
     if args.resume:
         if os.path.exists(args.checkpoint_path):
-            checkpoint = load_checkpoint(args.checkpoint_path, core_network, optimizer, device="cpu")
-            start_batch = int(checkpoint.get("batch", -1)) + 1
-            print(f"Resumed from {args.checkpoint_path} at batch {start_batch}")
+            checkpoint = load_checkpoint(args.checkpoint_path, policy_net, optimizer, device="cpu")
+            start_episode = int(checkpoint.get("episode", 0)) + 1
+            print(f"Resumed from {args.checkpoint_path} at episode {start_episode}")
         else:
             print(f"Checkpoint not found at {args.checkpoint_path}. Starting fresh.")
 
-    # Training loop.
     print("Starting training loop...\n")
-    for i, tensordict_data in enumerate(collector):
-        batch_idx = start_batch + i
+    
+    completed_episodes_data = []
+    recent_losses = []
+
+    for episode in range(start_episode, TOTAL_EPISODES + 1):
+        state = env.reset()
+        total_reward = 0
+        steps = 0
+        done = False
+        episode_loss = 0
         
-        tensordict_data.set("action", tensordict_data.get("action").squeeze(-1))
-        # Compute advantages without gradient tracking.
-        with torch.no_grad():
-            tensordict_data = advantage_module(tensordict_data)
+        while not done:
+            action = get_action(state, policy_net, epsilon)
+            if action is None:
+                done = True
+                reason = "no_valid_moves"
+                break
+                
+            next_state, reward, done = env.step(action)
+            total_reward += reward
+            steps += 1
+            
+            memory.append((state, action, reward, next_state, done))
+            state = next_state
+            
+            # Optimization step
+            if len(memory) >= BATCH_SIZE:
+                batch = random.sample(memory, BATCH_SIZE)
+                loss = 0
+                for b_state, b_action, b_reward, b_next_state, b_done in batch:
+                    q_values = policy_net(b_state["x"], b_state["edge_index"])
+                    q_value = q_values[b_action]
+                    
+                    if b_done:
+                        target = torch.tensor(b_reward, dtype=torch.float32)
+                    else:
+                        with torch.no_grad():
+                            next_q_values = target_net(b_next_state["x"], b_next_state["edge_index"])
+                            next_masked_q = next_q_values.masked_fill(~b_next_state["mask"], float('-inf'))
+                            if torch.isinf(next_masked_q).all():
+                                target = torch.tensor(b_reward, dtype=torch.float32)
+                            else:
+                                target = b_reward + GAMMA * next_masked_q.max()
+                                
+                    loss += F.smooth_l1_loss(q_value, target)
+                
+                loss = loss / BATCH_SIZE
+                optimizer.zero_grad()
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(policy_net.parameters(), max_norm=0.5)
+                optimizer.step()
+                
+                episode_loss += loss.item()
+                
+        # Deduce end reason
+        if reward >= 10.0:
+            reason = "bob_wins"
+        elif reward <= -10.0:
+            reason = "bob_loses"
+        else:
+            reason = "timeout"
 
-        # Compute A2C losses.
-        loss_dict = loss_module(tensordict_data)
+        # Record episode data
+        completed_episodes_data.append({
+            "return": total_reward,
+            "length": steps,
+            "reason": reason
+        })
+        if steps > 0:
+            recent_losses.append(episode_loss / steps)
+            
+        epsilon = max(EPSILON_END, epsilon * EPSILON_DECAY)
         
-        # Extract loss components.
-        actor_loss = loss_dict["loss_objective"]
-        value_loss = loss_dict["loss_critic"]
-        entropy_loss = loss_dict["loss_entropy"]  
-        
-        # Build total optimization loss.
-        total_loss = actor_loss + value_loss + entropy_loss
-
-        # Backpropagation.
-        optimizer.zero_grad()
-        total_loss.backward()
-        
-        # =========================================================================
-        # ADDED: Gradient Clipping
-        # Prevents exploding gradients from destroying the network weights
-        # when the agent encounters severe negative rewards.
-        # =========================================================================
-        torch.nn.utils.clip_grad_norm_(core_network.parameters(), max_norm=0.5)
-
-        optimizer.step()
-
-        # Logging metrics.
-        if batch_idx % 100 == 0 :
-            avg_reward = tensordict_data["next", "reward"].mean().item()
-
-            completed_episodes = base_env.completed_episodes
-            if completed_episodes:
-                returns = [ep["return"] for ep in completed_episodes]
-                lengths = [ep["length"] for ep in completed_episodes]
-                reasons = Counter(ep["reason"] for ep in completed_episodes)
-
-                num_episodes = len(completed_episodes)
-                avg_episode_return = sum(returns) / len(returns)
-                avg_episode_length = sum(lengths) / len(lengths)
-                min_episode_return = min(returns)
-                max_episode_return = max(returns)
-                win_rate = (num_episodes - reasons.get("bob_loses", 0)) / num_episodes
-                reasons_str = ", ".join(f"{k}={v}" for k, v in reasons.items())
-            else:
-                num_episodes = 0
-                avg_episode_return = float("nan")
-                avg_episode_length = float("nan")
-                min_episode_return = float("nan")
-                max_episode_return = float("nan")
-                win_rate = float("nan")
-                reasons_str = "no completed episode in this batch"
-
+        if episode % TARGET_UPDATE == 0:
+            target_net.load_state_dict(policy_net.state_dict())
+            
+        # Logging metrics and evaluation
+        if episode % LOG_INTERVAL == 0:
+            returns = [ep["return"] for ep in completed_episodes_data]
+            lengths = [ep["length"] for ep in completed_episodes_data]
+            reasons = Counter(ep["reason"] for ep in completed_episodes_data)
+            
+            num_episodes = len(completed_episodes_data)
+            avg_episode_return = sum(returns) / num_episodes if num_episodes > 0 else 0
+            avg_episode_length = sum(lengths) / num_episodes if num_episodes > 0 else 0
+            min_episode_return = min(returns) if num_episodes > 0 else 0
+            max_episode_return = max(returns) if num_episodes > 0 else 0
+            
+            win_rate = reasons.get("bob_wins", 0) / num_episodes if num_episodes > 0 else 0
+            avg_loss = sum(recent_losses) / len(recent_losses) if recent_losses else 0
+            reasons_str = ", ".join(f"{k}={v}" for k, v in reasons.items())
+            
             print(
-                f"Batch {batch_idx:4d} | Actor Loss: {actor_loss.item(): 8.3f} | Value Loss: {value_loss.item(): 8.3f} | "
-                f"Avg Step Reward: {avg_reward: 6.3f} | Avg Episode Return: {avg_episode_return: 6.3f} | "
+                f"Episode {episode:5d} | DQN Loss: {avg_loss: 8.3f} | "
+                f"Avg Episode Return: {avg_episode_return: 6.3f} | "
                 f"Avg Episode Len: {avg_episode_length: 6.1f} | Episodes: {num_episodes:4d} | "
                 f"WinRate (Bob): {win_rate: 6.2%} | Return[min/max]: {min_episode_return: 6.2f}/{max_episode_return: 6.2f} | "
                 f"Reasons: {reasons_str}"
             )
-
-            base_env.completed_episodes.clear()
-
-            # Log metrics to file
+            
             log_metrics_to_file(
-                args.log_path, batch_idx, num_episodes, win_rate, min_episode_return,
+                args.log_path, episode, num_episodes, win_rate, min_episode_return,
                 avg_episode_return, max_episode_return, avg_episode_length,
-                actor_loss.item(), value_loss.item(), entropy_loss.item(),
-                HEIGHT=HEIGHT, WIDTH=WIDTH, COLORS=COLORS
+                avg_loss, HEIGHT=HEIGHT, WIDTH=WIDTH, COLORS=COLORS
             )
+            
+            run_evaluation_episode(policy_net, eval_env)
+            
+            completed_episodes_data.clear()
+            recent_losses.clear()
+            
+            if args.save_every > 0 and episode % args.save_every == 0:
+                save_checkpoint(args.checkpoint_path, policy_net, optimizer, episode, config)
+                print(f"Checkpoint saved: {args.checkpoint_path} (episode {episode})")
 
-            run_evaluation_episode(policy, eval_env)
-
-            if args.save_every > 0 and batch_idx > 0 and batch_idx % args.save_every == 0:
-                save_checkpoint(args.checkpoint_path, core_network, optimizer, batch_idx, config)
-                print(f"Checkpoint saved: {args.checkpoint_path} (batch {batch_idx})")
-
-    save_checkpoint(args.checkpoint_path, core_network, optimizer, batch_idx, config)
+    save_checkpoint(args.checkpoint_path, policy_net, optimizer, episode, config)
     print(f"Final checkpoint saved: {args.checkpoint_path}")
-
 
 if __name__ == "__main__":
     main()
