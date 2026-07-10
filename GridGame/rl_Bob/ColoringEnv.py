@@ -11,13 +11,11 @@ from game.Grid import Grid
 from game.Alice.alice import Alice
 from model import GraphColoringDQN 
 
-# Define logics
 LOGICS = ["random", "heuristic1", "nn"] 
 ALICE_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Alice" / "latest.pt")
 
 ALICE_PLAYER = 0
 BOB_PLAYER = 1
-
 DEBUG = False
 
 class ColoringEnv:
@@ -43,7 +41,7 @@ class ColoringEnv:
         self.completed_episodes = []
         self.current_logic = None
 
-        # Load NN model if available
+        # Load Alice's legacy DQN model
         self.alice_nn = GraphColoringDQN(num_node_features=self.num_node_features, hidden_size=64, num_colors=self.num_colors)
         try:
             checkpoint = torch.load(ALICE_NN_PATH, map_location="cpu")
@@ -53,7 +51,7 @@ class ColoringEnv:
             self.alice_nn = None
 
     def _build_grid_edges(self):
-        # Build grid topology for GNN
+        # Build bidirectional graph edges based on grid topology
         edges = []
         for y in range(self.height):
             for x in range(self.width):
@@ -69,7 +67,7 @@ class ColoringEnv:
         return torch.tensor(edges, dtype=torch.long).t().contiguous()
 
     def _finish_episode(self, reason, reward):
-        # Record end of episode metrics
+        # Store episode metadata
         self.completed_episodes.append({
             "return": self.episode_return + reward,
             "length": self.episode_length,
@@ -77,7 +75,7 @@ class ColoringEnv:
         })
 
     def _get_obs(self):
-        # Transform state to GNN format with spatial features
+        # Generate node features and valid action masks
         node_features = []
         for y in range(self.height):
             for x in range(self.width):
@@ -102,7 +100,7 @@ class ColoringEnv:
         }
 
     def _get_alice_nn_move(self):
-        # Query Alice DQN for optimal move
+        # Select action using Alice's DQN
         if self.alice_nn is None:
             return None
             
@@ -121,7 +119,7 @@ class ColoringEnv:
         return self._action_to_move(best_action)
 
     def reset(self):
-        # Reset environment state
+        # Reinitialize grid and play Alice's first move if required
         self.current_step = 0
         self.episode_return = 0.0
         self.episode_length = 0
@@ -150,7 +148,7 @@ class ColoringEnv:
         return self._get_obs()
 
     def _action_to_move(self, action: int):
-        # Convert flat action to grid coordinates
+        # Decode integer action to x, y, color
         c = (action % self.num_colors) + 1
         cell_idx = action // self.num_colors
         x = cell_idx % self.width
@@ -158,7 +156,7 @@ class ColoringEnv:
         return x, y, c
     
     def step(self, action):
-        # Execute one step in the environment
+        # Execute Bob's action followed by Alice's response
         self.current_step += 1
         self.episode_length += 1
         self.grid.player = BOB_PLAYER
@@ -219,7 +217,8 @@ class ColoringEnv:
         return self._get_obs(), reward, False
     
     def render(self):
-        print(f"\n=== Tour {self.current_step} ===")
+        # Display the board in the terminal
+        print(f"\n=== Turn {self.current_step} ===")
         player_color = {
             0: "\033[91m",
             1: "\033[94m",
@@ -245,9 +244,8 @@ class ColoringEnv:
                 row_str += f"{color}{val}{reset} "
             print(row_str)
 
-
     def action_masks(self):
-        # Generate valid action mask
+        # Create boolean mask for valid actions
         mask = np.zeros(self.total_actions, dtype=np.bool_)
         for i in range(self.width):
             for j in range(self.height):
@@ -260,7 +258,7 @@ class ColoringEnv:
         return mask
 
     def is_grid_full(self):
-        # Check if no zero values remain
+        # Verify if board is fully colored
         for i in range(self.width):
             for j in range(self.height):
                 if self.grid.get_cell(i, j).get_value() == 0:
@@ -268,7 +266,7 @@ class ColoringEnv:
         return True
 
     def count_safe_cells(self):
-        # Count safe empty cells
+        # Count cells strictly protected from opponent's moves
         count = 0
         for i in range(self.width):
             for j in range(self.height):
@@ -278,7 +276,7 @@ class ColoringEnv:
         return count
 
     def has_uncolorable_cell(self):
-        # Check for presence of dead nodes
+        # Search for dead nodes where no color is valid
         for i in range(self.width):
             for j in range(self.height):
                 if self.grid.get_cell(i, j).get_value() == 0:
