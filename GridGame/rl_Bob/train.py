@@ -12,12 +12,11 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# Ensure your model class in model.py is correctly named and expects edge_attr
-from model import GraphColoringPPO 
+from Model import GraphColoringTransformerPPO 
 from ColoringEnv import ColoringEnv
 
 def save_checkpoint(path, model, optimizer, update_idx, config):
-    # Saves the model and optimizer parameters
+    # Serializes neural network state to disk
     checkpoint_dir = os.path.dirname(path)
     if checkpoint_dir:
         os.makedirs(checkpoint_dir, exist_ok=True)
@@ -30,7 +29,7 @@ def save_checkpoint(path, model, optimizer, update_idx, config):
     torch.save(checkpoint, path)
 
 def load_checkpoint(path, model, optimizer=None, device="cpu"):
-    # Loads previously trained model state
+    # Reconstructs model state from file
     checkpoint = torch.load(path, map_location=device)
     model.load_state_dict(checkpoint["model_state_dict"])
     if optimizer is not None and "optimizer_state_dict" in checkpoint:
@@ -39,7 +38,7 @@ def load_checkpoint(path, model, optimizer=None, device="cpu"):
 
 def log_metrics_to_file(log_path, update_idx, total_episodes, win_rate, min_return, 
                          avg_return, max_return, avg_length, ppo_loss, HEIGHT, WIDTH, COLORS):
-    # Logs evaluation metrics to CSV file
+    # Appends training progression to CSV
     log_dir = os.path.dirname(log_path)
     if log_dir:
         os.makedirs(log_dir, exist_ok=True)
@@ -55,7 +54,7 @@ def log_metrics_to_file(log_path, update_idx, total_episodes, win_rate, min_retu
                 f"{max_return:.4f},{avg_length:.4f},{ppo_loss:.6f}\n")
 
 def run_evaluation_episode(policy_net, env):
-    # Executes a deterministic evaluation episode
+    # Runs greedy policy to visualize current performance
     print("\n" + "="*30)
     print("EVALUATION: FINAL GRID")
     print("="*30)
@@ -74,7 +73,7 @@ def run_evaluation_episode(policy_net, env):
             break
             
         with torch.no_grad():
-            # Forward pass during evaluation including spatial distances (edge_attr)
+            # Inject spatial parameters into the transformer
             logits, _ = policy_net(state["x"], state["edge_index"], state["edge_attr"], batch_size=1)
             masked_logits = logits[0].masked_fill(~mask, float('-inf'))
             action = masked_logits.argmax().item()
@@ -93,7 +92,7 @@ def run_evaluation_episode(policy_net, env):
     print("="*30 + "\n")
 
 def compute_gae(rewards, values, dones, gamma, lam):
-    # Computes Generalized Advantage Estimation
+    # Calculates Generalized Advantage Estimation for variance reduction
     advantages = []
     last_advantage = 0
     for t in reversed(range(len(rewards))):
@@ -116,7 +115,7 @@ def main():
     parser.add_argument("--save-every", type=int, default=50, help="Save checkpoint every N updates.")
     args = parser.parse_args()
 
-    # PPO Hyperparameters
+    # Transformer & PPO Constants
     WIDTH, HEIGHT, COLORS = 5, 5, 4
     LEARNING_RATE = 3e-4
     GAMMA = 0.99
@@ -135,7 +134,7 @@ def main():
 
     print("Creating Graph Transformer PPO network...")
     num_node_features = (COLORS + 1) + 2
-    policy_net = GraphColoringPPO(num_node_features, hidden_size=64, num_colors=COLORS)
+    policy_net = GraphColoringTransformerPPO(num_node_features, hidden_size=64, num_colors=COLORS)
     optimizer = optim.Adam(policy_net.parameters(), lr=LEARNING_RATE)
 
     config = {
@@ -153,7 +152,6 @@ def main():
     print("Starting PPO training loop...\n")
     
     for update in range(start_update, TOTAL_UPDATES + 1):
-        # Rollout buffers
         batch_states = []
         batch_actions = []
         batch_log_probs = []
@@ -166,7 +164,7 @@ def main():
         episode_reward = 0
         episode_length = 0
         
-        # 1. Collect Trajectories
+        # 1. Rollout Phase
         for step in range(STEPS_PER_UPDATE):
             mask = state["mask"]
             valid_actions = torch.where(mask)[0]
@@ -179,7 +177,6 @@ def main():
                 continue
                 
             with torch.no_grad():
-                # Inference step with edge attributes for attention mechanism
                 logits, value = policy_net(state["x"], state["edge_index"], state["edge_attr"], batch_size=1)
                 masked_logits = logits[0].masked_fill(~mask, float('-inf'))
                 
@@ -215,9 +212,8 @@ def main():
                 episode_reward = 0
                 episode_length = 0
 
-        # 2. Compute Advantages
+        # 2. Compute Advantage Array
         with torch.no_grad():
-            # Estimate next state value with fully connected geometry
             _, next_value = policy_net(state["x"], state["edge_index"], state["edge_attr"], batch_size=1)
             batch_values.append(next_value.item())
             
@@ -230,15 +226,14 @@ def main():
         b_actions = torch.stack(batch_actions)
         b_log_probs = torch.stack(batch_log_probs)
         
-        # 3. PPO Optimization
+        # 3. Optimization Phase
         total_loss = 0
         for epoch in range(PPO_EPOCHS):
-            # Inject edge attributes into the batched graph data structure
+            # Form graph batch integrating local topologies and global spatial distances
             states_list = [Data(x=s[0]["x"], edge_index=s[0]["edge_index"], edge_attr=s[0]["edge_attr"]) for s in batch_states]
             b_masks = torch.stack([s[1] for s in batch_states])
             batched_states = Batch.from_data_list(states_list)
             
-            # Forward pass on the whole batch with edge distances
             logits, values = policy_net(batched_states.x, batched_states.edge_index, batched_states.edge_attr, batch_index=batched_states.batch, batch_size=len(batch_states))
             values = values.squeeze()
             
@@ -267,7 +262,7 @@ def main():
             
         avg_loss = total_loss / PPO_EPOCHS
         
-        # 4. Logging & Evaluation
+        # 4. Metrics Reporting
         if len(completed_episodes_data) > 0:
             returns_data = [ep["return"] for ep in completed_episodes_data]
             lengths = [ep["length"] for ep in completed_episodes_data]

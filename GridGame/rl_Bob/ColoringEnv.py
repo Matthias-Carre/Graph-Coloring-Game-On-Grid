@@ -1,7 +1,6 @@
 import random
 import numpy as np
-import torch 
-import torch.nn.functional as F
+import torch
 import sys
 from pathlib import Path
 
@@ -26,11 +25,13 @@ class ColoringEnv:
         
         self.num_nodes = width * height
         self.num_classes = num_colors + 1
-        # Feature size: One-hot classes + normalized X + normalized Y
         self.num_node_features = self.num_classes + 2 
         self.total_actions = self.num_nodes * self.num_colors
         
-        self.edge_index = self._build_grid_edges()
+        # Topology for Alice (sparse)
+        self.local_edge_index = self._build_local_edges()
+        # Topology for Bob (fully connected with distances)
+        self.global_edge_index, self.global_edge_attr = self._build_global_edges()
         
         self.grid = None
         self.Alice = None
@@ -41,7 +42,6 @@ class ColoringEnv:
         self.completed_episodes = []
         self.current_logic = None
 
-        # Load Alice's legacy DQN model
         self.alice_nn = GraphColoringDQN(num_node_features=self.num_node_features, hidden_size=64, num_colors=self.num_colors)
         try:
             checkpoint = torch.load(ALICE_NN_PATH, map_location="cpu")
@@ -50,11 +50,24 @@ class ColoringEnv:
         except Exception:
             self.alice_nn = None
 
-    def _build_grid_edges(self):
-        # Build fully connected graph with normalized Manhattan distances
+    def _build_local_edges(self):
+        # Build standard 4-way adjacent grid edges for legacy compatibility
+        edges = []
+        for y in range(self.height):
+            for x in range(self.width):
+                node = y * self.width + x
+                if x < self.width - 1:
+                    right = node + 1
+                    edges.extend([[node, right], [right, node]])
+                if y < self.height - 1:
+                    bottom = node + self.width
+                    edges.extend([[node, bottom], [bottom, node]])
+        return torch.tensor(edges, dtype=torch.long).t().contiguous()
+
+    def _build_global_edges(self):
+        # Build fully connected graph with Manhattan distances
         edges = []
         edge_attrs = []
-        
         max_dist = (self.width - 1) + (self.height - 1)
         
         for y1 in range(self.height):
@@ -63,22 +76,18 @@ class ColoringEnv:
                 for y2 in range(self.height):
                     for x2 in range(self.width):
                         node2 = y2 * self.width + x2
-                        
                         edges.append([node1, node2])
                         
-                        # Calculate and normalize Manhattan distance
                         dist = abs(x1 - x2) + abs(y1 - y2)
                         norm_dist = dist / max_dist if max_dist > 0 else 0.0
                         edge_attrs.append([norm_dist])
                         
         edge_index = torch.tensor(edges, dtype=torch.long).t().contiguous()
         edge_attr = torch.tensor(edge_attrs, dtype=torch.float32)
-        
         return edge_index, edge_attr
-    
-    
+
     def _finish_episode(self, reason, reward):
-        # Store episode metadata
+        # Finalize episode metrics
         self.completed_episodes.append({
             "return": self.episode_return + reward,
             "length": self.episode_length,
@@ -86,19 +95,17 @@ class ColoringEnv:
         })
 
     def _get_obs(self):
-        # Generate node features and valid action masks
+        # Process grid into tensor features
         node_features = []
         for y in range(self.height):
             for x in range(self.width):
                 val = self.grid.get_cell(x, y).get_value()
-                
                 norm_x = x / (self.width - 1) if self.width > 1 else 0.0
                 norm_y = y / (self.height - 1) if self.height > 1 else 0.0
                 
                 one_hot = [0.0] * self.num_classes
                 one_hot[val] = 1.0
                 one_hot.extend([norm_x, norm_y])
-                
                 node_features.append(one_hot)
                 
         x_tensor = torch.tensor(node_features, dtype=torch.float32)
@@ -106,32 +113,33 @@ class ColoringEnv:
         
         return {
             "x": x_tensor,
-            "edge_index": self.edge_index,
-            "edge_attr": self.edge_attr, # Expose distances to the model
+            "edge_index": self.global_edge_index,
+            "edge_attr": self.global_edge_attr,
+            "local_edge_index": self.local_edge_index,
             "mask": mask
         }
 
     def _get_alice_nn_move(self):
-        # Select action using Alice's DQN
+        # Query Alice DQN using sparse grid representation
         if self.alice_nn is None:
             return None
             
         obs_dict = self._get_obs()
         mask_tensor = obs_dict["mask"]
-        
         valid_actions = torch.where(mask_tensor)[0]
+        
         if len(valid_actions) == 0:
             return None
             
         with torch.no_grad():
-            q_values = self.alice_nn(obs_dict["x"], obs_dict["edge_index"], batch_size=1)
+            q_values = self.alice_nn(obs_dict["x"], obs_dict["local_edge_index"], batch_size=1)
             masked_q_values = q_values[0].masked_fill(~mask_tensor, float('-inf'))
             best_action = masked_q_values.argmax().item()
             
         return self._action_to_move(best_action)
 
     def reset(self):
-        # Reinitialize grid and play Alice's first move if required
+        # Reset game variables
         self.current_step = 0
         self.episode_return = 0.0
         self.episode_length = 0
@@ -140,7 +148,6 @@ class ColoringEnv:
         self.grid = Grid(self.height, self.width, self.num_colors)
         self.Alice = Alice(self.grid)
         self.grid.player = ALICE_PLAYER
-        
         self.current_logic = random.choice(LOGICS)
         
         opening_move = None
@@ -160,7 +167,7 @@ class ColoringEnv:
         return self._get_obs()
 
     def _action_to_move(self, action: int):
-        # Decode integer action to x, y, color
+        # Translate action index to coordinates
         c = (action % self.num_colors) + 1
         cell_idx = action // self.num_colors
         x = cell_idx % self.width
@@ -168,7 +175,7 @@ class ColoringEnv:
         return x, y, c
     
     def step(self, action):
-        # Execute Bob's action followed by Alice's response
+        # Process agent step and opponent reaction
         self.current_step += 1
         self.episode_length += 1
         self.grid.player = BOB_PLAYER
@@ -229,12 +236,9 @@ class ColoringEnv:
         return self._get_obs(), reward, False
     
     def render(self):
-        # Display the board in the terminal
+        # Print grid state
         print(f"\n=== Turn {self.current_step} ===")
-        player_color = {
-            0: "\033[91m",
-            1: "\033[94m",
-        }
+        player_color = {0: "\033[91m", 1: "\033[94m"}
         reset = "\033[0m"
         
         first_row = ""
@@ -257,7 +261,7 @@ class ColoringEnv:
             print(row_str)
 
     def action_masks(self):
-        # Create boolean mask for valid actions
+        # Generate valid boolean mask
         mask = np.zeros(self.total_actions, dtype=np.bool_)
         for i in range(self.width):
             for j in range(self.height):
@@ -270,7 +274,7 @@ class ColoringEnv:
         return mask
 
     def is_grid_full(self):
-        # Verify if board is fully colored
+        # Check termination status
         for i in range(self.width):
             for j in range(self.height):
                 if self.grid.get_cell(i, j).get_value() == 0:
@@ -278,7 +282,7 @@ class ColoringEnv:
         return True
 
     def count_safe_cells(self):
-        # Count cells strictly protected from opponent's moves
+        # Count strictly protected areas
         count = 0
         for i in range(self.width):
             for j in range(self.height):
@@ -288,7 +292,7 @@ class ColoringEnv:
         return count
 
     def has_uncolorable_cell(self):
-        # Search for dead nodes where no color is valid
+        # Check for uncolorable configurations
         for i in range(self.width):
             for j in range(self.height):
                 if self.grid.get_cell(i, j).get_value() == 0:
