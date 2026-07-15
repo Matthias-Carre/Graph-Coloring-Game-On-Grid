@@ -1,6 +1,6 @@
 import random
 import numpy as np
-import torch
+import torch 
 import torch.nn.functional as F
 import sys
 from pathlib import Path
@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from game.Grid import Grid
 from game.Alice.alice import Alice
-from model import GraphColoringDQN 
+from Model import GraphColoringDQN 
 
 LOGICS = ["random", "heuristic1", "nn"] 
 ALICE_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Alice" / "latest.pt")
@@ -51,21 +51,32 @@ class ColoringEnv:
             self.alice_nn = None
 
     def _build_grid_edges(self):
-        # Build bidirectional graph edges based on grid topology
+        # Build fully connected graph with normalized Manhattan distances
         edges = []
-        for y in range(self.height):
-            for x in range(self.width):
-                node = y * self.width + x
-                if x < self.width - 1:
-                    right = node + 1
-                    edges.append([node, right])
-                    edges.append([right, node])
-                if y < self.height - 1:
-                    bottom = node + self.width
-                    edges.append([node, bottom])
-                    edges.append([bottom, node])
-        return torch.tensor(edges, dtype=torch.long).t().contiguous()
-
+        edge_attrs = []
+        
+        max_dist = (self.width - 1) + (self.height - 1)
+        
+        for y1 in range(self.height):
+            for x1 in range(self.width):
+                node1 = y1 * self.width + x1
+                for y2 in range(self.height):
+                    for x2 in range(self.width):
+                        node2 = y2 * self.width + x2
+                        
+                        edges.append([node1, node2])
+                        
+                        # Calculate and normalize Manhattan distance
+                        dist = abs(x1 - x2) + abs(y1 - y2)
+                        norm_dist = dist / max_dist if max_dist > 0 else 0.0
+                        edge_attrs.append([norm_dist])
+                        
+        edge_index = torch.tensor(edges, dtype=torch.long).t().contiguous()
+        edge_attr = torch.tensor(edge_attrs, dtype=torch.float32)
+        
+        return edge_index, edge_attr
+    
+    
     def _finish_episode(self, reason, reward):
         # Store episode metadata
         self.completed_episodes.append({
@@ -96,6 +107,7 @@ class ColoringEnv:
         return {
             "x": x_tensor,
             "edge_index": self.edge_index,
+            "edge_attr": self.edge_attr, # Expose distances to the model
             "mask": mask
         }
 

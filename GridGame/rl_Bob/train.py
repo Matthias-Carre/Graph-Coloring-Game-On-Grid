@@ -12,11 +12,12 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from model import GraphColoringPPO
+# Ensure your model class in model.py is correctly named and expects edge_attr
+from model import GraphColoringPPO 
 from ColoringEnv import ColoringEnv
 
 def save_checkpoint(path, model, optimizer, update_idx, config):
-    # Save the PPO model and optimizer parameters
+    # Saves the model and optimizer parameters
     checkpoint_dir = os.path.dirname(path)
     if checkpoint_dir:
         os.makedirs(checkpoint_dir, exist_ok=True)
@@ -29,7 +30,7 @@ def save_checkpoint(path, model, optimizer, update_idx, config):
     torch.save(checkpoint, path)
 
 def load_checkpoint(path, model, optimizer=None, device="cpu"):
-    # Load previously trained model
+    # Loads previously trained model state
     checkpoint = torch.load(path, map_location=device)
     model.load_state_dict(checkpoint["model_state_dict"])
     if optimizer is not None and "optimizer_state_dict" in checkpoint:
@@ -38,7 +39,7 @@ def load_checkpoint(path, model, optimizer=None, device="cpu"):
 
 def log_metrics_to_file(log_path, update_idx, total_episodes, win_rate, min_return, 
                          avg_return, max_return, avg_length, ppo_loss, HEIGHT, WIDTH, COLORS):
-    # Log evaluation metrics to CSV
+    # Logs evaluation metrics to CSV file
     log_dir = os.path.dirname(log_path)
     if log_dir:
         os.makedirs(log_dir, exist_ok=True)
@@ -47,14 +48,14 @@ def log_metrics_to_file(log_path, update_idx, total_episodes, win_rate, min_retu
     
     with open(log_path, 'a') as f:
         if not file_exists or update_idx == 1:
-            f.write(f"Bob PPO Training On size: w={WIDTH}, h={HEIGHT}, c={COLORS}\n")
+            f.write(f"Bob PPO Transformer Training On size: w={WIDTH}, h={HEIGHT}, c={COLORS}\n")
             f.write("update,total_episodes,win_rate,min_score,avg_score,max_score,avg_length,ppo_loss\n")
         if total_episodes > 0:
             f.write(f"{update_idx},{total_episodes},{win_rate:.4f},{min_return:.4f},{avg_return:.4f},"
                 f"{max_return:.4f},{avg_length:.4f},{ppo_loss:.6f}\n")
 
 def run_evaluation_episode(policy_net, env):
-    # Execute a deterministic evaluation episode
+    # Executes a deterministic evaluation episode
     print("\n" + "="*30)
     print("EVALUATION: FINAL GRID")
     print("="*30)
@@ -73,9 +74,10 @@ def run_evaluation_episode(policy_net, env):
             break
             
         with torch.no_grad():
-            logits, _ = policy_net(state["x"], state["edge_index"], batch_size=1)
+            # Forward pass during evaluation including spatial distances (edge_attr)
+            logits, _ = policy_net(state["x"], state["edge_index"], state["edge_attr"], batch_size=1)
             masked_logits = logits[0].masked_fill(~mask, float('-inf'))
-            action = masked_logits.argmax().item() # Exploit completely during evaluation
+            action = masked_logits.argmax().item()
             
         state, reward, done = env.step(action)
         total_reward += reward
@@ -91,7 +93,7 @@ def run_evaluation_episode(policy_net, env):
     print("="*30 + "\n")
 
 def compute_gae(rewards, values, dones, gamma, lam):
-    # Compute Generalized Advantage Estimation
+    # Computes Generalized Advantage Estimation
     advantages = []
     last_advantage = 0
     for t in reversed(range(len(rewards))):
@@ -107,7 +109,7 @@ def main():
     default_checkpoint = str(script_dir / "checkpoints" / "Bob_PPO" / "latest.pt")
     default_log_file = str(script_dir / "checkpoints" / "Bob_PPO" / "training_metrics.csv")
     
-    parser = argparse.ArgumentParser(description="Train GNN-PPO graph coloring agent.")
+    parser = argparse.ArgumentParser(description="Train Graph Transformer PPO agent.")
     parser.add_argument("--resume", action="store_true", help="Resume from checkpoint.")
     parser.add_argument("--checkpoint-path", type=str, default=default_checkpoint, help="Path to checkpoint file.")
     parser.add_argument("--log-path", type=str, default=default_log_file, help="Path to metrics log file.")
@@ -131,7 +133,7 @@ def main():
     env = ColoringEnv(width=WIDTH, height=HEIGHT, num_colors=COLORS)
     eval_env = ColoringEnv(width=WIDTH, height=HEIGHT, num_colors=COLORS)
 
-    print("Creating GNN-PPO network...")
+    print("Creating Graph Transformer PPO network...")
     num_node_features = (COLORS + 1) + 2
     policy_net = GraphColoringPPO(num_node_features, hidden_size=64, num_colors=COLORS)
     optimizer = optim.Adam(policy_net.parameters(), lr=LEARNING_RATE)
@@ -170,7 +172,6 @@ def main():
             valid_actions = torch.where(mask)[0]
             
             if len(valid_actions) == 0:
-                # Force environment reset if stuck
                 completed_episodes_data.append({"return": episode_reward, "length": episode_length, "reason": "no_valid_moves"})
                 state = env.reset()
                 episode_reward = 0
@@ -178,10 +179,10 @@ def main():
                 continue
                 
             with torch.no_grad():
-                logits, value = policy_net(state["x"], state["edge_index"], batch_size=1)
+                # Inference step with edge attributes for attention mechanism
+                logits, value = policy_net(state["x"], state["edge_index"], state["edge_attr"], batch_size=1)
                 masked_logits = logits[0].masked_fill(~mask, float('-inf'))
                 
-                # Sample action using probability distribution
                 probs = F.softmax(masked_logits, dim=-1)
                 dist = Categorical(probs)
                 action = dist.sample()
@@ -216,14 +217,14 @@ def main():
 
         # 2. Compute Advantages
         with torch.no_grad():
-            _, next_value = policy_net(state["x"], state["edge_index"], batch_size=1)
+            # Estimate next state value with fully connected geometry
+            _, next_value = policy_net(state["x"], state["edge_index"], state["edge_attr"], batch_size=1)
             batch_values.append(next_value.item())
             
         advantages = compute_gae(batch_rewards, batch_values, batch_dones, GAMMA, GAE_LAMBDA)
         advantages = torch.tensor(advantages, dtype=torch.float32)
         returns = advantages + torch.tensor(batch_values[:-1], dtype=torch.float32)
         
-        # Normalize advantages
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
         
         b_actions = torch.stack(batch_actions)
@@ -232,12 +233,13 @@ def main():
         # 3. PPO Optimization
         total_loss = 0
         for epoch in range(PPO_EPOCHS):
-            # Form graph batch
-            states_list = [Data(x=s[0]["x"], edge_index=s[0]["edge_index"]) for s in batch_states]
+            # Inject edge attributes into the batched graph data structure
+            states_list = [Data(x=s[0]["x"], edge_index=s[0]["edge_index"], edge_attr=s[0]["edge_attr"]) for s in batch_states]
             b_masks = torch.stack([s[1] for s in batch_states])
             batched_states = Batch.from_data_list(states_list)
             
-            logits, values = policy_net(batched_states.x, batched_states.edge_index, batch_index=batched_states.batch, batch_size=len(batch_states))
+            # Forward pass on the whole batch with edge distances
+            logits, values = policy_net(batched_states.x, batched_states.edge_index, batched_states.edge_attr, batch_index=batched_states.batch, batch_size=len(batch_states))
             values = values.squeeze()
             
             masked_logits = logits.masked_fill(~b_masks, float('-inf'))
@@ -247,16 +249,13 @@ def main():
             new_log_probs = dist.log_prob(b_actions)
             entropy = dist.entropy().mean()
             
-            # Policy Loss (Clipping)
             ratio = torch.exp(new_log_probs - b_log_probs)
             surr1 = ratio * advantages
             surr2 = torch.clamp(ratio, 1.0 - CLIP_EPSILON, 1.0 + CLIP_EPSILON) * advantages
             actor_loss = -torch.min(surr1, surr2).mean()
             
-            # Value Loss
             critic_loss = F.mse_loss(values, returns)
             
-            # Total Loss
             loss = actor_loss + VALUE_COEF * critic_loss - ENTROPY_COEF * entropy
             
             optimizer.zero_grad()
