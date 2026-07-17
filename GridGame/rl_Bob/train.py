@@ -2,6 +2,7 @@ import torch
 import torch.optim as optim
 import argparse
 import os
+import warnings
 from collections import Counter
 from tensordict.nn import TensorDictModule
 from torchrl.envs.libs.gym import GymWrapper
@@ -16,6 +17,12 @@ from torchrl.modules.distributions import MaskedCategorical
 from tensordict import TensorDict
 import sys
 from pathlib import Path
+
+# ==========================================
+# Suppress TorchRL/PyTorch internal warnings
+# ==========================================
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -44,7 +51,6 @@ def load_checkpoint(path, model, optimizer=None, device="cpu"):
 def log_metrics_to_file(log_path, batch_idx, num_episodes, win_rate, min_episode_return, 
                          avg_episode_return, max_episode_return, avg_episode_length,
                          actor_loss, value_loss, entropy_loss, HEIGHT, WIDTH, COLORS):
-    # Appends training progression to CSV
     log_dir = os.path.dirname(log_path)
     if log_dir:
         os.makedirs(log_dir, exist_ok=True)
@@ -59,7 +65,6 @@ def log_metrics_to_file(log_path, batch_idx, num_episodes, win_rate, min_episode
                 f"{max_episode_return:.4f},{avg_episode_length:.4f},{actor_loss:.6f},{value_loss:.6f},{entropy_loss:.6f}\n")
 
 def run_evaluation_episode(policy, env):
-    # Runs a deterministic evaluation rollout
     print("\n" + "="*30)
     print("EVALUATION: FINAL GRID")
     print("="*30)
@@ -97,11 +102,14 @@ def main():
     parser.add_argument("--save-every", type=int, default=100, help="Save checkpoint every N batches.")
     args = parser.parse_args()
 
-    # PPO Hyperparameters
-    WIDTH, HEIGHT, COLORS = 20, 5, 4
+    # ==========================================
+    # MEMORY OPTIMIZED PPO HYPERPARAMETERS
+    # ==========================================
+    WIDTH, HEIGHT, COLORS = 6, 6, 4
     LEARNING_RATE = 3e-4
-    FRAMES_PER_BATCH = 1024   # Sufficient rollout size for PPO
-    TOTAL_FRAMES = 500_000
+    FRAMES_PER_BATCH = 256     # Reduced to prevent advantage_module OOM
+    MINI_BATCH_SIZE = 64       # Chunk size to prevent PPO backward OOM
+    TOTAL_FRAMES = 512_000     # Adjusted to be a perfect multiple of 256
     GAMMA = 0.99
     PPO_EPOCHS = 4
     
@@ -144,7 +152,6 @@ def main():
         out_keys=["logits"]
     )
     
-    # Probabilistic actor requires return_log_prob=True for PPO ratio computation
     policy = ProbabilisticActor(
         module=actor_module,
         in_keys=["logits", "mask"],
@@ -168,7 +175,6 @@ def main():
         device="cpu" 
     )
 
-    # Initialize PPO objective
     loss_module = ClipPPOLoss(
         actor_network=policy,
         critic_network=value_module,
@@ -192,6 +198,7 @@ def main():
         "colors": COLORS,
         "learning_rate": LEARNING_RATE,
         "frames_per_batch": FRAMES_PER_BATCH,
+        "mini_batch_size": MINI_BATCH_SIZE,
         "total_frames": TOTAL_FRAMES,
         "gamma": GAMMA,
         "ppo_epochs": PPO_EPOCHS
@@ -210,32 +217,44 @@ def main():
         tensordict_data.set("action", tensordict_data.get("action").squeeze(-1))
         
         with torch.no_grad():
+            # Advantage computation on 256 frames (Safe for RAM)
             tensordict_data = advantage_module(tensordict_data)
 
-        # Optimization phase (PPO multiple epochs)
+        # ==========================================
+        # MINI-BATCH OPTIMIZATION PHASE
+        # ==========================================
         total_actor_loss, total_value_loss, total_entropy = 0, 0, 0
+        num_minibatches = 0
         
         for _ in range(PPO_EPOCHS):
-            loss_dict = loss_module(tensordict_data)
+            # Shuffle the full batch
+            rand_idx = torch.randperm(FRAMES_PER_BATCH)
+            shuffled_data = tensordict_data[rand_idx]
             
-            actor_loss = loss_dict["loss_objective"]
-            value_loss = loss_dict["loss_critic"]
-            entropy_loss = loss_dict["loss_entropy"]  
-            
-            total_loss = actor_loss + value_loss + entropy_loss
+            # Process in chunks of 64 to prevent RAM explosion during backward pass
+            for minibatch in shuffled_data.split(MINI_BATCH_SIZE):
+                loss_dict = loss_module(minibatch)
+                
+                actor_loss = loss_dict["loss_objective"]
+                value_loss = loss_dict["loss_critic"]
+                entropy_loss = loss_dict["loss_entropy"]  
+                
+                total_loss = actor_loss + value_loss + entropy_loss
 
-            optimizer.zero_grad()
-            total_loss.backward()
-            torch.nn.utils.clip_grad_norm_(core_network.parameters(), max_norm=0.5)
-            optimizer.step()
-            
-            total_actor_loss += actor_loss.item()
-            total_value_loss += value_loss.item()
-            total_entropy += entropy_loss.item()
+                optimizer.zero_grad()
+                total_loss.backward()
+                torch.nn.utils.clip_grad_norm_(core_network.parameters(), max_norm=0.5)
+                optimizer.step()
+                
+                total_actor_loss += actor_loss.item()
+                total_value_loss += value_loss.item()
+                total_entropy += entropy_loss.item()
+                num_minibatches += 1
 
-        avg_actor_loss = total_actor_loss / PPO_EPOCHS
-        avg_value_loss = total_value_loss / PPO_EPOCHS
-        avg_entropy_loss = total_entropy / PPO_EPOCHS
+        # Calculate averages across all minibatches
+        avg_actor_loss = total_actor_loss / num_minibatches
+        avg_value_loss = total_value_loss / num_minibatches
+        avg_entropy_loss = total_entropy / num_minibatches
 
         # Metrics reporting
         if batch_idx % 10 == 0:
