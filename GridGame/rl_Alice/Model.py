@@ -1,114 +1,67 @@
 import torch
 import torch.nn as nn
-from escnn import gspaces
-from escnn import nn as enn
+from torch_geometric.nn import TransformerConv, global_mean_pool
 
 class GraphColoringNet(nn.Module):
-    def __init__(self, width, height, num_colors):
-        super(GraphColoringNet, self).__init__()
-        
-        self.width = width
-        self.height = height
+    """
+    Graph Transformer Actor-Critic architecture for PPO.
+    """
+    def __init__(self, width, height, num_colors, hidden_dim=64, num_layers=3):
+        super().__init__()
         self.num_colors = num_colors
+        self.num_nodes = width * height
+        num_node_features = num_colors + 1
         
-        in_channels = num_colors + 1
+        # Project initial sparse features to dense latent space
+        self.encoder = nn.Linear(num_node_features, hidden_dim)
         
-        # Define symmetry group for 4 discrete rotations.
-        self.r2_act = gspaces.flipRot2dOnR2(N=4)
-        self.r2_act = gspaces.flipRot2dOnR2(N=4)
-        
-        self.in_type = enn.FieldType(self.r2_act, in_channels * [self.r2_act.trivial_repr])
-        self.hidden_type = enn.FieldType(self.r2_act, 32 * [self.r2_act.regular_repr])
-        
-        # Shared equivariant convolutional feature extractor.
-        self.shared_cnn = enn.SequentialModule(
-            enn.R2Conv(self.in_type, self.hidden_type, kernel_size=3, padding=1),
-            enn.ReLU(self.hidden_type, inplace=True),
+        # Graph Transformer layers for message passing
+        self.transformer_layers = nn.ModuleList()
+        for _ in range(num_layers):
+            self.transformer_layers.append(
+                TransformerConv(
+                    in_channels=hidden_dim, 
+                    out_channels=hidden_dim // 4, 
+                    heads=4, 
+                    concat=True
+                )
+            )
             
-            enn.R2Conv(self.hidden_type, self.hidden_type, kernel_size=3, padding=1),
-            enn.ReLU(self.hidden_type, inplace=True),
-            
-            enn.R2Conv(self.hidden_type, self.hidden_type, kernel_size=3, padding=1),
-            enn.ReLU(self.hidden_type, inplace=True)
-        )
-        
-        # ==========================================
-        # THE ACTOR HEAD (Equivariant)
-        # ==========================================
-        # The output must be num_colors. Colors don't rotate (Color 1 is always Color 1), 
-        # so we use trivial representations.
-        self.out_type = enn.FieldType(self.r2_act, self.num_colors * [self.r2_act.trivial_repr])
-        
-        # We use 1x1 convolutions to maintain spatial awareness instead of nn.Linear
-        self.actor_head = enn.SequentialModule(
-            enn.R2Conv(self.hidden_type, self.hidden_type, kernel_size=1),
-            enn.ReLU(self.hidden_type, inplace=True),
-            enn.R2Conv(self.hidden_type, self.out_type, kernel_size=1)
-        )
-        
-        # ==========================================
-        # THE CRITIC HEAD (Invariant)
-        # ==========================================
-        # The Critic just needs to know if the board is good/bad, it shouldn't care about rotation.
-        # GroupPooling extracts rotation-invariant features safely.
-        #self.group_pool = enn.GroupPooling(self.hidden_type)
-        
-        self.critic_flattened_size = 32 * height * width
-        
-        
-        # After pooling, we have 32 channels.
-        self.critic_flattened_size = 32 * height * width
-        
-        self.critic_head = nn.Sequential(
-            nn.Linear(self.critic_flattened_size, 128),
+        # Actor head: Outputs preference scores (logits) for each color
+        self.actor_head = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(128, 1)
+            nn.Linear(hidden_dim, num_colors)
+        )
+        
+        # Critic head: Evaluates the overall quality of the graph state
+        self.critic_head = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.ReLU(),
+            nn.Linear(hidden_dim // 2, 1)
         )
 
-    def forward(self, observation):
-        add_batch = observation.dim() == 3
-        if add_batch:
-            observation = observation.unsqueeze(0)
+    def forward(self, x, edge_index, mask=None, batch_index=None):
+        # Encode nodes
+        h = torch.relu(self.encoder(x))
+        
+        # Apply self-attention message passing
+        for conv in self.transformer_layers:
+            h = torch.relu(conv(h, edge_index))
             
-        x = enn.GeometricTensor(observation, self.in_type)
-        features = self.shared_cnn(x)
+        # Compute actor logits and flatten
+        node_logits = self.actor_head(h)
+        actor_logits = node_logits.view(-1) 
         
-        # --- ACTOR ---
-        # Output shape is (Batch, num_colors, Height, Width)
-        actor_geom = self.actor_head(features)
-        actor_tensor = actor_geom.tensor 
-        
-        # CRITICAL TRICK: We permute the dimensions to (Batch, Height, Width, num_colors)
-        # This matches the Gymnasium action mapping: action = (y * width + x) * num_colors + c
-        actor_tensor = actor_tensor.permute(0, 2, 3, 1).contiguous()
-        
-        # Now we flatten it safely into (Batch, 100). The geometry correctly maps to the action indices!
-        logits = actor_tensor.view(actor_tensor.size(0), -1)
-        
-        # --- CRITIC ---
-        # Pool the rotation states manually to make the board evaluation strictly invariant.
-        # We avoid escnn's GroupPooling here because its in-place operations conflict with TorchRL's vmap.
-        
-        # features.tensor shape is (Batch, 128, Height, Width)
-        # We have 32 representations, each consisting of 8 rotation channels.
-        raw_critic_tensor = features.tensor
-        B, C, H, W = raw_critic_tensor.shape
-        
-        # Reshape to isolate the 4 rotations: (Batch, 32, 4, Height, Width)
-        # 8 for D4
-        reshaped_tensor = raw_critic_tensor.view(B, 32, 8, H, W)
-        # Reshape to isolate the 8 rotations: (Batch, 32, 8, Height, Width)
-        reshaped_tensor = raw_critic_tensor.view(B, 32, 8, H, W)
-        
-        # Take the maximum over the rotation dimension (dim=2) to achieve invariance
-        # The result shape is (Batch, 32, Height, Width)
-        invariant_tensor, _ = reshaped_tensor.max(dim=2)
-        
-        critic_flat = invariant_tensor.view(-1, self.critic_flattened_size)
-        value = self.critic_head(critic_flat)
-        
-        if add_batch:
-            logits = logits.squeeze(0)
-            value = value.squeeze(0)
+        # Apply action mask if provided (replace invalid with strong negative)
+        if mask is not None:
+            actor_logits = actor_logits.masked_fill(~mask, -1e8)
             
-        return logits, value
+        # Pool node embeddings to compute global graph value
+        if batch_index is None:
+            batch_index = torch.zeros(h.size(0), dtype=torch.long, device=h.device)
+            
+        global_h = global_mean_pool(h, batch_index)
+        critic_value = self.critic_head(global_h)
+        
+        return actor_logits, critic_value
