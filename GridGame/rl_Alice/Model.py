@@ -3,19 +3,19 @@ import torch.nn as nn
 from torch_geometric.nn import TransformerConv, global_mean_pool
 
 class GraphColoringNet(nn.Module):
-    """
-    Graph Transformer Actor-Critic architecture for PPO.
-    """
     def __init__(self, width, height, num_colors, hidden_dim=64, num_layers=3):
         super().__init__()
+        
+        self.width = width
+        self.height = height
         self.num_colors = num_colors
         self.num_nodes = width * height
-        num_node_features = num_colors + 1
+        in_channels = num_colors + 1
         
-        # Project initial sparse features to dense latent space
-        self.encoder = nn.Linear(num_node_features, hidden_dim)
+        # Encodeur initial
+        self.encoder = nn.Linear(in_channels, hidden_dim)
         
-        # Graph Transformer layers for message passing
+        # Couches Graph Transformer
         self.transformer_layers = nn.ModuleList()
         for _ in range(num_layers):
             self.transformer_layers.append(
@@ -27,41 +27,58 @@ class GraphColoringNet(nn.Module):
                 )
             )
             
-        # Actor head: Outputs preference scores (logits) for each color
+        # Tête de l'Acteur (Décide la couleur de chaque case)
         self.actor_head = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, num_colors)
         )
         
-        # Critic head: Evaluates the overall quality of the graph state
+        # Tête du Critique (Évalue la qualité globale de la grille)
         self.critic_head = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim // 2),
             nn.ReLU(),
             nn.Linear(hidden_dim // 2, 1)
         )
 
-    def forward(self, x, edge_index, mask=None, batch_index=None):
-        # Encode nodes
-        h = torch.relu(self.encoder(x))
+    def forward(self, observation, edge_index):
+        # Gestion du format Batch imposé par TorchRL
+        add_batch = observation.dim() == 2
+        if add_batch:
+            observation = observation.unsqueeze(0)
+            
+        B, N, C = observation.shape
         
-        # Apply self-attention message passing
+        # Projection initiale
+        h = torch.relu(self.encoder(observation)) 
+        
+        # ASTUCE PYG : On aplatit le batch de graphes en un seul "méga-graphe" déconnecté
+        h_flat = h.view(B * N, -1)
+        
+        # On duplique les arêtes pour chaque graphe du batch
+        E = edge_index.size(1)
+        batch_offsets = torch.arange(B, device=observation.device).view(-1, 1) * N
+        
+        
+        batched_edge_index = edge_index.unsqueeze(0) + batch_offsets.unsqueeze(-1)
+        # On transpose d'abord pour séparer proprement la ligne des sources et des cibles
+        batched_edge_index = batched_edge_index.transpose(0, 1).reshape(2, B * E)
+        
+        # Passage dans les couches Transformer
         for conv in self.transformer_layers:
-            h = torch.relu(conv(h, edge_index))
+            h_flat = torch.relu(conv(h_flat, batched_edge_index))
             
-        # Compute actor logits and flatten
-        node_logits = self.actor_head(h)
-        actor_logits = node_logits.view(-1) 
+        # Calcul de l'Acteur
+        actor_logits = self.actor_head(h_flat)
+        actor_logits = actor_logits.view(B, N * self.num_colors) # On reformate en [Batch, Toutes_Les_Actions]
         
-        # Apply action mask if provided (replace invalid with strong negative)
-        if mask is not None:
-            actor_logits = actor_logits.masked_fill(~mask, -1e8)
-            
-        # Pool node embeddings to compute global graph value
-        if batch_index is None:
-            batch_index = torch.zeros(h.size(0), dtype=torch.long, device=h.device)
-            
-        global_h = global_mean_pool(h, batch_index)
-        critic_value = self.critic_head(global_h)
+        # Calcul du Critique (Global Pooling)
+        batch_idx = torch.arange(B, device=observation.device).repeat_interleave(N)
+        global_h = global_mean_pool(h_flat, batch_idx)
+        value = self.critic_head(global_h)
         
-        return actor_logits, critic_value
+        if add_batch:
+            actor_logits = actor_logits.squeeze(0)
+            value = value.squeeze(0)
+            
+        return actor_logits, value
