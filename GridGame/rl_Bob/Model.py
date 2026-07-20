@@ -39,8 +39,8 @@ class GraphColoringNet(nn.Module):
         self.register_buffer("base_edge_attr", torch.tensor(edge_attrs, dtype=torch.float32))
         
         # Transformer Multi-Head Attention layers
-        self.conv1 = TransformerConv(in_channels, hidden_size // num_heads, heads=num_heads, edge_dim=1, dropout=0.1)
-        self.conv2 = TransformerConv(hidden_size, hidden_size // num_heads, heads=num_heads, edge_dim=1, dropout=0.1)
+        self.conv1 = TransformerConv(in_channels, hidden_size // num_heads, heads=num_heads, edge_dim=1, dropout=0.0)
+        self.conv2 = TransformerConv(hidden_size, hidden_size // num_heads, heads=num_heads, edge_dim=1, dropout=0.0)
         
         # Actor Head outputs logits for every cell * num_colors
         self.actor_head = nn.Linear(hidden_size, num_colors)
@@ -58,11 +58,10 @@ class GraphColoringNet(nn.Module):
         if not has_batch:
             observation = observation.unsqueeze(0)
             
-        B, N, F = observation.shape
+        B, N, num_features = observation.shape
         device = observation.device
         
-        # Flatten nodes for PyTorch Geometric processing
-        x = observation.view(B * N, F)
+        x = observation.view(B * N, num_features)
         
         # Dynamically duplicate the topology for the entire batch
         E = self.base_edge_index.size(1)
