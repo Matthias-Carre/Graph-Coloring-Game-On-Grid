@@ -130,8 +130,10 @@ def main():
     args = parser.parse_args()
 
     WIDTH, HEIGHT, COLORS = 5, 5, 4
-    LEARNING_RATE = 3e-4 # PPO prefers a lower learning rate than A2C
-    FRAMES_PER_BATCH = 200 # Increased to give PPO complete episodes
+    LEARNING_RATE = 3e-4
+    FRAMES_PER_BATCH = 200
+    MINI_BATCH_SIZE = 125   # 4 mini-batches par batch, même mémoire
+    PPO_EPOCHS = 4          # Réutilise chaque batch 4x = data efficiency x4
     TOTAL_FRAMES = 1_000_000
     GAMMA = 0.99
     
@@ -143,7 +145,7 @@ def main():
     eval_env = GraphColoringEnv(width=WIDTH, height=HEIGHT, num_colors=COLORS)
 
     print("Creating Actor-Critic network...")
-    core_network = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS)
+    core_network = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS, hidden_dim=128, num_layers=3)
     
     # Static edge creation for the model
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -203,13 +205,12 @@ def main():
         env, policy, frames_per_batch=FRAMES_PER_BATCH, total_frames=TOTAL_FRAMES, device="cpu" 
     )
 
-    # Strict PPO implementation instead of A2C
     loss_module = ClipPPOLoss(
         actor_network=policy,
         critic_network=value_module,
         entropy_bonus=True,
-        entropy_coef=0.01, # PPO entropy is generally lower
-        clip_epsilon=0.2 # PPO core parameter
+        entropy_coef=0.03,  # Augmenté pour plus d'exploration
+        clip_epsilon=0.2
     )
     loss_module.set_keys(advantage="advantage")
 
@@ -245,22 +246,35 @@ def main():
         with torch.no_grad():
             tensordict_data = advantage_module(tensordict_data)
 
-        # Compute PPO losses
-        loss_dict = loss_module(tensordict_data)
-        
-        # Extract loss components
-        actor_loss = loss_dict["loss_objective"]
-        value_loss = loss_dict["loss_critic"]
-        entropy_loss = loss_dict["loss_entropy"]
-        
-        # Build total optimization loss
-        total_loss = actor_loss + value_loss + entropy_loss
+        # PPO: plusieurs passes sur les mêmes données avec mini-batches
+        total_actor_loss, total_value_loss, total_entropy_loss = 0.0, 0.0, 0.0
+        num_minibatches = 0
 
-        # Backpropagation
-        optimizer.zero_grad()
-        total_loss.backward()
-        torch.nn.utils.clip_grad_norm_(core_network.parameters(), max_norm=0.5)
-        optimizer.step()
+        for _ in range(PPO_EPOCHS):
+            rand_idx = torch.randperm(FRAMES_PER_BATCH)
+            shuffled_data = tensordict_data[rand_idx]
+
+            for minibatch in shuffled_data.split(MINI_BATCH_SIZE):
+                loss_dict = loss_module(minibatch)
+
+                actor_loss = loss_dict["loss_objective"]
+                value_loss = loss_dict["loss_critic"]
+                entropy_loss = loss_dict["loss_entropy"]
+                total_loss = actor_loss + value_loss + entropy_loss
+
+                optimizer.zero_grad()
+                total_loss.backward()
+                torch.nn.utils.clip_grad_norm_(core_network.parameters(), max_norm=0.5)
+                optimizer.step()
+
+                total_actor_loss += actor_loss.item()
+                total_value_loss += value_loss.item()
+                total_entropy_loss += entropy_loss.item()
+                num_minibatches += 1
+
+        avg_actor_loss = total_actor_loss / num_minibatches
+        avg_value_loss = total_value_loss / num_minibatches
+        avg_entropy_loss = total_entropy_loss / num_minibatches
 
         # Logging metrics
         if batch_idx % 100 == 0:
@@ -289,7 +303,7 @@ def main():
                 reasons_str = "no completed episode in this batch"
 
             print(
-                f"Batch {batch_idx:4d} | Actor Loss: {actor_loss.item(): 8.3f} | Value Loss: {value_loss.item(): 8.3f} | "
+                f"Batch {batch_idx:4d} | Actor Loss: {avg_actor_loss: 8.3f} | Value Loss: {avg_value_loss: 8.3f} | "
                 f"Avg Step Reward: {avg_reward: 6.3f} | Avg Episode Return: {avg_episode_return: 6.3f} | "
                 f"Avg Episode Len: {avg_episode_length: 6.1f} | Episodes: {num_episodes:4d} | "
                 f"WinRate: {win_rate: 6.2%} | Return[min/max]: {min_episode_return: 6.2f}/{max_episode_return: 6.2f} | "
@@ -302,7 +316,7 @@ def main():
             log_metrics_to_file(
                 args.log_path, batch_idx, num_episodes, win_rate, min_episode_return,
                 avg_episode_return, max_episode_return, avg_episode_length,
-                actor_loss.item(), value_loss.item(), entropy_loss.item(),
+                avg_actor_loss, avg_value_loss, avg_entropy_loss,
                 HEIGHT=HEIGHT, WIDTH=WIDTH, COLORS=COLORS
             )
 

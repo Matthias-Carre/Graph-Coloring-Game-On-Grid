@@ -141,7 +141,7 @@ class GraphColoringEnv(gym.Env):
         return self._action_to_move(best_action)
     
     
-    # Step with rewards only on lose or win
+    # Step with rewards only on lose or win (kept for reference)
     def step(self, action):
         self.current_step += 1
         self.episode_length += 1
