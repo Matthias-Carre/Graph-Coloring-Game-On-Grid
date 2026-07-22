@@ -15,7 +15,7 @@ class GraphColoringNet(nn.Module):
         # Encodeur initial
         self.encoder = nn.Linear(in_channels, hidden_dim)
         
-        # Couches Graph Transformer
+        # Couches Graph attention-based 
         self.transformer_layers = nn.ModuleList()
         for _ in range(num_layers):
             self.transformer_layers.append(

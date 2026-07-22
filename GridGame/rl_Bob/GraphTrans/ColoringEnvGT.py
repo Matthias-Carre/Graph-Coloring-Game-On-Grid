@@ -13,8 +13,8 @@ from game.Alice.alice import Alice
 from ModelGT import GraphColoringNet
 
 ALICE_MODE = "heuristic" 
-LOGICS = ["heuristic", "random", "nn"]
-LOGICS = ["random"]
+#LOGICS = ["heuristic", "random", "nn"]
+LOGICS = ["heuristic", "random"]
 
 ALICE_PLAYER = 0
 BOB_PLAYER = 1

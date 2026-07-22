@@ -15,10 +15,10 @@ class GraphColoringNet(nn.Module):
         # Encodeur initial
         self.encoder = nn.Linear(in_channels, hidden_dim)
         
-        # Couches Graph Transformer
-        self.transformer_layers = nn.ModuleList()
+        # Couches Graph attention-based
+        self.gnn_layers = nn.ModuleList()
         for _ in range(num_layers):
-            self.transformer_layers.append(
+            self.gnn_layers.append(
                 TransformerConv(
                     in_channels=hidden_dim, 
                     out_channels=hidden_dim // 4, 
@@ -64,8 +64,8 @@ class GraphColoringNet(nn.Module):
         # On transpose d'abord pour séparer proprement la ligne des sources et des cibles
         batched_edge_index = batched_edge_index.transpose(0, 1).reshape(2, B * E)
         
-        # Passage dans les couches Transformer
-        for conv in self.transformer_layers:
+        # Passage dans les couches GNN
+        for conv in self.gnn_layers:
             h_flat = torch.relu(conv(h_flat, batched_edge_index))
             
         # Calcul de l'Acteur
