@@ -1,6 +1,8 @@
 from game.Bob.strategy_3 import *
 from game.Bob.strategy_random import *
 
+#Bob class that will play the game using a strategy based on the grid size and the last move of Alice
+
 class Bob:
     def __init__(self,grid):
         self.grid = grid
@@ -8,7 +10,7 @@ class Bob:
         self.load_strategy()
 
 
-
+    #import the strategy depending on the grid size
     def load_strategy(self):
 
         if self.grid.height == 3 and self.grid.num_colors == 3:

@@ -1,10 +1,17 @@
 import random
 
+#Logic for Alice to play a random move
 
+
+#test case to return True for any grid and any last move of Bob
 def is_any(grid, bob_move):
     print("test any")
     return True
 
+
+# in : grid : grid of the game , bob_move : bob's last move (x,y,color)
+# out : (x,y,color) : Alice's next move
+# return a random valid move (x,y,color) for Alice, None if there is no valid move
 def random_move(grid, bob_move):
     legal_moves = []
 

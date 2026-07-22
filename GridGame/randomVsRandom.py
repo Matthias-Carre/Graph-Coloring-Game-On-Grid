@@ -40,7 +40,7 @@ def main():
             # Alice logic
             #alice_move = alice.next_safe_move()
             
-            alice_move = alice.next_euristic1_move()
+            alice_move = alice.next_heuristic1_move()
 
             if start:
                 start = False

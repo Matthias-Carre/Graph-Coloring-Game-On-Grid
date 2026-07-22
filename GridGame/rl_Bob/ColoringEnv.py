@@ -197,7 +197,7 @@ class GraphColoringEnv(gym.Env):
         epsilon = 0.2 
         
         if self.current_logic == "heuristic1" and random.random() >= epsilon:
-            Alice_move = self.Alice.next_euristic1_move()
+            Alice_move = self.Alice.next_heuristic1_move()
         elif self.current_logic == "nn" and self.alice_nn is not None:
             Alice_move = self._get_alice_nn_move()
         elif self.current_logic == "algo" and random.random() >= epsilon:

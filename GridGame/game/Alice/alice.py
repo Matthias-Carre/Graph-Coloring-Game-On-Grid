@@ -2,10 +2,13 @@ from game.Alice.strategy_3 import *
 from game.Alice.strategy_4 import *
 from game.Alice.strategy_random import *
 from game.Alice.strategy_survive import *
-from game.Alice.euristic1 import *
+from game.Alice.heuristic1 import *
 
 CustomStrat = True
 DEBUG = False
+
+#Alice class that will play the game using a strategy based on the grid size and the last move of Bob
+
 
 class Alice:
     def __init__(self,grid):
@@ -13,13 +16,6 @@ class Alice:
         self.strategy = []
         self.load_strategy()
 
-    '''
-    On a besoin:
-     - du dernier move de Bob 
-     - dans quel config on ce trouve
-     - la situation de la case avant le move de Bob
-    
-    '''
 
     #import the strategy depending on the grid size
     def load_strategy(self):
@@ -32,6 +28,8 @@ class Alice:
                 #(is_center, solve_center)
             ]
         elif self.grid.height == 4 and self.grid.num_colors == 4:
+
+            #Strategy for 4*n based on "The Graph Coloring Game on 4 * n-Grids" C. Brosse, N. Martins, N. Nisse, R. Sampaio 
             self.strategy = [
                 #(is_TEST, solve_TEST),
 
@@ -69,7 +67,7 @@ class Alice:
             ]
         else:
             self.strategy = [
-                (is_any,eurisitic_move)
+                (is_any,heurisitic_move)
             ]
 
     #return a random valid move (x,y,color) for Alice
@@ -77,12 +75,14 @@ class Alice:
         #print("Alice: random move")
         return random_move(self.grid, self.grid.last_Bob_move)
 
+    #return a valide move (x,y,color) for Alice that will not create a color critical vertex for Bob
     def next_safe_move(self):
         #print("Alice: safe move")
         return survive_strategy(self.grid, self.grid.last_Bob_move)
 
-    def next_euristic1_move(self):
-        next_move = eurisitic_move(self.grid, self.grid.last_Bob_move)
+    #return a valide move (x,y,color) for Alice base on heuristic
+    def next_heuristic1_move(self):
+        next_move = heurisitic_move(self.grid, self.grid.last_Bob_move)
         return next_move
         
         
