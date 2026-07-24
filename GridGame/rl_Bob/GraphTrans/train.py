@@ -129,7 +129,7 @@ def main():
     parser.add_argument("--save-every", type=int, default=500)
     args = parser.parse_args()
 
-    WIDTH, HEIGHT, COLORS = 7, 7, 4
+    WIDTH, HEIGHT, COLORS = 6, 6, 4
     LEARNING_RATE = 3e-4
     FRAMES_PER_BATCH = 200
     MINI_BATCH_SIZE = 125   # 4 mini-batches par batch, même mémoire
@@ -145,7 +145,7 @@ def main():
     eval_env = GraphColoringEnv(width=WIDTH, height=HEIGHT, num_colors=COLORS)
 
     print("Creating Actor-Critic network...")
-    core_network = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS, hidden_dim=128, num_layers=3)
+    core_network = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS, hidden_dim=128, num_layers=5)
     
     # Static edge creation for the model
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

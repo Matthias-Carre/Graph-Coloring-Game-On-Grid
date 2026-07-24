@@ -129,7 +129,7 @@ def main():
     parser.add_argument("--save-every", type=int, default=500)
     args = parser.parse_args()
 
-    WIDTH, HEIGHT, COLORS = 5, 5, 4
+    WIDTH, HEIGHT, COLORS = 6, 6, 4
     LEARNING_RATE = 3e-4
     FRAMES_PER_BATCH = 200
     MINI_BATCH_SIZE = 125   # 4 mini-batches par batch, même mémoire

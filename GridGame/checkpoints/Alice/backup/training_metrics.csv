@@ -45,8 +45,3 @@ Alice Training On size: w=5, h=5, c=4
 batch,num_episodes,win_rate,min_score,avg_score,max_score,avg_length,actor_loss,value_loss,entropy_loss
 Alice Training On size: w=5, h=5, c=4
 batch,num_episodes,win_rate,min_score,avg_score,max_score,avg_length,actor_loss,value_loss,entropy_loss
-Alice Training On size: w=5, h=5, c=4
-batch,num_episodes,win_rate,min_score,avg_score,max_score,avg_length,actor_loss,value_loss,entropy_loss
-Alice Training On size: w=6, h=6, c=4
-batch,num_episodes,win_rate,min_score,avg_score,max_score,avg_length,actor_loss,value_loss,entropy_loss
-100,1491,0.5412,-10.0000,0.8249,10.0000,13.4165,-0.011115,2.850743,-0.028622

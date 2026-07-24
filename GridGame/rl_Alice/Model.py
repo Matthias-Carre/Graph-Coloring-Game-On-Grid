@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch_geometric.nn import TransformerConv, global_mean_pool
 
 class GraphColoringNet(nn.Module):
-    def __init__(self, width, height, num_colors, hidden_dim=64, num_layers=3):
+    def __init__(self, width, height, num_colors, hidden_dim=64, num_layers=5):
         super().__init__()
         
         self.width = width
