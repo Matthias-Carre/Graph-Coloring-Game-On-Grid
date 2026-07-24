@@ -1,3 +1,6 @@
+"""
+The Interface class provides methods for creating the game window, drawing the grid, handling user interactions, and managing buttons and popups.
+"""
 import tkinter as tk
 from graphic.Draw import Draw
 

@@ -1,3 +1,9 @@
+"""
+
+This file contains the logic for Bob's random strategy and some heuristic strategies in the GridGame.
+The random and heristic strategy is designed to have some base strategies for Bob to play the game, which can be used to try the game, help to train a model, or to test the game.
+
+"""
 import random
 
 

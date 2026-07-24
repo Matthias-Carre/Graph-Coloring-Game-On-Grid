@@ -1,4 +1,7 @@
-
+"""
+This file contains the logic for Bob's strategy 3 in the GridGame.
+This strategy is designed for a 3*n grid with 3 colors where Bob will win.
+"""
 
 def has_diagonal(grid, Alice_move):
     if len(grid.last_moves) <= 2:

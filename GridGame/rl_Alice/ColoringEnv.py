@@ -1,3 +1,9 @@
+"""
+This file contains the implementation of the GraphColoringEnv class, which is a Gymnasium environment for the graph coloring game.
+
+its here we chose the reward function, the step function, the reset function.
+We can configure Bobs behavior to be heuristic, random, or neural network-based.
+"""
 import random
 
 import gymnasium as gym
@@ -195,7 +201,7 @@ class GraphColoringEnv(gym.Env):
         epsilon = 0.4
         
         if self.current_logic == "heuristic" and random.random() >= epsilon:
-            bob_move = self.bob.next_move_euristic()
+            bob_move = self.bob.next_move_heuristic()
         elif self.current_logic == "nn" and self.bob_nn is not None :
             bob_move = self._get_bob_nn_move()
         else:

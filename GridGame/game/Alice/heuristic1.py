@@ -1,12 +1,21 @@
+"""
+This file contains the logic for Alice's heuristic strategy in the GridGame.
+The heuristic strategy is designed to have some basic strategies for Alice to play the game, which can be used to try the game, help to train a model, or to test the game. 
+
+"""
 import random
 
+#Heuristic for Alice
+#Take the grid and output a move (x,y,color) for Alice
 
+
+# Any case
 def is_any(grid, bob_move):
     print("test any")
     return True
 
-
-
+#in : grid : grid of the game , bob_move : bob's last move (x,y,color)
+#out : (x,y,color) : Alice's next move
 # Check for color critical cells and play them if they exist.
 def critical_strategy(grid, bob_move):
     for x, y in grid.empty_cells():
@@ -16,7 +25,10 @@ def critical_strategy(grid, bob_move):
                 if grid.is_move_valid(x, y, color):
                     return (x, y, color)
     return play_same_in_diag(grid, bob_move)
-            
+
+#in : grid : grid of the game , bob_move : bob's last move (x,y,color)
+#out : (x,y,color) : Alice's next move
+#try to play the same color as Bob in diagonal cells if possible, otherwise play a safe move
 def play_same_in_diag(grid, bob_move):
     if bob_move is None:
         return (1,1,1)
@@ -27,7 +39,8 @@ def play_same_in_diag(grid, bob_move):
             return (a_x, a_y, color)
     return survive_strategy(grid, bob_move)
 
-
+#in : grid : grid of the game , bob_move : bob's last move (x,y,color)
+#out : (x,y,color) : Alice's next move
 # Alice will never play a move that kill her unless there is no other choice. 
 def survive_strategy(grid, bob_move):
     legal_moves = []

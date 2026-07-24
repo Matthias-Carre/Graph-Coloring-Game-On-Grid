@@ -1,3 +1,9 @@
+"""
+This file contains the implementation of the Model.
+
+This model is a CNN with equivariance and 3 layers with A2C
+"""
+
 import torch
 import torch.nn as nn
 from escnn import gspaces

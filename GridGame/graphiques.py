@@ -1,3 +1,7 @@
+"""
+This script provides functionality to load training metrics from a CSV file and plot them using matplotlib.
+"""
+
 import argparse
 from pathlib import Path
 import re

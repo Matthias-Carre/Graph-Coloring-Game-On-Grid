@@ -1,3 +1,7 @@
+"""
+Class GameEngine is the main engine of the GridGame. It manages the game state, player turns, and interactions with the graphical interface. It also handles player strategies, including heuristic and neural network-based strategies for both Alice and Bob.
+The engine provides methods for running the game, processing player moves, and updating the game state accordingly.
+"""
 import sys
 import importlib.util
 from pathlib import Path
@@ -238,7 +242,7 @@ class GameEngine:
         elif self.alice_mode == "strategy":
             move = self.Alice.next_move()
         else:  # heuristic
-            move = self.Alice.next_euristic1_move()
+            move = self.Alice.next_heuristic1_move()
         if move is None:
             move = self.Alice.next_random_move()
         x, y, color = move

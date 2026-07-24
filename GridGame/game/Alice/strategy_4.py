@@ -1,5 +1,11 @@
 """
-Every case of the paper
+This file contains a strategy for Alice on a 4*n grid with 4 colors.
+
+It follows the strategy described in the paper "The Graph Coloring Game on 4 * n-Grids" by C. Brosse, N. Martins, N. Nisse, R. Sampaio.
+
+we check in which configuration Bob played and we answer accordingly:
+is_configX => solve_configX
+
 Note: in the paper line are from down to up starting from 1
 Here we consider up to down starting from 0
 

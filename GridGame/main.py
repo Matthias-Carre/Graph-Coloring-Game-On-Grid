@@ -1,3 +1,7 @@
+"""
+This is the main file of the GridGame project. It initializes the game, creates the graphical interface, and manages user interactions. The game can be configured with different grid sizes and numbers of colors, and it supports both Alice and Bob players with various strategies.
+"""
+
 import tkinter as tk
 from game.Grid import Grid
 from graphic.Draw import Draw

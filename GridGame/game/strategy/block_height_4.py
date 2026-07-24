@@ -1,5 +1,10 @@
-from turtle import left
+"""
+This file contains the logic for handling blocks of height 4 in the GridGame.
 
+Based on the paper "The Graph Coloring Game on 4 * n-Grids" by C. Brosse, N. Martins, N. Nisse, R. Sampaio.
+this class manages the differents configurations of blocks of height 4 in the grid, and provides methods to update the blocks based on moves played by Bob or Alice. It also checks the induction hypothesis after each move to ensure that the game state remains valid.
+
+"""
 from game.strategy.Block4 import Block
 
 class BlockHeight4:

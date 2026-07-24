@@ -1,5 +1,11 @@
+"""
+This file contains the implementation of the Bob class, which represents a player in the GridGame.
+Bob uses various strategies to determine his next move based on the current state of the grid and the last move made by Alice. The strategies are loaded based on the grid size and number of colors.
+"""
+
 from game.Bob.strategy_3 import *
 from game.Bob.strategy_random import *
+
 
 class Bob:
     def __init__(self,grid):
@@ -8,7 +14,7 @@ class Bob:
         self.load_strategy()
 
 
-
+    #import the strategy depending on the grid size
     def load_strategy(self):
 
         if self.grid.height == 3 and self.grid.num_colors == 3:

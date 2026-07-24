@@ -1,3 +1,8 @@
+"""
+This file contains the implementation of the Draw class, which is responsible for rendering the GridGame using the Tkinter library.
+The Draw class provides methods for drawing the game grid, cells, and other graphical elements, as well as handling user interactions through buttons and radio buttons.
+"""
+
 import tkinter as tk
 
 class Draw:
