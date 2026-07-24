@@ -1,3 +1,8 @@
+"""
+This file contains the logic for handling blocks of height 4 in the GridGame.
+Used with block_height_4.py to check the configurations of the blocks and to update the blocks based on the moves played by Bob or Alice.
+"""
+
 #a block is a union of neighboring columns where each column has at least one colored cell
 class Block:
     def __init__(self,grid):

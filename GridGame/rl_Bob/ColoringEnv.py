@@ -1,9 +1,9 @@
 import random
-
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 import torch
+from torch.distributions import Categorical
 import sys
 from pathlib import Path
 
@@ -19,7 +19,9 @@ from Model import GraphColoringNet
 # ==========================================
 
 ALICE_MODE = "heuristic" 
-#ALICE_MODE = "nn" 
+ALICE_MODE = "nn" 
+LOGICS = ["random","heuristic1","nn"] #["random", "heuristic1", "nn"]  # List of available logics for Alice
+#LOGICS = ["nn"]
 
 ALICE_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Alice" / "latest.pt")
 
@@ -38,6 +40,7 @@ class GraphColoringEnv(gym.Env):
         self.width = width
         self.height = height
         self.num_colors = num_colors
+        
         
         # Action space: choice of a cell and a color
         # Total actions = (width * height) * number_of_colors
@@ -68,6 +71,9 @@ class GraphColoringEnv(gym.Env):
         self.move_history = []
         self.completed_episodes = []
 
+        # logic parameters
+        self.current_logic = None
+
         # Load Alice's neural network if mode is active
         self.alice_nn = None
         if ALICE_MODE == "nn":
@@ -94,7 +100,7 @@ class GraphColoringEnv(gym.Env):
         for i in range(self.width):
             for j in range(self.height):
                 val = self.grid.get_cell(i, j).get_value()
-                # val est dans [0, num_colors]
+                # val is in [0, num_colors]
                 obs[val, j, i] = 1.0 
                 
         return {
@@ -103,18 +109,28 @@ class GraphColoringEnv(gym.Env):
         }
 
     def _get_alice_nn_move(self):
-        """Queries the trained neural network for Alice's best move."""
+        """Queries the trained neural network for Alice's best move, combining epsilon-greedy with categorical sampling."""
         obs_dict = self._get_obs()
+        mask = obs_dict["mask"]
         
+        
+        valid_actions = [i for i, is_valid in enumerate(mask) if is_valid]
+        if valid_actions: 
+            random_action = random.choice(valid_actions)
+            return self._action_to_move(random_action)
+        
+        # Exploitation via sampling: play a move based on the neural network's probability distribution
         obs_tensor = torch.tensor(obs_dict["observation"], dtype=torch.float32).unsqueeze(0)
-        mask_tensor = torch.tensor(obs_dict["mask"], dtype=torch.bool).unsqueeze(0)
+        mask_tensor = torch.tensor(mask, dtype=torch.bool).unsqueeze(0)
         
         with torch.no_grad():
             logits, _ = self.alice_nn(obs_tensor)
             logits = logits.masked_fill(~mask_tensor, -1e8)
-            best_action = torch.argmax(logits, dim=1).item()
             
-        return self._action_to_move(best_action)
+            dist = Categorical(logits=logits)
+            sampled_action = dist.sample().item()
+            
+        return self._action_to_move(sampled_action)
 
     def reset(self, seed=None, options=None):
         seed = seed or np.random.randint(0, 10000)
@@ -130,13 +146,19 @@ class GraphColoringEnv(gym.Env):
 
         self.grid.player = ALICE_PLAYER  # Alice starts first
         
+        self.current_logic = random.choice(LOGICS)
+        
         # Determine Alice's opening move based on selected mode
         opening_move = None
         if ALICE_MODE == "nn" and self.alice_nn is not None:
             opening_move = self._get_alice_nn_move()
         else:
-            
-            opening_move = self.Alice.next_euristic1_move()
+            if self.current_logic == "random":
+                opening_move = self.Alice.next_random_move()
+            elif self.current_logic == "heuristic1":
+                opening_move = self.Alice.next_random_move()
+            elif self.current_logic == "nn" and self.alice_nn is not None:
+                opening_move = self.Alice.next_random_move()
             
         if opening_move is not None:
             x, y, c = opening_move
@@ -207,17 +229,19 @@ class GraphColoringEnv(gym.Env):
         
         # Determine Alice's move based on selected mode
         Alice_move = None
-        if ALICE_MODE == "nn" and self.alice_nn is not None:
+        
+        epsilon = 0.2  # chance to play random
+        
+        if self.current_logic == "heuristic1" and random.random() >= epsilon:
+            Alice_move = self.Alice.next_euristic1_move()
+        elif self.current_logic == "nn" and self.alice_nn is not None:
             Alice_move = self._get_alice_nn_move()
+        elif self.current_logic == "algo" and random.random() >= epsilon:
+            Alice_move = self.Alice.next_move()
+                
         else:
-            #random
-            #Alice_move = self.Alice.next_random_move()
-            #euristic
-            epsilon = 0.4  # chance to play random
-            if random.random() < epsilon:
-                Alice_move = self.Alice.next_random_move()
-            else:
-                Alice_move = self.Alice.next_euristic1_move()
+        #elif self.current_logic == "random":
+            Alice_move = self.Alice.next_random_move()
             
         if Alice_move is not None:
             alice_x, alice_y, alice_c = Alice_move

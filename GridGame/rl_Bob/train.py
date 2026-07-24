@@ -7,9 +7,7 @@ from tensordict.nn import TensorDictModule
 from torchrl.envs.libs.gym import GymWrapper
 from torchrl.collectors import SyncDataCollector
 
-#from torchrl.objectives import ReinforceLoss
 from torchrl.objectives import A2CLoss
-
 from torchrl.objectives.value import GAE
 from torchrl.modules import ProbabilisticActor, ValueOperator
 from torchrl.modules.distributions import MaskedCategorical
@@ -68,7 +66,6 @@ def log_metrics_to_file(log_path, batch_idx, num_episodes, win_rate, min_episode
                 f"{max_episode_return:.4f},{avg_episode_length:.4f},{actor_loss:.6f},{value_loss:.6f},{entropy_loss:.6f}\n")
 
 
-
 def run_evaluation_episode(policy, env):
     """
     Runs one evaluation episode print the final gird to give an idea of the game
@@ -104,7 +101,6 @@ def run_evaluation_episode(policy, env):
     print("="*30 + "\n")
 
 
-
 def main():
     # Calculate checkpoint path relative to this script location
     script_dir = Path(__file__).parent.parent  # GridGame directory
@@ -134,50 +130,30 @@ def main():
     args = parser.parse_args()
 
     # Hyperparameters.
-    WIDTH, HEIGHT, COLORS = 5, 5, 4
+    WIDTH, HEIGHT, COLORS = 20, 5, 4
     LEARNING_RATE = 1e-3
     FRAMES_PER_BATCH = 100    # Steps collected before updating the network
     TOTAL_FRAMES = 500_000     # Total training steps
     GAMMA = 0.95              # Discount factor for future rewards
     
-
-
     # Environment setup.
     print("Initializing environment...")
     base_env = GraphColoringEnv(width=WIDTH, height=HEIGHT, num_colors=COLORS)
     # Convert Gymnasium outputs to TensorDict for TorchRL.
     env = GymWrapper(base_env, categorical_action_encoding=True)
-
     eval_env = GraphColoringEnv(width=WIDTH, height=HEIGHT, num_colors=COLORS)
 
     # Neural network setup.
-    print("Creating Actor-Critic network...")
+    print("Creating Actor-Critic network (escnn)...")
     core_network = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS)
 
-
-
-    #================================
-    # TEST : setting a custom filter 
-    #================================
-    import numpy as np
-    # Create a filter initialized with 0.0
-    custom_filter = np.full((COLORS + 1, 3, 3), 0.0, dtype=np.float32)
-
-    # Define the expected pattern
-    custom_filter[1, 0, 1] = 0.2
-    custom_filter[2, 1, 0] = 0.2
-    custom_filter[0, 1, 1] = 0.2
-    custom_filter[3, 1, 2] = 0.2
-    custom_filter[0, 2, 1] = 0.2
-
-    # Convert to tensor and inject into the first filter
-    custom_tensor = torch.tensor(custom_filter)
-    with torch.no_grad():
-        core_network.shared_cnn[0].weight[0] = custom_tensor
-        core_network.shared_cnn[0].bias[0] = 0.0
-
-
-
+    # =========================================================================
+    # REMOVED: Custom manual filter injection.
+    # escnn uses steerable basis functions to construct weights dynamically. 
+    # Directly overwriting weight tensors with arbitrary values breaks the 
+    # geometric constraints and equivariance properties of the G-CNN.
+    # The network will learn the optimal symmetrical filters natively.
+    # =========================================================================
 
     # Wrappers to split actor and critic outputs.
     class ActorWrapper(torch.nn.Module):
@@ -191,7 +167,6 @@ def main():
             # Handle the case where the model creates an artificial batch dimension.
             if obs.dim() == 3 and logits.dim() == 2:
                 logits = logits.squeeze(0)  # [1, A] -> [A]
-                
                 
             # Align mask shape with logits when needed.
             if mask.dim() < logits.dim():
@@ -215,8 +190,6 @@ def main():
                 
             return value
         
-
-        
     # Actor module: takes observation and action mask.
     actor_module = TensorDictModule(
         module=ActorWrapper(core_network),
@@ -239,7 +212,6 @@ def main():
         in_keys=["observation"],
         out_keys=["state_value"]
     )
-
     
     # Data collector.
     print("Setting up SyncDataCollector...")
@@ -250,7 +222,6 @@ def main():
         total_frames=TOTAL_FRAMES,
         device="cpu" 
     )
-
 
     # Loss and advantage modules.
     # A2C objective with entropy regularization.
@@ -291,7 +262,6 @@ def main():
         else:
             print(f"Checkpoint not found at {args.checkpoint_path}. Starting fresh.")
 
-
     # Training loop.
     print("Starting training loop...\n")
     for i, tensordict_data in enumerate(collector):
@@ -308,7 +278,7 @@ def main():
         # Extract loss components.
         actor_loss = loss_dict["loss_objective"]
         value_loss = loss_dict["loss_critic"]
-        entropy_loss = loss_dict["loss_entropy"]  # Optional, useful for monitoring.
+        entropy_loss = loss_dict["loss_entropy"]  
         
         # Build total optimization loss.
         total_loss = actor_loss + value_loss + entropy_loss
@@ -316,6 +286,14 @@ def main():
         # Backpropagation.
         optimizer.zero_grad()
         total_loss.backward()
+        
+        # =========================================================================
+        # ADDED: Gradient Clipping
+        # Prevents exploding gradients from destroying the network weights
+        # when the agent encounters severe negative rewards.
+        # =========================================================================
+        torch.nn.utils.clip_grad_norm_(core_network.parameters(), max_norm=0.5)
+
         optimizer.step()
 
         # Logging metrics.
@@ -361,7 +339,6 @@ def main():
                 actor_loss.item(), value_loss.item(), entropy_loss.item(),
                 HEIGHT=HEIGHT, WIDTH=WIDTH, COLORS=COLORS
             )
-
 
             run_evaluation_episode(policy, eval_env)
 

@@ -1,5 +1,7 @@
-#Grid class to handle the grid of the graph
-
+"""
+This file contains the implementation of the Grid class, which represents the game grid in the GridGame.
+The Grid class manages the state of the game, including the cells, their colors, and the interactions between players (Alice and Bob). It provides methods for validating moves, updating the grid state, and checking the status of cells (safe, sound, color critical, uncolorable).
+"""
 from game.Cell import Cell
 #from game.Block import Block
 

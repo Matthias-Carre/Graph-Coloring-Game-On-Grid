@@ -102,6 +102,12 @@ def run_evaluation_episode(policy, env):
     print("="*30 + "\n")
 
 
+# save the latest.pt if exists to avoid overwriting it
+def backup_latest_checkpoint(checkpoint_path):
+    if os.path.exists(checkpoint_path):
+        backup_path = checkpoint_path.replace("latest.pt", "latest_backup.pt")
+        torch.save(torch.load(checkpoint_path), backup_path)
+        print(f"Backup of latest checkpoint saved to {backup_path}")
 
 def main():
     # Calculate checkpoint path relative to this script location
@@ -132,12 +138,14 @@ def main():
     args = parser.parse_args()
 
     # Hyperparameters.
-    WIDTH, HEIGHT, COLORS = 5, 5, 4
+    WIDTH, HEIGHT, COLORS = 20, 5, 4
     LEARNING_RATE = 1e-3
     FRAMES_PER_BATCH = 100    # Steps collected before updating the network
-    TOTAL_FRAMES = 500_000     # Total training steps
+    TOTAL_FRAMES = 1_000_000     # Total training steps
     GAMMA = 0.99           # Discount factor for future rewards
     
+    # Backup the latest checkpoint if it exists.
+    backup_latest_checkpoint(args.checkpoint_path)
 
 
     # Environment setup.
@@ -155,13 +163,20 @@ def main():
 
 
 
+
+
+
+    """test de set un filte
+    
     #================================
     # TEST : setting a custom filter 
     #================================
     import numpy as np
+    
+    
     # Create a filter initialized with 0.0
     custom_filter = np.full((COLORS + 1, 3, 3), 0.0, dtype=np.float32)
-
+    
     # Define the expected pattern
     custom_filter[1, 0, 1] = 0.2
     custom_filter[2, 1, 0] = 0.2
@@ -175,7 +190,7 @@ def main():
         core_network.shared_cnn[0].weight[0] = custom_tensor
         core_network.shared_cnn[0].bias[0] = 0.0
 
-
+    """
 
 
 

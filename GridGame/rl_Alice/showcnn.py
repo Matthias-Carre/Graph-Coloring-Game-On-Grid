@@ -73,14 +73,14 @@ def main():
     )
     args = parser.parse_args()
 
-    WIDTH, HEIGHT, COLORS = 5, 5, 4
+    WIDTH, HEIGHT, COLORS = 5, 5, 3
 
 
     matrice = [[0, 0, 1, 0, 0],
                [0, 2, 0, 3, 0],
                [0, 0, 0, 1, 0],
                [0, 0, 2, 0, 3],
-               [4, 0, 0, 0, 0]]
+               [1, 0, 0, 0, 0]]
 
     # 1. Observation creation and PyTorch conversion
     obs_numpy = matrix_to_obs(matrice, COLORS)

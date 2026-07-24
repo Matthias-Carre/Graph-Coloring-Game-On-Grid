@@ -1,3 +1,10 @@
+"""
+Class GameEngine is the main engine of the GridGame. It manages the game state, player turns, and interactions with the graphical interface. It also handles player strategies, including heuristic and neural network-based strategies for both Alice and Bob.
+The engine provides methods for running the game, processing player moves, and updating the game state accordingly.
+"""
+import sys
+import importlib.util
+from pathlib import Path
 from game.GameState import GameState
 from graphic.Interface import Interface
 from game.strategy.block_height_4 import BlockHeight4
@@ -5,8 +12,8 @@ from game.latexForm import save_grid_latex
 
 class GameEngine:
     def __init__(self,grid,root,Alice=None,Bob=None):
-        self.window_width = 1600
-        self.window_height = 800
+        self.window_width = 2000
+        self.window_height = 1600
         self.grid = grid
         self.root = root
         self.state = GameState(grid)
@@ -21,6 +28,11 @@ class GameEngine:
         self.window = Interface(root,self)
 
         self.reset = None
+        # NN / mode selection
+        self.bob_mode = "heuristic"   # "random" | "heuristic" | "nn" | "strategy"
+        self.alice_mode = "heuristic" # "random" | "heuristic" | "nn" | "strategy"
+        self.bob_nn = None
+        self.alice_nn = None
         # for latex file
         self.num_latex = 0 
         
@@ -51,6 +63,9 @@ class GameEngine:
         self.window.draw_button("rounds",self.toggle_rounds)
         self.window.draw_button("print blocks",self.print_blocks)
         self.window.draw_button("Reset",self.reset)
+        self.window.draw_button("Bob: Heuristic", self.toggle_bob_mode, name="bob_mode_btn")
+        self.window.draw_button("Alice: Heuristic", self.toggle_alice_mode, name="alice_mode_btn")
+        self._try_load_nn_models()
 
         self.window.canvas.bind("<Button-1>", self.on_left_click)
         
@@ -123,9 +138,16 @@ class GameEngine:
     def on_left_click(self,event):
         
         #print("click",event)
-        x = event.x
-        y = event.y
-        ratio = min(self.window_width / self.grid.width, self.window_height / self.grid.height)
+        draw = self.window.draw
+        ratio = draw.cell_ratio
+        if ratio <= 0:
+            return
+        x = event.x - draw.origin_x
+        y = event.y - draw.origin_y
+
+        if x < 0 or y < 0 or x >= draw.grid_pixel_width or y >= draw.grid_pixel_height:
+            return
+
         i = int(x // ratio)
         j = int(y // ratio)
 
@@ -153,9 +175,16 @@ class GameEngine:
     """
     def on_right_click(self,event):
         #print("right click",event)
-        x = event.x
-        y = event.y
-        ratio = min(self.window_width / self.grid.width, self.window_height / self.grid.height)
+        draw = self.window.draw
+        ratio = draw.cell_ratio
+        if ratio <= 0:
+            return
+        x = event.x - draw.origin_x
+        y = event.y - draw.origin_y
+
+        if x < 0 or y < 0 or x >= draw.grid_pixel_width or y >= draw.grid_pixel_height:
+            return
+
         i = int(x // ratio)
         j = int(y // ratio)
 
@@ -178,9 +207,16 @@ class GameEngine:
     """
     def on_x_press(self,event):
         #print("button3 pressed",event)
-        x = event.x
-        y = event.y
-        ratio = min(self.window_width / self.grid.width, self.window_height / self.grid.height)
+        draw = self.window.draw
+        ratio = draw.cell_ratio
+        if ratio <= 0:
+            return
+        x = event.x - draw.origin_x
+        y = event.y - draw.origin_y
+
+        if x < 0 or y < 0 or x >= draw.grid_pixel_width or y >= draw.grid_pixel_height:
+            return
+
         i = int(x // ratio)
         j = int(y // ratio)
 
@@ -199,8 +235,18 @@ class GameEngine:
         if self.grid.player != 0:
             print("Not Alice's turn")
             return
-        x, y, color = self.Alice.next_move()  
-        print(f"Alice move: {x}, {y}, color: {color}")
+        if self.alice_mode == "random":
+            move = self.Alice.next_random_move()
+        elif self.alice_mode == "nn" and self.alice_nn is not None:
+            move = self._nn_move(self.alice_nn)
+        elif self.alice_mode == "strategy":
+            move = self.Alice.next_move()
+        else:  # heuristic
+            move = self.Alice.next_heuristic1_move()
+        if move is None:
+            move = self.Alice.next_random_move()
+        x, y, color = move
+        print(f"Alice move ({self.alice_mode}): {x}, {y}, color: {color}")
         self.change_node_color(self.grid, x, y, color)
         self.on_update_callback()
 
@@ -214,8 +260,18 @@ class GameEngine:
         if self.grid.player != 1:
             print("Not Bob's turn")
             return
-        x, y, color = self.Bob.next_move()
-        print(f"Bob move: {x}, {y}, color: {color}")
+        if self.bob_mode == "random":
+            move = self.Bob.next_random_move()
+        elif self.bob_mode == "nn" and self.bob_nn is not None:
+            move = self._nn_move(self.bob_nn)
+        elif self.bob_mode == "strategy":
+            move = self.Bob.next_move()
+        else:  # heuristic
+            move = self.Bob.next_move_euristic()
+        if move is None:
+            move = self.Bob.next_random_move()
+        x, y, color = move
+        print(f"Bob move ({self.bob_mode}): {x}, {y}, color: {color}")
         self.change_node_color(self.grid, x, y, color)
         self.on_update_callback()
 
@@ -319,3 +375,124 @@ class GameEngine:
         for block in self.grid.blocks.blocks:
             print("Block:")
             block.print_block()
+
+    # ------------------------------------------------------------------
+    # Mode selection: random / heuristic / nn
+    # ------------------------------------------------------------------
+    _BOB_MODES = ["random", "heuristic", "nn", "strategy"]
+    _ALICE_MODES = ["random", "heuristic", "nn", "strategy"]
+    _MODE_LABELS = {"random": "Random", "heuristic": "Heuristic", "nn": "NN", "strategy": "Strategy"}
+
+    def toggle_bob_mode(self):
+        idx = self._BOB_MODES.index(self.bob_mode)
+        self.bob_mode = self._BOB_MODES[(idx + 1) % len(self._BOB_MODES)]
+        if self.bob_mode == "nn" and self.bob_nn is None:
+            print("Bob NN not loaded — falling back to heuristic")
+        label = f"Bob: {self._MODE_LABELS[self.bob_mode]}"
+        self.window.update_button_text("bob_mode_btn", label)
+        print(f"Bob mode → {self.bob_mode}")
+
+    def toggle_alice_mode(self):
+        idx = self._ALICE_MODES.index(self.alice_mode)
+        self.alice_mode = self._ALICE_MODES[(idx + 1) % len(self._ALICE_MODES)]
+        if self.alice_mode == "nn" and self.alice_nn is None:
+            print("Alice NN not loaded — falling back to heuristic")
+        label = f"Alice: {self._MODE_LABELS[self.alice_mode]}"
+        self.window.update_button_text("alice_mode_btn", label)
+        print(f"Alice mode → {self.alice_mode}")
+
+    # ------------------------------------------------------------------
+    # NN helpers
+    # ------------------------------------------------------------------
+    def _try_load_nn_models(self):
+        """Tente de charger les modèles NN de Bob et Alice depuis les checkpoints."""
+        base = Path(__file__).parent.parent  # GridGame/
+
+        # --- Bob ---
+        bob_ckpt = base / "checkpoints" / "Bob" / "latest.pt"
+        if bob_ckpt.exists():
+            try:
+                import torch
+                spec = importlib.util.spec_from_file_location(
+                    "BobModel", str(base / "rl_Bob" / "Model.py")
+                )
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
+                self.bob_nn = mod.GraphColoringNet(
+                    width=self.grid.width,
+                    height=self.grid.height,
+                    num_colors=self.grid.num_colors,
+                )
+                ckpt = torch.load(str(bob_ckpt), map_location="cpu")
+                self.bob_nn.load_state_dict(ckpt["model_state_dict"])
+                self.bob_nn.eval()
+                print(f"Bob NN chargé depuis {bob_ckpt}")
+            except Exception as e:
+                print(f"Impossible de charger le NN de Bob : {e}")
+                self.bob_nn = None
+        else:
+            print(f"Checkpoint Bob introuvable : {bob_ckpt}")
+
+        # --- Alice ---
+        alice_ckpt = base / "checkpoints" / "Alice" / "latest.pt"
+        if alice_ckpt.exists():
+            try:
+                import torch
+                spec = importlib.util.spec_from_file_location(
+                    "AliceModel", str(base / "rl_Alice" / "Model.py")
+                )
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
+                self.alice_nn = mod.GraphColoringNet(
+                    width=self.grid.width,
+                    height=self.grid.height,
+                    num_colors=self.grid.num_colors,
+                )
+                ckpt = torch.load(str(alice_ckpt), map_location="cpu")
+                self.alice_nn.load_state_dict(ckpt["model_state_dict"])
+                self.alice_nn.eval()
+                print(f"Alice NN chargée depuis {alice_ckpt}")
+            except Exception as e:
+                print(f"Impossible de charger le NN d'Alice : {e}")
+                self.alice_nn = None
+        else:
+            print(f"Checkpoint Alice introuvable : {alice_ckpt}")
+
+    def _get_obs_for_nn(self):
+        """Construit l'observation (grille + masque d'actions légales) pour le NN."""
+        import numpy as np
+        num_colors = self.grid.num_colors
+        height = self.grid.height
+        width = self.grid.width
+        obs = np.zeros((num_colors + 1, height, width), dtype=np.float32)
+        for i in range(width):
+            for j in range(height):
+                val = self.grid.get_cell(i, j).get_value()
+                obs[val, j, i] = 1.0
+        total_actions = width * height * num_colors
+        mask = np.zeros(total_actions, dtype=bool)
+        for i in range(width):
+            for j in range(height):
+                if self.grid.get_cell(i, j).get_value() == 0:
+                    for c in range(num_colors):
+                        if self.grid.is_move_valid(i, j, c + 1):
+                            mask[(j * width + i) * num_colors + c] = True
+        return {"observation": obs, "mask": mask}
+
+    def _nn_move(self, nn_model):
+        """Calcule le coup du NN et retourne (x, y, color)."""
+        import torch
+        obs = self._get_obs_for_nn()
+        obs_t = torch.tensor(obs["observation"], dtype=torch.float32).unsqueeze(0)
+        mask_t = torch.tensor(obs["mask"], dtype=torch.bool).unsqueeze(0)
+        with torch.no_grad():
+            logits, _ = nn_model(obs_t)
+            logits = logits.masked_fill(~mask_t, -1e8)
+            best = torch.argmax(logits, dim=1).item()
+        num_colors = self.grid.num_colors
+        width = self.grid.width
+        c = (best % num_colors) + 1
+        cell_idx = best // num_colors
+        x = cell_idx % width
+        y = cell_idx // width
+        return x, y, c

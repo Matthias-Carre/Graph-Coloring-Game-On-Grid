@@ -1,3 +1,6 @@
+"""
+The Interface class provides methods for creating the game window, drawing the grid, handling user interactions, and managing buttons and popups.
+"""
 import tkinter as tk
 from graphic.Draw import Draw
 
@@ -10,6 +13,7 @@ class Interface:
         self.on_click = engine.on_click
         self.draw = None
         self.selected_color = engine.color_selected
+        self._buttons = {}  # named buttons registry
         engine.on_update_callback = self.draw_grid
         
 
@@ -41,11 +45,12 @@ class Interface:
         canvas = tk.Canvas(self.root, width=w, height=h, bg="white")
         self.canvas = canvas
 
-        draw = Draw( window_width,window_height, self.grid,self.root,canvas)
+        draw = Draw(w, h, self.grid, self.root, canvas)
         self.draw = draw
 
         draw.draw_window()
         self.draw_grid()
+        self.canvas.bind("<Configure>", self.on_canvas_resize)
         #creation of the canvas and button/color selection
         canvas.bind("<Button-1>", self.on_click)
         self.engine.color_var_accessor = draw.color_selected
@@ -64,15 +69,32 @@ class Interface:
         self.draw.draw_grid()
     
     #create and draw a button with text and command
-    def draw_button(self, text, command):
-        #print("DrawButtonInterface")
-        self.draw.draw_button(text, command)
+    def draw_button(self, text, command, name=None):
+        btn = self.draw.draw_button(text, command)
+        if name:
+            self._buttons[name] = btn
         self.root.update()
+        return btn
+
+    def update_button_text(self, name, new_text):
+        """Met à jour le texte d'un bouton enregistré par son nom."""
+        if name in self._buttons:
+            self._buttons[name].config(text=new_text)
     
     #draw all buttons needed for the game interface
     def draw_buttons(self):
         #self.draw_button("test",self.test_print())
         return 
+
+    def on_canvas_resize(self, event):
+        # Keep Draw dimensions in sync with the actual canvas size.
+        if self.draw is None:
+            return
+        if event.width <= 1 or event.height <= 1:
+            return
+        self.draw.width = event.width
+        self.draw.height = event.height
+        self.draw_grid()
 
     def test_print(self,msg=""):
         print("InterTestPrint:",msg)

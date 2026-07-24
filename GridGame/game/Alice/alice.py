@@ -1,10 +1,18 @@
+"""
+This file contains the implementation of the Alice class, which represents a player in the GridGame.
+Alice uses various strategies to determine her next move based on the current state of the grid and the last move made by Bob. The strategies are loaded based on the grid size and number of colors.
+
+"""
 from game.Alice.strategy_3 import *
 from game.Alice.strategy_4 import *
 from game.Alice.strategy_random import *
 from game.Alice.strategy_survive import *
-from game.Alice.euristic1 import *
+from game.Alice.heuristic1 import *
 
 CustomStrat = True
+DEBUG = False
+
+
 
 class Alice:
     def __init__(self,grid):
@@ -12,13 +20,6 @@ class Alice:
         self.strategy = []
         self.load_strategy()
 
-    '''
-    On a besoin:
-     - du dernier move de Bob 
-     - dans quel config on ce trouve
-     - la situation de la case avant le move de Bob
-    
-    '''
 
     #import the strategy depending on the grid size
     def load_strategy(self):
@@ -31,6 +32,8 @@ class Alice:
                 #(is_center, solve_center)
             ]
         elif self.grid.height == 4 and self.grid.num_colors == 4:
+
+            #Strategy for 4*n based on "The Graph Coloring Game on 4 * n-Grids" C. Brosse, N. Martins, N. Nisse, R. Sampaio 
             self.strategy = [
                 #(is_TEST, solve_TEST),
 
@@ -68,7 +71,7 @@ class Alice:
             ]
         else:
             self.strategy = [
-                (is_any,eurisitic_move)
+                (is_any,heurisitic_move)
             ]
 
     #return a random valid move (x,y,color) for Alice
@@ -76,12 +79,14 @@ class Alice:
         #print("Alice: random move")
         return random_move(self.grid, self.grid.last_Bob_move)
 
+    #return a valide move (x,y,color) for Alice that will not create a color critical vertex for Bob
     def next_safe_move(self):
         #print("Alice: safe move")
         return survive_strategy(self.grid, self.grid.last_Bob_move)
 
-    def next_euristic1_move(self):
-        next_move = eurisitic_move(self.grid, self.grid.last_Bob_move)
+    #return a valide move (x,y,color) for Alice base on heuristic
+    def next_heuristic1_move(self):
+        next_move = heurisitic_move(self.grid, self.grid.last_Bob_move)
         return next_move
         
         
@@ -90,13 +95,15 @@ class Alice:
         if self.grid.player != 0:
             print("Not Alice's turn")
             return None
-        print("\n===-- Alice move --===")
+        #print("\n===-- Alice move --===")
 
         # react to Bob's last move
         
         #first move
         if(self.grid.round == 1):
+            self.grid.round += 1
             return (0,1,1)
+            
         
         #For custom strategy:
 
@@ -104,77 +111,16 @@ class Alice:
         #if CustomStrategy:
         #    self.next_euristic_move(self.grid, self.grid.last_Bob_move)
         
-        print("Alice strategy: Bob: ", self.grid.bob_play_on_config)
+        if DEBUG:
+            print("Alice strategy: Bob: ", self.grid.bob_play_on_config)
         for is_case, solve_case in self.strategy:
             if is_case(self.grid,self.grid.last_Bob_move):
-                print(f"Return Alice: {solve_case(self.grid,self.grid.last_Bob_move)}")
+                if DEBUG:
+                    print(f"Return Alice: {solve_case(self.grid,self.grid.last_Bob_move)}")
                 return solve_case(self.grid,self.grid.last_Bob_move)
 
         #case test:
         if is_TestConfig(self.grid,self.grid.last_Bob_move):
             return solve_TestConfig(self.grid,self.grid.last_Bob_move)
        
-
-        #CASE 1: in block/border d/j,j-1 of L,L2,L',L'2/j-2 of L,L'/j-2 of L2,L'2 if j-3 not empty
-
-        #case 1D
-
-
-        #case 1D'
-
-        #case 1L
-
-        #case 1L'
-
-        #case 1-doc
-
-        #case 1g-doc
-
-        #case 1-safe
-        #!!!
-
-        #Case 2: In Border not in D,L,L'
-
-        #case 2d
-
-        #case 2afgFree
-
-        #case 2b
-
-        #case 2g
-
-        #case 2a
-
-        #case 2a'
-
-
-        #Case 3: empty col not in j-1 of L,L2,L',L'2
-
-        #case 3new
-
-        #case 3pi
-
-        #case 3d
-
-        #case 3aF
-
-        #case 3bF
-
-        #case 3gF
-
-        #case 3g
-
-        #case 3b
-
-        #case 3a
-
-    #cases:
-
-    '''
-    def handle_case_1D():
-        bob_move = self.grid.last_Bob_move
-        self.case_1D(bob_move)
-    '''
-
-
 

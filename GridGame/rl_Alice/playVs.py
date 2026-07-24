@@ -24,10 +24,11 @@ def decode_action(action, width, num_colors):
 def main():
     # --- 1. CONFIGURATION ---
     # Use the same dimensions as the last training session
-    WIDTH, HEIGHT, COLORS = 5, 5, 4 
+    WIDTH, HEIGHT, COLORS = 20, 5, 4 
     #MODEL_PATH = "GridGame/NN/4x4.pt"
     script_dir = Path(__file__).parent.parent
-    MODEL_PATH = str(script_dir / "checkpoints" / "Alice" / "latest.pt")
+    #MODEL_PATH = str(script_dir / "checkpoints" / "Alice" / "latest.pt")
+    MODEL_PATH = "rl_Alice/latest.pt"  # Path to the trained model for Alice
 
     # --- 2. WAKING UP ALICE ---
     model = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS)
@@ -58,6 +59,7 @@ def main():
 
     done = False
     
+    start = True
     while not done:
         env.render() # Display current grid state
 
@@ -88,6 +90,11 @@ def main():
 
         # 5. Apply Alice's move to the grid
         env.grid.player = 0
+        
+        # to manipulate the first move of Alice
+        if start:
+            #a_x, a_y, a_c = 2, 2, 1
+            start = False
         env.grid.play_move(a_x, a_y, a_c)
 
         if stop_if_bob_wins():

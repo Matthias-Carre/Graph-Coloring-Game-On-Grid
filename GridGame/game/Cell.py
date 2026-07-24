@@ -1,3 +1,10 @@
+"""
+This file contains the logic for handling individual cells in the GridGame.
+Each cell has properties such as its position, color, neighbors, and status (safe, sound, color critical, uncolorable).
+The class provides methods to update the cell's status based on the game rules and the moves played by Bob or Alice.
+
+mainly used in the grid class.
+"""
 
 class Cell:
     def __init__(self, x, y, grid,num_colors=4, value=0):

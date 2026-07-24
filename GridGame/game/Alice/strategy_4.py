@@ -1,5 +1,11 @@
 """
-Every case of the paper
+This file contains a strategy for Alice on a 4*n grid with 4 colors.
+
+It follows the strategy described in the paper "The Graph Coloring Game on 4 * n-Grids" by C. Brosse, N. Martins, N. Nisse, R. Sampaio.
+
+we check in which configuration Bob played and we answer accordingly:
+is_configX => solve_configX
+
 Note: in the paper line are from down to up starting from 1
 Here we consider up to down starting from 0
 
@@ -20,7 +26,7 @@ used to know where Bob played and to translate Alice response
 """
 #exemple de skelet de code pour l'exec
 
-
+DEBUG = False
 
 
 def is_TestConfig(grid,bob_move):
@@ -77,7 +83,8 @@ def is_1_Delta(grid,bob_move):
 
     if grid.bob_play_on_config["config"] != "D":
         return False
-    print("Strat 1Delta: Bob played on:",grid.bob_play_on_config)
+    if DEBUG :
+        print("Strat 1Delta: Bob played on:",grid.bob_play_on_config)
     return True
 
 def solve_1_Delta(grid,bob_move):
@@ -94,13 +101,15 @@ def solve_1_Delta(grid,bob_move):
         #Alice play 1,j+1 with any color
         cell = get_norm_cell(grid,1,0,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
-        print("1 Delta a")
+        if DEBUG :    
+            print("1 Delta a")
         return (rx,ry,cell.color_options[0])
     else:
         #Alice play 1,j+1 (color the sound vertex)
         cell = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-        print("1 Delta b")
+        if DEBUG :
+            print("1 Delta b")
         return (rx,ry,cell.color_options[0])
     
 def is_1_Dp_1(grid,bob_move):
@@ -119,41 +128,48 @@ def solve_1_Dp_1(grid,bob_move):
     dx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
 
     #Bob 2,j-1 or 1,j c => Alice 2,j+1 c
-    print("1 Dp 1: Bob played on:",x,y ,"norm pos: ",dx,ny)
+    if DEBUG :
+        print("1 Dp 1: Bob played on:",x,y ,"norm pos: ",dx,ny)
     if (dx == -1 and ny == 2) or (dx == 0 and ny == 1) :
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("1 Dp 1 a")
+        if DEBUG :
+            print("1 Dp 1 a")
         return (rx,ry,color)
     #Bob 2,j c => Alice 3,j+1 c
     if (dx == 0 and ny == 2):
         rx,ry = get_real_pos(grid,1,3,j,is_h_flip,is_v_flip)
-        print("1 Dp 1 b")
+        if DEBUG :
+            print("1 Dp 1 b")
         return (rx,ry,color)
     
     #Bob 2,j+1 respc 3,j+1 => Alice 3,j+1 respc 2,j+1 available
     if (dx == 1 and ny == 2):
         cell = get_norm_cell(grid,1,3,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,3,j,is_h_flip,is_v_flip)
-        print("1 Dp 1 c1")
+        if DEBUG :
+            print("1 Dp 1 c1")
         return (rx,ry,cell.color_options[0])
     if (dx == 1 and ny == 3):
         cell = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("1 Dp 1 c2")
+        if DEBUG :
+            print("1 Dp 1 c2")
         return (rx,ry,cell.color_options[0])
     
     #Bob 1,j+2 => Alice 2,j+1 aviable
     if (dx == 2 and ny == 1):
         cell = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("1 Dp 1 d")
+        if DEBUG :
+            print("1 Dp 1 d")
         return (rx,ry,cell.color_options[0])
     
     #Bob 0,j+2 or 0,j+1 => Alice 1,j+2 available
     if (dx == 2 and ny == 0) or (dx == 1 and ny == 0):
         cell = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,2,1,j,is_h_flip,is_v_flip)
-        print("1 Dp 1 e")
+        if DEBUG :
+            print("1 Dp 1 e")
         return (rx,ry,cell.color_options[0])
 
     #Bob 2,j+2 c' != c => Alice 1,j+2
@@ -162,10 +178,12 @@ def solve_1_Dp_1(grid,bob_move):
         if color != cell_c.value:
             cell = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
             rx,ry = get_real_pos(grid,2,1,j,is_h_flip,is_v_flip)
-            print("1 Dp 1 f")
+            if DEBUG :
+                print("1 Dp 1 f")
             return (rx,ry,cell.color_options[0])
         
-    print("1 Dp 1 no condition matched ")
+    if DEBUG :
+        print("1 Dp 1 no condition matched ")
     return
 
 def is_1_Dp_2(grid,bob_move):
@@ -191,23 +209,27 @@ def solve_1_Dp_2(grid,bob_move):
 
     if cell_2_j.value == 0 and (cell_cp.value in cell_2_j.color_options):
         rx,ry = get_real_pos(grid,0,1,j,is_h_flip,is_v_flip)
-        print("1 Dp 2 a")
+        if DEBUG :
+            print("1 Dp 2 a")
         return (rx,ry,cell_cp.value)
     
     #else A => 3,j+1 c'
     else:
         rx,ry = get_real_pos(grid,1,3,j,is_h_flip,is_v_flip)
-        print("1 Dp 2 b")
+        if DEBUG :
+            print("1 Dp 2 b")
         return (rx,ry,cell_cp.value)
     
     #Impossible Mais tql
-    print("1 Dp 2 no condition matched")
+    if DEBUG :
+        print("1 Dp 2 no condition matched")
     return
 
 def is_1_L(grid,bob_move):
     x,y,color = bob_move
     if grid.bob_play_on_config["config"] == "L" or grid.bob_play_on_config["config"] == "L2":
-        print("Is 1 L")
+        if DEBUG :
+            print("Is 1 L")
         return True
     return False
 
@@ -221,18 +243,21 @@ def solve_1_L(grid,bob_move):
     # Bob 0,j-1 => Alice 2,j-1 same
     if (dx == -1 and ny == 0):
         rx,ry = get_real_pos(grid,-1,2,j,is_h_flip,is_v_flip)
-        print("1 L a")
+        if DEBUG :
+            print("1 L a")
         return (rx,ry,color)
     # Bob 2,j-1 respc 1,j-1 => Alice 1,j-1 respc 2,j-1 available
     if(dx == -1 and ny == 2):
         cell = get_norm_cell(grid,-1,1,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,-1,1,j,is_h_flip,is_v_flip)
-        print("1 L b1")
+        if DEBUG :
+            print("1 L b1")
         return (rx,ry,cell.color_options[0])
     if(dx == -1 and ny == 1):
         cell = get_norm_cell(grid,-1,2,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,-1,2,j,is_h_flip,is_v_flip)
-        print("1 L b2")
+        if DEBUG :
+            print("1 L b2")
         return (rx,ry,cell.color_options[0])
     
     # Bob 2,j => Alice 1,j-1 same if available else 3,j-1 same
@@ -240,11 +265,13 @@ def solve_1_L(grid,bob_move):
         cell = get_norm_cell(grid,-1,1,j,is_h_flip,is_v_flip)
         if color in cell.color_options :
             rx,ry = get_real_pos(grid,-1,1,j,is_h_flip,is_v_flip)
-            print("1 L c1")
+            if DEBUG :
+                print("1 L c1")
             return (rx,ry,color)
         else:
             rx,ry = get_real_pos(grid,-1,3,j,is_h_flip,is_v_flip)
-            print("1 L c2")
+            if DEBUG :
+                print("1 L c2")
             return (rx,ry,color)
         
     # Bob 3,j-1 x => Alice 1,j-1 x if possible else
@@ -253,31 +280,36 @@ def solve_1_L(grid,bob_move):
         cell_cpp = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
         if color in cell_1_jm1.color_options:
             rx,ry = get_real_pos(grid,-1,1,j,is_h_flip,is_v_flip)
-            print("1 L d1")
+            if DEBUG :
+                print("1 L d1")
             return (rx,ry,color)
         # if x != c'' => Alice 2,j x else Alice 0,j-1 c''
         else:
             
             if color != cell_cpp.value:
                 rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-                print("1 L d2")
+                if DEBUG :
+                    print("1 L d2")
                 return (rx,ry,color)
             else:
                 rx ,ry = get_real_pos(grid,-1,0,j,is_h_flip,is_v_flip)
-                print("1 L d3")
+                if DEBUG :
+                    print("1 L d3")
                 return (rx,ry,cell_cpp.value)
     
     # Bob 3,j-2 or 1,j-2 => Alice 1,j-2
     if (dx == -2 and ny == 3) or (dx == -2 and ny == 1):
         cell = get_norm_cell(grid,-2,1,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,-2,1,j,is_h_flip,is_v_flip)
-        print("1 L e")
+        if DEBUG :
+            print("1 L e")
         return (rx,ry,cell.color_options[0])
 
 def is_1_Lp(grid,bob_move):
     x,y,color = bob_move
     if grid.bob_play_on_config["config"] == "L'" or grid.bob_play_on_config["config"] == "L'2":
-        print("Is 1 L'")
+        if DEBUG :
+            print("Is 1 L'")
         return True
     return False
 
@@ -295,7 +327,8 @@ def solve_1_Lp(grid,bob_move):
 
         #Check c'' != c' (0, j-1) is not c nether c' 
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("1 L' a")
+        if DEBUG :
+            print("1 L' a")
         return (rx,ry,cell.color_options[0])
 
        
@@ -303,16 +336,19 @@ def solve_1_Lp(grid,bob_move):
     if (dx == 1 and ny == 2):
         cell = get_norm_cell(grid,-1,1,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,-1,1,j,is_h_flip,is_v_flip)
-        print("1 L' b")
+        if DEBUG :
+            print("1 L' b")
         return (rx,ry,cell.color_options[0])
         
     #Bob 3,j-2 or 1,j-2 => Alice 1,j-1
     if (dx == -2 and ny == 3) or (dx == -1 and ny == 1):
         cell = get_norm_cell(grid,-1,1,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,-1,1,j,is_h_flip,is_v_flip)
-        print("1 L' c")
+        if DEBUG :
+            print("1 L' c")
         return (rx,ry,cell.color_options[0])
-    print("1 L' no condition matched")
+    if DEBUG :
+        print("1 L' no condition matched")
     return
 
 #Bob color doc of v not in gamma
@@ -330,8 +366,9 @@ def is_1_doc(grid,bob_move):
         if grid.bob_play_on_config["config"] != "gm1":
             
             #check if its inside a block (not in the borders)
-            print("1 doc: blocks:",grid.blocks)
-            print("Is 1 doc")
+            if DEBUG :
+                print("1 doc: blocks:",grid.blocks)
+                print("Is 1 doc")
             return True
     
     return False    
@@ -339,8 +376,9 @@ def is_1_doc(grid,bob_move):
 def solve_1_doc(grid,bob_move):
     
         patient = grid.bob_play_on_config["patient"]
-
-        print("Solve 1 doc")
+    
+        if DEBUG :
+            print("Solve 1 doc")
         return (patient.y,patient.x,patient.color_options[0])
 
 #Bob color doc of v in gamma
@@ -348,7 +386,8 @@ def is_1_g_doc(grid,bob_move):
     x,y,color = bob_move
     if grid.bob_play_on_config["doctor"] == True:
         if grid.bob_play_on_config["config"] == 'gm1' and (grid.bob_play_on_config["j"] == x-1 or grid.bob_play_on_config["j"] == x+1):
-            print("Is 1 g doc")
+            if DEBUG :
+                print("Is 1 g doc")
             return True
     return False
 
@@ -369,7 +408,8 @@ def is_1_safe(grid,bob_move):
         return False
     
     if grid.bob_play_on_config["state"] == "safe" or grid.bob_play_on_config["state"] == "sound":
-        print("Is 1 safe")
+        if DEBUG :
+            print("Is 1 safe")
         return True
 
     return False
@@ -380,19 +420,22 @@ def solve_1_safe(grid,bob_move):
     # if E sick => Alice color it
     cell_sick = grid.get_first_sick_cell()
     if cell_sick is not None:
-        print("1 safe a (sick)")
+        if DEBUG :
+            print("1 safe a (sick)")
         return (cell_sick.y,cell_sick.x,cell_sick.color_options[0])
     
     # if E sound => Alice make it safe
     cell_sound = grid.get_first_sound_cell()
     if cell_sound is not None:
-        print("1 safe b (sound)")
+        if DEBUG :
+            print("1 safe b (sound)")
         return (cell_sound.y,cell_sound.x,cell_sound.color_options[0])
     
     # E uncolored safe not in border => Alice color it
     cell_safe = grid.get_first_inner_safe_cell()
     if cell_safe is not None:
-        print("1 safe c (safe)")
+        if DEBUG :
+            print("1 safe c (safe)")
         return (cell_safe.y,cell_safe.x,cell_safe.color_options[0])
     
 
@@ -415,11 +458,13 @@ def solve_1_safe(grid,bob_move):
         cell_cp = get_norm_cell(grid,0,2,j,is_h_flip,is_v_flip)
         if cell_1_jp2.value != cell_cp.value :
             rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-            print("1 safe delta a")
+            if DEBUG :
+                print("1 safe delta a")
             return (rx,ry,cell_cp.value)
         else:
             rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
-            print("1 safe delta b")
+            if DEBUG :
+                print("1 safe delta b")
             return (rx,ry,cell_cp.value)
 
     
@@ -433,7 +478,8 @@ def solve_1_safe(grid,bob_move):
 
         cell_cp = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,3,j,is_h_flip,is_v_flip)
-        print("1 safe pi")
+        if DEBUG :
+            print("1 safe pi")
         return (rx,ry,cell_cp.value)
 
     #1 gamma
@@ -446,7 +492,8 @@ def solve_1_safe(grid,bob_move):
 
         cell = get_norm_cell(grid,0,2,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,0,2,j,is_h_flip,is_v_flip)
-        print("1 safe gamma")
+        if DEBUG :
+            print("1 safe gamma")
         return (rx,ry,cell.color_options[0])
 
     #1 alpha beta free 
@@ -463,7 +510,8 @@ def solve_1_safe(grid,bob_move):
         if is_column_empty(grid,1,j,is_v_flip) and is_column_empty(grid,2,j,is_v_flip) :
             cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
             rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-            print("1 safe alpha free")
+            if DEBUG :
+                print("1 safe alpha free")
             return (rx,ry,cell_c.value)
 
     if border_beta is not None:
@@ -475,7 +523,8 @@ def solve_1_safe(grid,bob_move):
 
             cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
             rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-            print("1 safe beta free")
+            if DEBUG :
+                print("1 safe beta free")
             return (rx,ry,cell_c.value)
 
     #1 beta
@@ -483,12 +532,14 @@ def solve_1_safe(grid,bob_move):
     if border_beta is not None:
         is_h_flip = border_beta["is_hori_flipped"]
         is_v_flip = border_beta["is_vert_flipped"]
-        print("1 safe beta: border beta found at j=",border_beta["j"],"h_flip=",is_h_flip,"v_flip=",is_v_flip)
+        if DEBUG :
+            print("1 safe beta: border beta found at j=",border_beta["j"],"h_flip=",is_h_flip,"v_flip=",is_v_flip)
         j = border_beta["j"]
 
         cell = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-        print("1 safe beta")
+        if DEBUG :
+            print("1 safe beta")
         return (rx,ry,cell.color_options[0])
 
     #1 alpha 1
@@ -502,7 +553,8 @@ def solve_1_safe(grid,bob_move):
         cell_1_jp2 = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
         if cell_1_jp2.value != cell_c.value:
             rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-            print("1 safe alpha a")
+            if DEBUG :
+                print("1 safe alpha a")
             return (rx,ry,cell_c.value)
         else:
     #1 alpha 2
@@ -510,14 +562,16 @@ def solve_1_safe(grid,bob_move):
             if is_column_empty(grid,3,j,is_v_flip):
                 cell = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
                 rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-                print("1 safe alpha b")
+                if DEBUG :
+                    print("1 safe alpha b")
                 return (rx,ry,cell.color_options[0])
     #1 aplha 3
     # else (j+3 not empty) => 2,j+1 c'
             else:
                 cell = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
                 rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-                print("1 safe alpha c")
+                if DEBUG :
+                    print("1 safe alpha c")
                 return (rx,ry,cell.color_options[0])
     return
 """
@@ -539,7 +593,8 @@ Bob play:
 def is_2_delta(grid,bob_move):
     x,_,_ = bob_move
     if grid.bob_play_on_config["config"] == "d" and (x == grid.bob_play_on_config["j"]):
-        print("Is 2 delta")
+        if DEBUG :
+            print("Is 2 delta")
         return True
     return False
 
@@ -558,12 +613,14 @@ def solve_2_delta(grid,bob_move):
     cell_cp = get_norm_cell(grid,0,2,j,is_h_flip,is_v_flip)
     if cell_1_jp2.value != cell_cp.value :
         rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-        print("2 delta a")
+        if DEBUG :
+            print("2 delta a")
         return (rx,ry,cell_cp.value)
     # else A 0,j+1 c'
     else:
         rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
-        print("2 delta b")
+        if DEBUG :
+            print("2 delta b")
         return (rx,ry,cell_cp.value)
 
 # Bob play in free border of a b or g
@@ -576,7 +633,8 @@ def is_2_abgF(grid,bob_move):
             return False
         verti = grid.bob_play_on_config["is_vert_flipped"]
         if is_column_empty(grid,1,j,verti) and is_column_empty(grid,2,j,verti) :
-            print("Is 2 abg free")
+            if DEBUG :
+                print("Is 2 abg free")
             return True
     return False
 
@@ -595,28 +653,32 @@ def solve_2_abgF(grid,bob_move):
     cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
     if config == "a":
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("2 abg free a")
-        print("2 abg free a: c=",cell_c.value)
+        if DEBUG :
+            print("2 abg free a")
+            print("2 abg free a: c=",cell_c.value)
         return (rx,ry,cell_c.value)
 
 
     # if B in beta => Alice 2,j+1 c
     if config == "b":
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("2 abg free b")
+        if DEBUG :
+            print("2 abg free b")
         return (rx,ry,cell_c.value)
 
     # if B (2,j) c' != c (forcement different) in gamma => A (1,j+1) c'
     if config == "g" and ny == 2:
         rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-        print("2 abg free g1")
+        if DEBUG :
+            print("2 abg free g1")
         return (rx,ry,color)
 
     
     # if B (1,j) c' != c (forcement different) in gamma => A (2,j+1) c'
     if config == "g" and ny == 1:
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("2 abg free g2")
+        if DEBUG :
+            print("2 abg free g2")
         return (rx,ry,color)
     
 
@@ -626,7 +688,8 @@ def is_2_beta(grid,bob_move):
     x,_,_ = bob_move
     j= grid.bob_play_on_config["j"]
     if grid.bob_play_on_config["config"] == "b" and (x == j):
-        print("Is 2 beta")
+        if DEBUG :
+            print("Is 2 beta")
         return True
     return False
 
@@ -643,7 +706,8 @@ def solve_2_beta(grid,bob_move):
     if cell_2_j.value == 0:
         cell = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-        print("2 beta a")
+        if DEBUG :
+            print("2 beta a")
         return (rx,ry,cell_2_j.color_options[0])
     
     # if B 2,j c' => if 1,j+2 != c' => A 1,j+1 c'
@@ -651,17 +715,20 @@ def solve_2_beta(grid,bob_move):
         cell_1_jp2 = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
         if color != cell_1_jp2.value:
             rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-            print("2 beta b1")
+            if DEBUG :
+                print("2 beta b1")
             return (rx,ry,color)
     # else if 0,j != c' => A 0,j+1 c'
         else:
             cell_0_j = get_norm_cell(grid,0,0,j,is_h_flip,is_v_flip)
             if color != cell_0_j.value:
                 rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
-                print("2 beta b2")
+                if DEBUG :
+                    print("2 beta b2")
                 return (rx,ry,color)
             #else gerer plus tard
-    print("2 beta no condition matched")
+    if DEBUG :
+        print("2 beta no condition matched")
     return
 
 #Bob play in in non free Beta
@@ -669,7 +736,8 @@ def is_2_gamma(grid,bob_move):
     x,_,_ = bob_move
     j= grid.bob_play_on_config["j"]
     if grid.bob_play_on_config["config"] == "g" and (x == j):
-        print("Is 2 gamma")
+        if DEBUG :
+            print("Is 2 gamma")
         return True
 
     return False
@@ -686,7 +754,8 @@ def solve_2_gamma(grid,bob_move):
     if ny == 2 :
         cell = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("2 gamma a")
+        if DEBUG :
+            print("2 gamma a")
         return (rx,ry,cell.color_options[0])
 
     #B 1,j c' & 2,j+2 != c' => A 2,j+1 c'
@@ -694,7 +763,8 @@ def solve_2_gamma(grid,bob_move):
         cell_2_jp2 = get_norm_cell(grid,2,2,j,is_h_flip,is_v_flip)
         if color != cell_2_jp2.value:
             rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-            print("2 gamma b")
+            if DEBUG :
+                print("2 gamma b")
             return (rx,ry,color)
 
     #else 2,j+1 c' => A 2,j) c'' (diff c et c')
@@ -704,7 +774,8 @@ def solve_2_gamma(grid,bob_move):
             colors.remove(color)
             colors.remove(cell_c.value)
             rx,ry = get_real_pos(grid,0,2,j,is_h_flip,is_v_flip)
-            print("2 gamma c")
+            if DEBUG :
+                print("2 gamma c")
             return (rx,ry,colors[0])
 
     return
@@ -719,7 +790,8 @@ def is_2_alpha(grid,bob_move):
         return False
     
     if grid.bob_play_on_config["config"] == "a" and (x == j):
-        print("Is 2 alpha")
+        if DEBUG :
+            print("Is 2 alpha")
         return True
     return False
 
@@ -736,7 +808,8 @@ def solve_2_alpha(grid,bob_move):
     cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
     if cell_2_jp2.value != cell_c.value:
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("2 alpha 1")
+        if DEBUG :
+            print("2 alpha 1")
         return (rx,ry,cell_c.value)
     
     
@@ -747,33 +820,40 @@ def solve_2_alpha(grid,bob_move):
         cell_1_jp1 = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
         if color in cell_1_jp1.color_options:
             rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-            print("2 alpha 2.1")
+            if DEBUG :
+                print("2 alpha 2.1")
             return (rx,ry,color)
         else:
             rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-            print("2 alpha 2.2")
+            if DEBUG :
+                print("2 alpha 2.2")
             return (rx,ry,color)
 
     # B 0,j c' & 0,j not colored => if 1,j+2 != c' => A 1,j+1 c' else A 0,j+1 c'
     cell_0_j = get_norm_cell(grid,0,0,j,is_h_flip,is_v_flip)
-    print("2 alpha 3: check:",color,"cell 0,j:",cell_0_j.value)
+    if DEBUG :
+        print("2 alpha 3: check:",color,"cell 0,j:",cell_0_j.value)
     if ny == 2 and cell_0_j.value == 0:
         cell_1_jp2 = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
-        print("2 alpha 3: check:",color,"cell 1,j+2:",cell_1_jp2.value)
+        if DEBUG :
+            print("2 alpha 3: check:",color,"cell 1,j+2:",cell_1_jp2.value)
         if color != cell_1_jp2.value:
             rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-            print("2 alpha 3.1")
+            if DEBUG :
+                print("2 alpha 3.1")
             return (rx,ry,color)
         else:
             rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
-            print("2 alpha 3.2")
+            if DEBUG :
+                print("2 alpha 3.2")
             return (rx,ry,color)
 
     # if (0,j+2) != c => A 0,j+1 c
     cell_0_jp2 = get_norm_cell(grid,2,0,j,is_h_flip,is_v_flip)
     if cell_0_jp2.value != cell_c.value:
         rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
-        print("2 alpha 4")
+        if DEBUG :
+            print("2 alpha 4")
         return (rx,ry,cell_c.value)
 
     # if (3,j+2) != c' => A 3,j+1 c'
@@ -781,18 +861,22 @@ def solve_2_alpha(grid,bob_move):
     cell_cp = get_norm_cell(grid,0,2,j,is_h_flip,is_v_flip)
     if cell_3_jp2.value != cell_cp.value:
         rx,ry = get_real_pos(grid,1,3,j,is_h_flip,is_v_flip)
-        print("2 alpha 5")
+        if DEBUG :
+            print("2 alpha 5")
         return (rx,ry,cell_cp.value)
 
     # (if 1,j+2) not c' should be the case Prop 3) => A 1,j+1 c' 
     cell_1_jp2 = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
     if cell_1_jp2.value != cell_cp.value:
-        print("By Prop 3 : 1,j+2 should not be c' ")
+        if DEBUG :
+            print("By Prop 3 : 1,j+2 should not be c' ")
         rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-        print("2 alpha 6")
+        if DEBUG :
+            print("2 alpha 6")
         return (rx,ry,cell_cp.value)
 
-    print("2 alpha no condition matched")
+    if DEBUG :
+        print("2 alpha no condition matched")
     return
 
 # Bob color v of non free 1 colom block alpha
@@ -806,7 +890,8 @@ def is_2_aplha_prime(grid,bob_move):
         return False
     
     if grid.bob_play_on_config["config"] == "a" and (x == j):
-        print("Is 2 alpha'")
+        if DEBUG :
+            print("Is 2 alpha'")
         return True
     return False
 
@@ -828,12 +913,14 @@ def solve_2_alpha_prime(grid,bob_move):
     cell_2_jm2 = get_norm_cell(grid,-2,2,j,is_h_flip,is_v_flip)
     if cell_2_jm2 == None:
         rx,ry = get_real_pos(grid,-1,2,j,is_h_flip,is_v_flip)
-        print("2 alpha' 0'")
+        if DEBUG :
+            print("2 alpha' 0'")
         return (rx,ry,cell_c.value)
 
     if cell_2_jm2.value != cell_c.value :
         rx,ry = get_real_pos(grid,-1,2,j,is_h_flip,is_v_flip)
-        print("2 alpha' 0")
+        if DEBUG :
+            print("2 alpha' 0")
         return (rx,ry,cell_c.value)
     #(now asume that 2,j-2 is c)
 
@@ -842,12 +929,14 @@ def solve_2_alpha_prime(grid,bob_move):
     #if cell_0_jm2 is None => A 0,j-1 c
     if cell_0_jm2 == None:
         rx,ry = get_real_pos(grid,-1,0,j,is_h_flip,is_v_flip)
-        print("2 alpha' 1a'")
+        if DEBUG :
+            print("2 alpha' 1a'")
         return (rx,ry,cell_c.value)
 
     if (cell_0_jm2.value != cell_c.value) and cell_0_jm2.value != 0:
         rx,ry = get_real_pos(grid,-1,0,j,is_h_flip,is_v_flip)
-        print("2 alpha' 1a")
+        if DEBUG :
+            print("2 alpha' 1a")
         return (rx,ry,cell_c.value)
     
     # else (=c) => if 1,j-2 colored => A 2mj-1 c'
@@ -855,7 +944,8 @@ def solve_2_alpha_prime(grid,bob_move):
         cell_1_jm2 = get_norm_cell(grid,-2,1,j,is_h_flip,is_v_flip)
         if cell_1_jm2.value != 0:
             rx,ry = get_real_pos(grid,-1,2,j,is_h_flip,is_v_flip)
-            print("2 alpha' 1b")
+            if DEBUG :
+                print("2 alpha' 1b")
             return (rx,ry,cell_c.value)
     # ((0,j-2) colored & 1.j-2 = 0)
     # sup 0,j-2 = c and 1,j-2 = 0
@@ -863,7 +953,8 @@ def solve_2_alpha_prime(grid,bob_move):
     # if j-3 not empty => A 2,j-1 c'
     if not is_column_empty(grid,-3,j,is_v_flip):
         rx,ry = get_real_pos(grid,-1,2,j,is_h_flip,is_v_flip)
-        print("2 alpha' 2")
+        if DEBUG :
+            print("2 alpha' 2")
         return (rx,ry,color)
 
     #if 2,j+2 != c => A 2,j+1 c
@@ -872,20 +963,23 @@ def solve_2_alpha_prime(grid,bob_move):
     # if cell_2_jp2 is None => A 2,j+1 c
     if cell_2_jp2 == None:
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("2 alpha' 3'")
+        if DEBUG :
+            print("2 alpha' 3'")
         return (rx,ry,cell_c.value)
 
 
     if cell_2_jp2.value != cell_c.value:
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("2 alpha' 3")
+        if DEBUG :
+            print("2 alpha' 3")
         return (rx,ry,cell_c.value)
     
     # if (0,j+2) != c => A 0,j+1 c
     cell_0_jp2 = get_norm_cell(grid,2,0,j,is_h_flip,is_v_flip)
     if cell_0_jp2.value != cell_c.value and cell_0_jp2.value != 0:
         rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
-        print("2 alpha' 4")
+        if DEBUG :
+            print("2 alpha' 4")
         return (rx,ry,cell_c.value)
 
     # if j+3 not empty => A 2,j+1 c'' != c'
@@ -897,11 +991,13 @@ def solve_2_alpha_prime(grid,bob_move):
     cpp.remove(color)
     if not is_column_empty(grid,3,j,is_v_flip):
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("2 alpha' 5")
+        if DEBUG :
+            print("2 alpha' 5")
         return (rx,ry,cpp[0])
     else:
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("2 alpha' 6")
+        if DEBUG :
+            print("2 alpha' 6")
         return (rx,ry,cpp[0])
 
 
@@ -933,13 +1029,15 @@ def is_3_new(grid,bob_move):
     list = [(x,0),(x,1),(x,2),(x,3)]
     list.remove((x,y))
     if same_value_grid(grid,list) and is_column_empty(grid,-1,x,False) and is_column_empty(grid,1,x,False):
-        print("Case 3-new")
+        if DEBUG :
+            print("Case 3-new")
         return True
     return False
 
 # Alice answer in col j with |a-b| = 2 with c
 def solve_3_new(grid,bob_move):
-    print("Case 3-new: Alice color v_b,j with |a-b| = 2 with c")
+    if DEBUG :
+        print("Case 3-new: Alice color v_b,j with |a-b| = 2 with c")
     x,y,color = bob_move
     if y == 0 or y == 1:
         return (x,y+2,color)
@@ -949,7 +1047,8 @@ def solve_3_new(grid,bob_move):
 
 def is_3_pi(grid,bob_move):
     if grid.bob_play_on_config["config"] == "p":
-        print("Is 3 pi")
+        if DEBUG :
+            print("Is 3 pi")
         return True
     return False
 
@@ -971,12 +1070,14 @@ def solve_3_pi(grid,bob_move):
         #print("3Pi color option: ", col)
         rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
         #print("3Pi real pos: ",rx,ry)
-        print(f"3Pi: 1")
+        if DEBUG :
+            print(f"3Pi: 1")
         return (rx,ry,col[0])
     if(ny == 1):
         col = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip).color_options
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print(f"3Pi: 2")
+        if DEBUG :
+            print(f"3Pi: 2")
         return (rx,ry,col[0])
     
     #bob 3,j+1 cw c' or c'' => alice 1,j+1 cw available 
@@ -989,19 +1090,22 @@ def solve_3_pi(grid,bob_move):
         if color == col_cell_1.value or color == col_cell_2.value:
             c = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip).color_options
             rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-            print(f"3Pi: 3")
+            if DEBUG :
+                print(f"3Pi: 3")
             return (rx,ry,c[0])
         #bob 3,j+1 cw w => if 1,j+2 != w => alice 1,j+1 cw w else 1,j+1 cw c''
         if color != get_norm_cell(grid,dx+1,1,j,is_h_flip,is_v_flip).value:
             rx,ry = get_real_pos(grid,dx,1,j,is_h_flip,is_v_flip)
-            print(f"3Pi: 4")
+            if DEBUG :
+                print(f"3Pi: 4")
             return (rx,ry,color)
         else:
             #get the value of c'' (j,2)
             cell = get_norm_cell(grid,0,2,j,is_h_flip,is_v_flip)
             rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
 
-            print(f"3Pi: 5")
+            if DEBUG :
+                print(f"3Pi: 5")
             return (rx,ry,cell.value)
 
     if (ny == 0):
@@ -1010,7 +1114,8 @@ def solve_3_pi(grid,bob_move):
         if color == c1.value:
             col = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip).color_options
             rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-            print(f"3Pi: 6")
+            if DEBUG :
+                print(f"3Pi: 6")
             return (rx,ry,col[0])
         
         #if 0,j+1 =  w => 2,j+1 w
@@ -1024,9 +1129,11 @@ def solve_3_pi(grid,bob_move):
         possi.remove(c2.value)
         w = possi[0]
 
-        print(f"3Pi: c={c.value}, c'={c1.value}, c''={c2.value},w={w}")
+        if DEBUG :
+            print(f"3Pi: c={c.value}, c'={c1.value}, c''={c2.value},w={w}")
         if color == w:
-            print(f"3Pi: 7")
+            if DEBUG :
+                print(f"3Pi: 7")
             rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
             return (rx,ry,color)
         
@@ -1036,32 +1143,38 @@ def solve_3_pi(grid,bob_move):
             if cell_1_jp2.value == c2.value:
                 col = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip).color_options
                 rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-                print(f"3Pi: 8")
+                if DEBUG :
+                    print(f"3Pi: 8")
                 return (rx,ry,col[0])
 
             #if 0,j+1 = c'' => if 1,j+2 c or w => 2,j+1 same
             if cell_1_jp2.value == c.value or cell_1_jp2.value == w:
                 rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-                print(f"3Pi: 9")
+                if DEBUG :
+                    print(f"3Pi: 9")
                 return (rx,ry,color)
 
             #if 0,j+1 = c' => if 1,j+2 0 => 1,j+1 w
             if cell_1_jp2.value == 0:
                 rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-                print(f"3Pi: 10")
+                if DEBUG :
+                    print(f"3Pi: 10")
                 return (rx,ry,w)
         
-    print("3Pi: no condition matched")  
+    if DEBUG :
+        print("3Pi: no condition matched")  
     return
 
 
 def is_3_delta(grid,bob_move):
     #bob coor in col adjacent to border of config delta
     #idea: Alice will color to obtain alpha beta gamma or delta or merge
-    print("Check 3 delta: ", grid.bob_play_on_config)
+    if DEBUG :
+        print("Check 3 delta: ", grid.bob_play_on_config)
     if grid.bob_play_on_config["config"] == "d" or grid.bob_play_on_config["config2"] == "d":
 
-        print("Is 3 delta")
+        if DEBUG :
+            print("Is 3 delta")
         return True
     
     return False
@@ -1076,7 +1189,8 @@ def solve_3_delta(grid,bob_move):
     if grid.bob_play_on_config["config2"] == "d":
         is_v_flip = True
     #fix j
-    print(f"3Delta: Bob last move{(x,y)},{is_h_flip},{is_v_flip} ",) 
+    if DEBUG :
+        print(f"3Delta: Bob last move{(x,y)},{is_h_flip},{is_v_flip} ",) 
     j = x+1 if is_v_flip else x-1
     nx,ny = get_norm_pos(grid,x,y,j,is_h_flip,is_v_flip)
 
@@ -1088,30 +1202,36 @@ def solve_3_delta(grid,bob_move):
             cell_1_jp2 = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
             if cell_1_jp2.value != color:
                 rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-                print("3Delta: Case 3d1a")
+                if DEBUG :
+                    print("3Delta: Case 3d1a")
                 return (rx,ry,color)
             else:
                 #if 1,j+2 = y => alice 1,j+1 w y
                 rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
-                print("3Delta: Case 3d1b")
+                if DEBUG :
+                    print("3Delta: Case 3d1b")
                 return (rx,ry,color)
     #Case 3d2
     #bob 3,j+1 c != y => alice 1,j+1 c or y
         else: #color != y
             cell = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
             cell_y = get_norm_cell(grid,0,2,j,is_h_flip,is_v_flip)
-            print(f"3Delta: j={j}")
+            if DEBUG :
+                print(f"3Delta: j={j}")
 
             rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
             #if y is an option for 1,j+1
-            print(f"y={cell_y.value}, options 1,j+1: {cell.color_options},c={color}")
+            if DEBUG :
+                print(f"y={cell_y.value}, options 1,j+1: {cell.color_options},c={color}")
             if cell_y.value in cell.color_options:
-                print("3Delta: Case 3d2a")
+                if DEBUG :
+                    print("3Delta: Case 3d2a")
                 return (rx,ry,cell_y.value)
             #else (y not an option) => color c
             else:
                 rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-                print("3Delta: Case 3d2b")
+                if DEBUG :
+                    print("3Delta: Case 3d2b")
                 return (rx,ry,color)
             
     #Case 3d3
@@ -1120,22 +1240,26 @@ def solve_3_delta(grid,bob_move):
         cell_y = get_norm_cell(grid,0,2,j,is_h_flip,is_v_flip)
         if color != cell_y.value:
             #check if j+2 not empty
-            print(f"3Delta: Is j+2 empty: {is_column_empty(grid,2,j,is_v_flip)}")
+            if DEBUG :
+                print(f"3Delta: Is j+2 empty: {is_column_empty(grid,2,j,is_v_flip)}")
             if not is_column_empty(grid,2,j,is_v_flip):
                 cell = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
                 rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-                print("3Delta: Case 3d3a1")
+                if DEBUG :
+                    print("3Delta: Case 3d3a1")
                 return (rx,ry,cell.color_options[0])
     #bob 2,j+1 c != y if j+2 empty if 1,j+3 != c => alice 1,j+2 c else 0,j+2 c
             else: #j+2 empty
                 cell_1_jp3 = get_norm_cell(grid,3,1,j,is_h_flip,is_v_flip)
                 if cell_1_jp3.value != color:
                     rx,ry = get_real_pos(grid,2,1,j,is_h_flip,is_v_flip)
-                    print("3Delta: Case 3d3a2")
+                    if DEBUG :
+                        print("3Delta: Case 3d3a2")
                     return (rx,ry,color)
                 else:
                     rx,ry = get_real_pos(grid,2,0,j,is_h_flip,is_v_flip)
-                    print("3Delta: Case 3d3b")
+                    if DEBUG :
+                        print("3Delta: Case 3d3b")
                     return (rx,ry,color)
 
     #case 3d4
@@ -1144,13 +1268,15 @@ def solve_3_delta(grid,bob_move):
         if not(is_column_empty(grid,2,j,is_v_flip)):
             cell = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
             rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-            print("3Delta: Case 3d4a")
+            if DEBUG :
+                print("3Delta: Case 3d4a")
             return (rx,ry,cell.color_options[0])
     #bob 1,j+1 c if j+2 empty 3,j+1 y
         else:
             cell_y = get_norm_cell(grid,0,2,j,is_h_flip,is_v_flip)
             rx,ry = get_real_pos(grid,1,3,j,is_h_flip,is_v_flip)
-            print(f"3Delta: Case 3d4b")
+            if DEBUG :
+                print(f"3Delta: Case 3d4b")
             return (rx,ry,cell_y.value)
 
     #case 3d5
@@ -1161,19 +1287,22 @@ def solve_3_delta(grid,bob_move):
             cell_1_jp2 = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
             if cell_1_jp2.value != cell_y.value:
                 rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-                print("3Delta: Case 3d5a")
+                if DEBUG :
+                    print("3Delta: Case 3d5a")
                 return (rx,ry,cell_y.value)
             
             else:# 1,j+2 = y => alice 1,j c
                 rx,ry = get_real_pos(grid,0,1,j,is_h_flip,is_v_flip)
-                print("3Delta: Case 3d5b")
+                if DEBUG :
+                    print("3Delta: Case 3d5b")
                 return (rx,ry,color)
         #if color = y if 3,j+2 != y => alice 3,j+1 y else if...
         else: #color = y
             cell_3_jp2 = get_norm_cell(grid,2,3,j,is_h_flip,is_v_flip)
             if cell_3_jp2.value != cell_y.value:
                 rx,ry = get_real_pos(grid,1,3,j,is_h_flip,is_v_flip)
-                print("3Delta: Case 3d5c")
+                if DEBUG :
+                    print("3Delta: Case 3d5c")
                 return (rx,ry,cell_y.value)
             #if c=y and 3,j+2 = y if 2,j+2 = c' != 0 => alice 1,j+1 c' else 
             #- if 1,j+2 = c' => alice 2,j+1 c' (if c' != y or other) else(1,j+2=0) should not be possible
@@ -1181,23 +1310,27 @@ def solve_3_delta(grid,bob_move):
                 cell_2_jp2 = get_norm_cell(grid,2,2,j,is_h_flip,is_v_flip)
                 if cell_2_jp2.value != 0:
                     rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-                    print("3Delta: Case 3d5d")
+                    if DEBUG :
+                        print("3Delta: Case 3d5d")
                     return (rx,ry,cell_2_jp2.value)
                 else: # 2,j+2 = 0
                     cell_1_jp2 = get_norm_cell(grid,2,1,j,is_h_flip,is_v_flip)
                     if cell_1_jp2.value != 0: 
                         if cell_y.value != cell_1_jp2.value:
                             rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-                            print("3Delta: Case 3d5e")
+                            if DEBUG :
+                                print("3Delta: Case 3d5e")
                             return (rx,ry,cell_1_jp2.value)
                         else:
                             cell = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
                             rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-                            print("3Delta: Case 3d5f")
+                            if DEBUG :
+                                print("3Delta: Case 3d5f")
                             return (rx,ry,cell.color_options[0])
 
                     else: # 1,j+2 = 0
-                        print("3Delta: Case 3d5f - should not happen")
+                        if DEBUG :
+                            print("3Delta: Case 3d5f - should not happen")
 
     print("3Delta: no condition matched")
     return
@@ -1207,7 +1340,8 @@ def is_3_alpha_F(grid,bob_move):
     #Bob play border of alpha with no block on the other side
     if grid.bob_play_on_config["config"] == "a":
         if grid.bob_play_on_config["config2"] == "empty":
-            print("Is 3 alpha F")
+            if DEBUG :
+                print("Is 3 alpha F")
             return True 
     return False
 
@@ -1225,28 +1359,31 @@ def solve_3_alpha_F(grid,bob_move):
     if (ny == 3 or ny == 0):
         cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("3Alpha F1") 
         return (rx,ry,cell_c.value)
     #if Bob 1,j+1 c' => Alice 3,j+1 c'
     if (ny == 1):
         rx,ry = get_real_pos(grid,1,3,j,is_h_flip,is_v_flip)
-        print("3Alpha F2")
+        if DEBUG:
+            print("3Alpha F2")
         return (rx,ry,color)
     #if Bob play 2,j+1 c' => Alice play 0,j+1 c
     if (ny == 2):
         cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
-        print("3Alpha F3")
+        if DEBUG:
+            print("3Alpha F3")
         return (rx,ry,cell_c.value)
     
-    print("3Alpha F: no condition matched")
+    if DEBUG:
+        print("3Alpha F: no condition matched")
     return
 
 def is_3_beta_F(grid,bob_move):
     #Bob play border of beta with no block on the other side
     if grid.bob_play_on_config["config"] == "b":
         if grid.bob_play_on_config["config2"] == "empty":
-            print("Is 3 beta F")
+            if DEBUG :
+                print("Is 3 beta F")
             return True 
     return False
 
@@ -1265,43 +1402,51 @@ def solve_3_beta_F(grid,bob_move):
         cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
         if color != cell_c.value:
             rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-            print("3Beta F1")
+            if DEBUG :
+                print("3Beta F1")
             return (rx,ry,color)
         else:
             rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
-            print("3Beta F2")
+            if DEBUG :
+                print("3Beta F2")
             return (rx,ry,cell_c.value)
     #Bob play 2,j+1 c' => Alice play 0,j+1 c
     if (ny == 2):
         cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
-        print("3Beta F3")
+        if DEBUG :
+            print("3Beta F3")
         return (rx,ry,cell_c.value)
     #Bob play 0,j+1 c' => Alice 2,j+1 c
     if (ny == 0):
         cell_c = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("3Beta F4")
+        if DEBUG :
+            print("3Beta F4")
         return (rx,ry,cell_c.value)
     #Bob play 1,j+1 c' => if 3,j != c' => Alice 3,j+1 c' else (if 2,j+3 != c' => Alice 2,j+2 c' else Alice 3,j+2 c')
     if (ny == 1):
         cell_3_j = get_norm_cell(grid,0,3,j,is_h_flip,is_v_flip)
         if color != cell_3_j.value:
             rx,ry = get_real_pos(grid,1,3,j,is_h_flip,is_v_flip)
-            print("3Beta F5")
+            if DEBUG :
+                print("3Beta F5")
             return (rx,ry,color)
         else:
             cell_2_jp3 = get_norm_cell(grid,3,2,j,is_h_flip,is_v_flip)
             if color != cell_2_jp3.value:
                 rx,ry = get_real_pos(grid,2,2,j,is_h_flip,is_v_flip)
-                print("3Beta F6")
+                if DEBUG :
+                    print("3Beta F6")
                 return (rx,ry,color)
             else:
                 rx,ry = get_real_pos(grid,2,3,j,is_h_flip,is_v_flip)
-                print("3Beta F7")
+                if DEBUG :
+                    print("3Beta F7")
                 return (rx,ry,color)
             
-    print("3Beta F: no condition matched")
+    if DEBUG :
+        print("3Beta F: no condition matched")
     return
 
 
@@ -1309,7 +1454,8 @@ def is_3_gamma_F(grid,bob_move):
     #Bob play border of gamma with no block on the other side
     if grid.bob_play_on_config["config"] == "g":
         if grid.bob_play_on_config["config2"] == "empty":
-            print("Is 3 gamma F")
+            if DEBUG :
+                print("Is 3 gamma F")
             return True 
     return False
 
@@ -1324,33 +1470,39 @@ def solve_3_gamma_F(grid,bob_move):
     #bob play 0,j+1 c' => Alice 2,j+1 c'
     if (ny == 0):
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("3Gamma F1")
+        if DEBUG:
+            print("3Gamma F1")
         return (rx,ry,color)
     
     #bob play 3,j+1 c' => Alice 1,j+1 c'
     if (ny == 3):
         rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-        print("3Gamma F2")
+        if DEBUG:
+            print("3Gamma F2")
+
         return (rx,ry,color)
     #bob play 2,j+1 c' != c => Alice 1,j c'
     if (ny == 2):
         cell_c = get_norm_cell(grid,0,0,j,is_h_flip,is_v_flip)
         if color != cell_c.value:
             rx,ry = get_real_pos(grid,0,1,j,is_h_flip,is_v_flip)
-            print("3Gamma F3")
+            if DEBUG:
+                print("3Gamma F3")
             return (rx,ry,color)
     #bob play 2,j+1 c' = c => if 1,j+3 != c => Alice 1,j c else if 3,j+3 != c => Alice 0,j+2 c
         else:
             cell_1_jp3 = get_norm_cell(grid,3,1,j,is_h_flip,is_v_flip)
             if cell_c.value != cell_1_jp3.value:
                 rx,ry = get_real_pos(grid,0,1,j,is_h_flip,is_v_flip)
-                print("3Gamma F4")
+                if DEBUG:
+                    print("3Gamma F4")
                 return (rx,ry,cell_c.value)
             else:
                 cell_3_jp3 = get_norm_cell(grid,3,3,j,is_h_flip,is_v_flip)
                 if cell_c.value != cell_3_jp3.value:
                     rx,ry = get_real_pos(grid,2,0,j,is_h_flip,is_v_flip)
-                    print("3Gamma F5")
+                    if DEBUG:
+                        print("3Gamma F5")
                     return (rx,ry,cell_c.value)
 
     #bob play 1,j+1 c' != c => Alice 2,j c'
@@ -1358,20 +1510,24 @@ def solve_3_gamma_F(grid,bob_move):
         cell_c = get_norm_cell(grid,0,0,j,is_h_flip,is_v_flip)
         if color != cell_c.value:
             rx,ry = get_real_pos(grid,0,2,j,is_h_flip,is_v_flip)
-            print("3Gamma F6")
+            if DEBUG:
+                print("3Gamma F6")
             return (rx,ry,color)
     #bob play 1,j+1 c' = c if 2,j+3 != c => Alice 2,j+2 c else we are in Delta'
         else:
             cell_2_jp3 = get_norm_cell(grid,3,2,j,is_h_flip,is_v_flip)
             if color != cell_2_jp3.value:
                 rx,ry = get_real_pos(grid,2,2,j,is_h_flip,is_v_flip)
-                print("3Gamma F7")
+                if DEBUG:
+                    print("3Gamma F7")
                 return (rx,ry,color)
             else:
                 rx,ry = get_real_pos(grid,2,3,j,is_h_flip,is_v_flip)
-                print("3Gamma F8 *2TH:je supp a verifier")
+                if DEBUG:
+                    print("3Gamma F8 *2TH:je supp a verifier")
                 return (rx,ry,color)
-    print("3Gamma F: no condition matched")
+    if DEBUG:
+        print("3Gamma F: no condition matched")
     return
 
 def is_3_gamma(grid,bob_move):
@@ -1379,7 +1535,8 @@ def is_3_gamma(grid,bob_move):
     config = grid.bob_play_on_config["config"]
     config2 = grid.bob_play_on_config["config2"]
     if (config == "g" and (config2 == "a" or config2 == "b" or config2 == "g")):
-        print("Is 3 gamma")
+        if DEBUG:
+            print("Is 3 gamma")
         return True
     
     return False
@@ -1397,7 +1554,8 @@ def solve_3_gamma(grid,bob_move):
     cell_c = get_norm_cell(grid,0,0,j,is_h_flip,is_v_flip)
     if (ny == 3 and color != cell_c.value):
         rx,ry = get_real_pos(grid,0,2,j,is_h_flip,is_v_flip)
-        print("3 gamma 1")
+        if DEBUG:
+            print("3 gamma 1")
         return (rx,ry,color)
 
     #3 gamma 2
@@ -1406,17 +1564,20 @@ def solve_3_gamma(grid,bob_move):
         cell_2_jp2 = get_norm_cell(grid,2,2,j,is_h_flip,is_v_flip)
         if color != cell_2_jp2.value:
             rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-            print("3 gamma 2")
+            if DEBUG:
+                print("3 gamma 2")
             return (rx,ry,color)
         
     #3 gamma 3
     #B 0,j+1 x != c => if 2,j+2 = c => A 2,j x
         else:
             rx,ry = get_real_pos(grid,0,2,j,is_h_flip,is_v_flip)
-            print("3 gamma 3")
+            if DEBUG:
+                print("3 gamma 3")
             return (rx,ry,color)
     
-    print("3 gamma: no condition matched")
+    if DEBUG:
+        print("3 gamma: no condition matched")
     return
 
 
@@ -1426,7 +1587,8 @@ def is_3_beta(grid,bob_move):
     config2 = grid.bob_play_on_config["config2"]
     #print("Check 3 beta: ", config, config2)
     if (config == 'b' and (config2 == 'a' or config2 == 'b')):
-        print("Is 3 beta")
+        if DEBUG:
+            print("Is 3 beta")
         return True
     return False
 
@@ -1443,12 +1605,14 @@ def solve_3_beta(grid,bob_move):
     if (ny == 2):
         cell_1_jp1 = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-        print("3 beta 0a")
+        if DEBUG:
+            print("3 beta 0a")
         return (rx,ry,cell_1_jp1.color_options[0])
     if (ny == 1):
         cell_2_jp1 = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("3 beta 0b")
+        if DEBUG:
+            print("3 beta 0b")
         return (rx,ry,cell_2_jp1.color_options[0])
     
     #3 beta 1
@@ -1457,7 +1621,8 @@ def solve_3_beta(grid,bob_move):
     if (ny == 0):
         cell_1_jp1 = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-        print("3 beta 1")
+        if DEBUG:
+            print("3 beta 1")
         return (rx,ry,cell_1_jp1.color_options[0])
 
     #3 beta 2
@@ -1465,7 +1630,8 @@ def solve_3_beta(grid,bob_move):
     if (ny == 3):
         if color != cell_c.value:
             rx,ry = get_real_pos(grid,0,2,j,is_h_flip,is_v_flip)
-            print("3 beta 2")
+            if DEBUG:
+                print("3 beta 2")
             return (rx,ry,color)
 
     #3 beta 3
@@ -1473,7 +1639,8 @@ def solve_3_beta(grid,bob_move):
     cell_0_jp2 = get_norm_cell(grid,2,0,j,is_h_flip,is_v_flip)
     if cell_0_jp2.value != cell_c.value:
         rx,ry = get_real_pos(grid,1,0,j,is_h_flip,is_v_flip)
-        print("3 beta 3")
+        if DEBUG:
+            print("3 beta 3")
         return (rx,ry,cell_c.value)
     
     # 3 beta 4
@@ -1482,14 +1649,16 @@ def solve_3_beta(grid,bob_move):
     if cell_2_jp2.value == cell_c.value:
         cell = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-        print("3 beta 4")
+        if DEBUG:
+            print("3 beta 4")
         return (rx,ry,cell.color_options[0])
 
     # 3 beta 5
     # if 2,j+2 != c => A 1,j+1 x
     if cell_2_jp2.value != cell_c.value and cell_2_jp2.value != 0:
         rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-        print("3 beta 5")
+        if DEBUG:
+            print("3 beta 5")
         return (rx,ry,color)
     
     # 3 beta 6
@@ -1498,10 +1667,12 @@ def solve_3_beta(grid,bob_move):
 
     if cell_1_jp2.value != 0:
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("3 beta 6")
+        if DEBUG:
+            print("3 beta 6")
         return (rx,ry,cell_1_jp2.value)
 
-    print("3 beta: no condition matched")
+    if DEBUG:
+        print("3 beta: no condition matched")
     return
 
 
@@ -1509,7 +1680,8 @@ def is_3_alpha(grid,bob_move):
     config = grid.bob_play_on_config["config"]
     config2 = grid.bob_play_on_config["config2"]
     if (config == "a" and (config2 == "a" )):
-        print("Is 3 alpha")
+        if DEBUG:
+            print("Is 3 alpha")
         return True
     return False
 
@@ -1528,12 +1700,14 @@ def solve_3_alpha(grid,bob_move):
     if (ny == 2):
         cell_1_jp1 = get_norm_cell(grid,1,1,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-        print("3 alpha 0a")
+        if DEBUG:
+            print("3 alpha 0a")
         return (rx,ry,cell_1_jp1.color_options[0])
     if (ny == 1):
         cell_2_jp1 = get_norm_cell(grid,1,2,j,is_h_flip,is_v_flip)
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("3 alpha 0b")
+        if DEBUG:
+            print("3 alpha 0b")
         return (rx,ry,cell_2_jp1.color_options[0])
     
     #3 alpha 1 (only case where 2 config alpha are sym vertical )
@@ -1544,14 +1718,16 @@ def solve_3_alpha(grid,bob_move):
     if (cell_1_jp2.value == cell_3_jp2.value and cell_1_jp2.value != 0):
         if (ny == 3 or ny == 0):
             rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-            print("3 alpha 1")
+            if DEBUG:
+                print("3 alpha 1")
             #if 2,j+2 = 0 => c or if 2,j = 0 => c'
             cell_2_j = get_norm_cell(grid,0,2,j,is_h_flip,is_v_flip)
             if cell_2_j.value != 0:
                 cell = get_norm_cell(grid,0,1,j,is_h_flip,is_v_flip)
                 return (rx,ry,cell.value)
             return (rx,ry,cell_1_jp2.value)
-        print("3 alpha 1: condition not met (should not happen if config is correct)")
+        if DEBUG:
+            print("3 alpha 1: condition not met (should not happen if config is correct)")
 
     #3 alpha 2 ???
     # if c' != c => A 2,j+1 
@@ -1559,14 +1735,16 @@ def solve_3_alpha(grid,bob_move):
     cell_c = get_norm_cell(grid,2,0,j,is_h_flip,is_v_flip)
     if cell_cp.value != cell_c.value :
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("3 alpha 2")
+        if DEBUG:
+            print("3 alpha 2")
         return (rx,ry,cell_cp.value)
 
     # 3 alpha 3
     # if B 3,j+1 x => 1,j+1 x
     if (ny == 3):
         rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-        print("3 alpha 3")
+        if DEBUG:
+            print("3 alpha 3")
         return (rx,ry,color)
 
     # 3 alpha 4
@@ -1574,24 +1752,28 @@ def solve_3_alpha(grid,bob_move):
     cell_2_j = get_norm_cell(grid,0,2,j,is_h_flip,is_v_flip)
     if cell_2_j.value != color :
         rx,ry = get_real_pos(grid,1,2,j,is_h_flip,is_v_flip)
-        print("3 alpha 4")
+        if DEBUG:
+            print("3 alpha 4")
         return (rx,ry,color)
 
     # 3 alpha 5
     # if col j+3 empty => A 1,j+1 x
     if is_column_empty(grid,3,j,is_v_flip):
         rx,ry = get_real_pos(grid,1,1,j,is_h_flip,is_v_flip)
-        print("3 alpha 5")
+        if DEBUG:
+            print("3 alpha 5")
         return (rx,ry,color)
 
     # 3 alpha 6
     # if if col j+3 not empty => 3,j+1 x
     else :
         rx,ry = get_real_pos(grid,1,3,j,is_h_flip,is_v_flip)
-        print("3 alpha 6")
+        if DEBUG:
+            print("3 alpha 6")
         return (rx,ry,color)
 
-    print("3 alpha: no condition matched")
+    if DEBUG:
+        print("3 alpha: no condition matched")
     return
 
 

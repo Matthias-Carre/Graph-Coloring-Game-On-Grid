@@ -1,3 +1,9 @@
+"""
+This script simulates random-vs-random graph coloring matches between Alice and Bob and reports the win rates.
+
+Used to have an idea of the win rate of Alice and Bob with random strategies, to compare with the heuristic strategies or neural network strategies.
+"""
+
 from game.Grid import Grid
 import argparse
 from game.Bob.bob import Bob
@@ -40,7 +46,7 @@ def main():
             # Alice logic
             #alice_move = alice.next_safe_move()
             
-            alice_move = alice.next_euristic1_move()
+            alice_move = alice.next_heuristic1_move()
 
             if start:
                 start = False

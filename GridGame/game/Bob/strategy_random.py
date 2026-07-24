@@ -1,3 +1,9 @@
+"""
+
+This file contains the logic for Bob's random strategy and some heuristic strategies in the GridGame.
+The random and heristic strategy is designed to have some base strategies for Bob to play the game, which can be used to try the game, help to train a model, or to test the game.
+
+"""
 import random
 
 
@@ -13,6 +19,7 @@ import random
 
 
 def euristic_move(grid, bob_move):
+    #print("Bob playing euristic move")
 
     # Collect all valid moves for cc cell heuristic
     valid_cc_moves = []
@@ -48,8 +55,9 @@ def euristic_move(grid, bob_move):
                         colors = set(cell.color_options).intersection(set(neighbor_2.color_options))
                         #print(f"TEST color: {colors}")  
                         if colors:
-                            return neighbor.y, neighbor.x, colors.pop()  # Return the first color from the intersection         
-
+                            c = colors.pop()
+                            if grid.is_move_valid(neighbor.y, neighbor.x, c):
+                                return neighbor.y, neighbor.x, c  # Return the first color from the intersection
 
     # Collect all valid moves for cells with exactly 2 color options
     valid_two_colors_moves = []

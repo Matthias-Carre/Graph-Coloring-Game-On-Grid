@@ -1,7 +1,12 @@
+"""
+This file contains the logic for generating LaTeX code to represent the grid in the GridGame.
+
+Could be usedfull to generate a latex representation of the grid to write a paper or to visualize the grid in a more formal way.
+"""
+
 
 # input : gird
 # out : latex code for the grid
-
 def save_grid_latex(grid, filename="grid_output.tex"):
 
     # start of the latex code
