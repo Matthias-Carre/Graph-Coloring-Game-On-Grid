@@ -238,7 +238,7 @@ class GameEngine:
         elif self.alice_mode == "strategy":
             move = self.Alice.next_move()
         else:  # heuristic
-            move = self.Alice.next_euristic1_move()
+            move = self.Alice.next_heuristic1_move()
         if move is None:
             move = self.Alice.next_random_move()
         x, y, color = move

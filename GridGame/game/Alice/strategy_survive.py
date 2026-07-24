@@ -8,8 +8,16 @@ DEBUG = False
 
 
 
-#euristic
-def eurisitic_move(grid, bob_move):
+#heuristic
+
+# in : grid : grid of the game , bob_move : bob's last move (x,y,color)
+# out : (x,y,color) : Alice's next move
+# heuristic for Alice:
+# 1. if a cell is color critical, then we play it
+# 2. else if cc we play the neighbor of the cc cell that does not create a cc cell
+# 3. else if we can create 2 safe with one move,
+# 4. else play a move that dose not give oportunity to Bob to kill Alice
+def heurisitic_move(grid, bob_move):
 
     # if a cell is color critical, then we play it
     # for the moment we play the color in the cell, maybe blocking it elsewhere is better
@@ -119,7 +127,9 @@ def eurisitic_move(grid, bob_move):
     
 
 
-
+# in : grid : grid of the game , bob_move : bob's last move (x,y,color)
+# out : bool : True if the move (x,y,c) creates a color critical cell, False otherwise
+# check if the move (x,y,c) creates a color critical cell
 def is_move_creating_cc(grid, x,y,c):
     #print(f"checking if move ({x}, {y}, {c}) creates a color critical cell")
     cell = grid.get_cell(x, y)
@@ -133,9 +143,9 @@ def is_move_creating_cc(grid, x,y,c):
     
 
 
-
-
-# Alice will never play a move that kill her unless there is no other choice. 
+#in : grid : grid of the game , bob_move : bob's last move (x,y,color)
+#out : (x,y,color) : Alice's next move
+# Alice try to play a random safe move if possible, otherwise she will play a random legal move
 def survive_strategy(grid, bob_move):
     legal_moves = []
     safe_moves = []
