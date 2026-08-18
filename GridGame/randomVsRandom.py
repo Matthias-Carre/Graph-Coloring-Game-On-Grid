@@ -3,21 +3,9 @@ import argparse
 from game.Bob.bob import Bob
 from game.Alice.alice import Alice
 
-# Alice Random vs Bob Random
-# with input size, color and number of games to simulate
-def main():
-    parser = argparse.ArgumentParser(
-        description="Run random-vs-random graph coloring matches and report win rates."
-    )
-    parser.add_argument("--w", type=int, default=4, help="Grid width.")
-    parser.add_argument("--h", type=int, default=4, help="Grid height.")
-    parser.add_argument("--colors", type=int, default=4, help="Number of colors.")
-    parser.add_argument("--games", type=int, default=100, help="Number of games to simulate.")
-    
-    args = parser.parse_args()
-
+def run_random_vs_random(grid_width, grid_height, num_colors, num_games):
     #create the grid:
-    grid = Grid(args.h, args.w, args.colors)
+    grid = Grid(grid_height, grid_width, num_colors)
 
     alice = Alice(grid)
     bob = Bob(grid)
@@ -29,9 +17,9 @@ def main():
     Bob_kill_Alice=0
     colored_cell_proportion_list = []
 
-    for game in range(args.games):
+    for game in range(num_games):
         start = True
-        grid = Grid(args.h, args.w, args.colors)
+        grid = Grid(grid_height, grid_width, num_colors)
         alice = Alice(grid)
         bob = Bob(grid)
         while True:
@@ -39,7 +27,7 @@ def main():
 
             # Alice logic
             #alice_move = alice.next_safe_move()
-            
+            #alice_move = alice.next_random_move()
             alice_move = alice.next_heuristic1_move()
 
             if start:
@@ -63,8 +51,10 @@ def main():
 
             grid.player = 1
 
-            #bob logic here
-            bob_move = bob.kill_if_possible()
+            # BOB logic here
+            #bob_move = bob.next_random_move()
+            #bob_move = bob.kill_if_possible()
+            bob_move = bob.next_move_euristic()
 
 
             if bob_move is None:
@@ -77,24 +67,46 @@ def main():
                 break
             if has_uncolorable_cell(grid):
                 #show the grid
-                print("BOB win:")
-                render(grid)
-                print(f"------")                
+                #print("BOB win:")
+                #render(grid)
+                #print(f"------")                
                 Bob_win += 1
                 Bob_kill_Alice += 1
                 break
 
         colored_cell_proportion_list.append(grid.proportion_colored_cells())
+        '''
         if game % 1000 == 0:
-            print(f"Game {game}/{args.games}")
+            print(f"Game {game}/{num_games}")
             render(grid)
-    print(f"On {args.games} games with grid {args.w}x{args.h} and {args.colors} colors:")
-    print(f"Alice wins: {Alice_win} ({100*Alice_win/args.games:.1f}%)")
-    print(f"Bob wins:   {Bob_win} ({100*Bob_win/args.games:.1f}%)")
-    print(f"Alice kills herself: {Alice_kill_herself} ({100*Alice_kill_herself/args.games:.1f}%)")
-    print(f"Bob kills Alice: {Bob_kill_Alice} ({100*Bob_kill_Alice/args.games:.1f}%)") 
+        '''
+         
+    print(f"On {num_games} games with grid {grid_width}x{grid_height} and {num_colors} colors:")
+    print(f"Alice wins: {Alice_win} ({100*Alice_win/num_games:.1f}%)")
+    print(f"Bob wins:   {Bob_win} ({100*Bob_win/num_games:.1f}%)")
+    print(f"Alice kills herself: {Alice_kill_herself} ({100*Alice_kill_herself/num_games:.1f}%)")
+    print(f"Bob kills Alice: {Bob_kill_Alice} ({100*Bob_kill_Alice/num_games:.1f}%)") 
     avg_colored_proportion = sum(colored_cell_proportion_list) / len(colored_cell_proportion_list)
     print(f"Average proportion of colored cells at game end: {avg_colored_proportion}") 
+    print(f"-==-=--=-=-=-=-==---=--=-=")
+
+# Alice Random vs Bob Random
+# with input size, color and number of games to simulate
+def main():
+    parser = argparse.ArgumentParser(
+        description="Run random-vs-random graph coloring matches and report win rates."
+    )
+    parser.add_argument("--w", type=int, default=4, help="Grid width.")
+    parser.add_argument("--h", type=int, default=4, help="Grid height.")
+    parser.add_argument("--colors", type=int, default=4, help="Number of colors.")
+    parser.add_argument("--games", type=int, default=100, help="Number of games to simulate.")
+    
+    args = parser.parse_args()
+
+    #run_random_vs_random(args.w, args.h, args.colors, args.games)
+
+    for e in [4,5,6,10,20] :
+        run_random_vs_random(e, e, 4, 5000)
 
     # get random move from alice
 

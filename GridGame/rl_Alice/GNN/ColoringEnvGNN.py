@@ -9,17 +9,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from game.Grid import Grid
-from game.Alice.alice import Alice
-from ModelGT import GraphColoringNet
+from game.Bob.bob import Bob
+from ModelGNN import GraphColoringNet
 
-ALICE_MODE = "heuristic" 
-#LOGICS = ["heuristic", "random", "nn"]
-LOGICS = ["heuristic", "random"]
+BOB_MODE = "heuristic" 
+LOGICS = ["heuristic", "random", "nn"]
 
-ALICE_PLAYER = 0
-BOB_PLAYER = 1
-
-ALICE_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Alice" / "latest.pt")
+BOB_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Bob" / "latest.pt")
 
 class GraphColoringEnv(gym.Env):
     def __init__(self, width=3, height=3, num_colors=4):
@@ -47,23 +43,23 @@ class GraphColoringEnv(gym.Env):
         })
         
         self.grid = None
-        self.alice = None
+        self.bob = None
         self.current_step = 0
         self.episode_return = 0.0
         self.episode_length = 0
         self.completed_episodes = []
 
-        self.alice_nn = None
-        if ALICE_MODE == "nn":
-            self.alice_nn = GraphColoringNet(width=self.width, height=self.height, num_colors=self.num_colors)
+        self.bob_nn = None
+        if BOB_MODE == "nn":
+            self.bob_nn = GraphColoringNet(width=self.width, height=self.height, num_colors=self.num_colors)
             try:
-                checkpoint = torch.load(ALICE_NN_PATH, map_location="cpu")
-                self.alice_nn.load_state_dict(checkpoint["model_state_dict"])
-                self.alice_nn.eval()
-                print(f"Environment initialized: Alice's NN successfully loaded")
+                checkpoint = torch.load(BOB_NN_PATH, map_location="cpu")
+                self.bob_nn.load_state_dict(checkpoint["model_state_dict"])
+                self.bob_nn.eval()
+                print(f"Environment initialized: Bob's NN successfully loaded")
             except FileNotFoundError:
-                print(f"Warning: Alice's model not found. Falling back to heuristic.")
-                self.alice_nn = None
+                print(f"Warning: Bob's model not found. Falling back to heuristic.")
+                self.bob_nn = None
 
     def _finish_episode(self, reason, reward):
         self.completed_episodes.append({
@@ -97,25 +93,13 @@ class GraphColoringEnv(gym.Env):
         
         # Complete recreation of game state
         self.grid = Grid(self.height, self.width, self.num_colors)
-        self.alice = Alice(self.grid)
-        self.grid.player = ALICE_PLAYER  # Player 0 starts
+        self.bob = Bob(self.grid)
+        self.grid.player = 0  # Player 0 starts
         
         self.current_logic = random.choice(LOGICS)
         
-        # 1st move of Alice
-        if self.current_logic == "heuristic":
-            alice_move = self.alice.next_euristic1_move()
-        elif self.current_logic == "nn" and self.alice_nn is not None:
-            alice_move = self._get_alice_nn_move()
-        else:
-            alice_move = self.alice.next_random_move()
-        
-        if alice_move is not None:
-            alice_x, alice_y, alice_c = alice_move
-            self.grid.play_move(alice_x, alice_y, alice_c)
         
         
-        self.grid.player =  BOB_PLAYER
         return self._get_obs(), {}
 
     def _action_to_move(self, action: int):
@@ -127,8 +111,8 @@ class GraphColoringEnv(gym.Env):
         return x, y, c
     
 
-    def _get_alice_nn_move(self):
-        """Queries the trained neural network for Alice's best move, with epsilon-greedy randomness."""
+    def _get_bob_nn_move(self):
+        """Queries the trained neural network for Bob's best move, with epsilon-greedy randomness."""
         obs_dict = self._get_obs()
         
         # Epsilon-greedy: Play a random valid move with probability 'epsilon'
@@ -139,7 +123,7 @@ class GraphColoringEnv(gym.Env):
             
         if valid_actions:  # Fallback check to ensure the list is not empty
             random_action = random.choice(valid_actions)
-            #print(f"Alice: Played random move (epsilon {epsilon})") # Optional debug
+            #print(f"Bob: Played random move (epsilon {epsilon})") # Optional debug
             return self._action_to_move(random_action)
         
         # Exploitation: Play the best move according to the neural network
@@ -147,7 +131,7 @@ class GraphColoringEnv(gym.Env):
         mask_tensor = torch.tensor(obs_dict["mask"], dtype=torch.bool).unsqueeze(0)
         
         with torch.no_grad():
-            logits, _ = self.alice_nn(obs_tensor)
+            logits, _ = self.bob_nn(obs_tensor)
             # Penalize illegal moves
             logits = logits.masked_fill(~mask_tensor, -1e8)
             best_action = torch.argmax(logits, dim=1).item()
@@ -157,10 +141,8 @@ class GraphColoringEnv(gym.Env):
     
     # Step with rewards only on lose or win (kept for reference)
     def step(self, action):
-        
         self.current_step += 1
         self.episode_length += 1
-        self.grid.player = BOB_PLAYER
         
         c = (action % self.num_colors) + 1
         cell_idx = action // self.num_colors
@@ -175,51 +157,48 @@ class GraphColoringEnv(gym.Env):
             self._finish_episode("illegal_move", -10.0)
             return self._get_obs(), -10.0, True, False, {"reason": "illegal_move"}
 
-        # --- 1. Bob plays ---     
+        # --- 1. Alice plays ---     
         self.grid.play_move(x, y, c)
         
-        # Check if Bob created a dead node
+        # Check if Alice created a dead node
         if self.has_uncolorable_cell():
-            self._finish_episode("bob_won", 10.0)
-            return self._get_obs(), 10.0, True, False, {"reason": "bob_won"}
+            self._finish_episode("alice_created_dead_node", -10.0)
+            return self._get_obs(), -10.0, True, False, {"reason": "alice_created_dead_node"}
 
         # Did Alice win?
         if self.is_grid_full():
-            self._finish_episode("alice_won", -10.0)
-            return self._get_obs(), -10.0, True, False, {"reason": "alice_won"}
+            self._finish_episode("alice_won", 10.0)
+            return self._get_obs(), 10.0, True, False, {"reason": "alice_won"}
 
-        # --- 2. Alice plays ---
-        self.grid.player = ALICE_PLAYER
+        # --- 2. Bob plays ---
+        self.grid.player = 1
         
-        # Determine Alice's move based on selected mode
-        alice_move = None
+        # Determine Bob's move based on selected mode
+        bob_move = None
         
         epsilon = 0.4
         
         if self.current_logic == "heuristic" and random.random() >= epsilon:
-            alice_move = self.alice.next_euristic1_move()
-        elif self.current_logic == "nn" and self.alice_nn is not None :
-            alice_move = self._get_alice_nn_move()
+            bob_move = self.bob.next_move_euristic()
+        elif self.current_logic == "nn" and self.bob_nn is not None :
+            bob_move = self._get_bob_nn_move()
         else:
-            alice_move = self.alice.next_random_move()
+            bob_move = self.bob.next_random_move()
         
-        if alice_move is not None:
-            alice_x, alice_y, alice_c = alice_move
-            self.grid.play_move(alice_x, alice_y, alice_c)
-        
-        self.grid.player = BOB_PLAYER
+        if bob_move is not None:
+            bob_x, bob_y, bob_c = bob_move
+            self.grid.play_move(bob_x, bob_y, bob_c)
+        self.grid.player = 0
 
-        
-
-        # Check if Alice created a dead
+        # Check if Bob created a dead node to trap Alice
         if self.has_uncolorable_cell():
-            self._finish_episode("bob_won", 10.0)
-            return self._get_obs(), 10.0, True, False, {"reason": "bob_won"}
+            self._finish_episode("bob_created_dead_node", -10.0)
+            return self._get_obs(), -10.0, True, False, {"reason": "bob_created_dead_node"}
 
-        # Did Alice win after her move?
+        # Did Alice win after Bob's move
         if self.is_grid_full():
-            self._finish_episode("alice_won", -10.0)
-            return self._get_obs(), -10.0, True, False, {"reason": "alice_won"}
+            self._finish_episode("alice_won", 10.0)
+            return self._get_obs(), 10.0, True, False, {"reason": "alice_won"}
 
         self.episode_return += reward
         return self._get_obs(), reward, False, False, {}

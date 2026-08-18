@@ -15,10 +15,10 @@ import sys
 from pathlib import Path
 
 # Add parent directory to path to access game modules
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from ColoringEnv import GraphColoringEnv
-from Model import GraphColoringNet
+from ColoringEnvGNN import GraphColoringEnv
+from ModelGNN import GraphColoringNet
 
 
 # Function to create 2D grid edges

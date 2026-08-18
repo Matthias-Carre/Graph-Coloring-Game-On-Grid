@@ -37,7 +37,7 @@ def build_grid_edges(width, height):
 
 def main():
     # Configuration
-    WIDTH, HEIGHT, COLORS = 10, 10, 4 
+    WIDTH, HEIGHT, COLORS = 7, 7, 4 
     
     # Adjust path according to your folder structure
     MODEL_PATH = "rl_Alice/latest.pt"  
@@ -45,7 +45,7 @@ def main():
     device = torch.device("cpu")
 
     # Initialize the Graph Transformer model
-    model = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS, hidden_dim=128, num_layers=3)
+    model = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS)
     
     try:
         checkpoint = torch.load(MODEL_PATH, map_location=device)

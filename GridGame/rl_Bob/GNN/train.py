@@ -17,8 +17,8 @@ from pathlib import Path
 # Add parent directory to path to access game modules
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from ColoringEnvGT import GraphColoringEnv
-from ModelGT import GraphColoringNet
+from ColoringEnvGNN import GraphColoringEnv
+from ModelGNN import GraphColoringNet
 
 
 # Function to create 2D grid edges
@@ -67,7 +67,7 @@ def log_metrics_to_file(log_path, batch_idx, num_episodes, win_rate, min_episode
     
     with open(log_path, 'a') as f:
         if not file_exists or batch_idx == 0:
-            f.write(f"Bob Training On size: w={WIDTH}, h={HEIGHT}, c={COLORS}\n")
+            f.write(f"Alice Training On size: w={WIDTH}, h={HEIGHT}, c={COLORS}\n")
             f.write("batch,num_episodes,win_rate,min_score,avg_score,max_score,avg_length,actor_loss,value_loss,entropy_loss\n")
             return
         if num_episodes > 0:
@@ -118,7 +118,7 @@ def main():
     # Set thread limit to prevent system freezing
     torch.set_num_threads(4)
 
-    script_dir = Path(__file__).parent.parent.parent
+    script_dir = Path(__file__).parent.parent
     default_checkpoint = str(script_dir / "checkpoints" / "Bob" / "latest.pt")
     default_log_file = str(script_dir / "checkpoints" / "Bob" / "training_metrics.csv")
     
@@ -129,7 +129,7 @@ def main():
     parser.add_argument("--save-every", type=int, default=500)
     args = parser.parse_args()
 
-    WIDTH, HEIGHT, COLORS = 6, 6, 4
+    WIDTH, HEIGHT, COLORS = 7, 7, 4
     LEARNING_RATE = 3e-4
     FRAMES_PER_BATCH = 200
     MINI_BATCH_SIZE = 125   # 4 mini-batches par batch, même mémoire
@@ -145,7 +145,7 @@ def main():
     eval_env = GraphColoringEnv(width=WIDTH, height=HEIGHT, num_colors=COLORS)
 
     print("Creating Actor-Critic network...")
-    core_network = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS, hidden_dim=128, num_layers=5)
+    core_network = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS, hidden_dim=128, num_layers=3)
     
     # Static edge creation for the model
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -291,7 +291,7 @@ def main():
                 avg_episode_length = sum(lengths) / len(lengths)
                 min_episode_return = min(returns)
                 max_episode_return = max(returns)
-                win_rate = reasons.get("bob_won", 0) / num_episodes
+                win_rate = (len(completed_episodes) - reasons.get("alice_won", 0)) / num_episodes
                 reasons_str = ", ".join(f"{k}={v}" for k, v in reasons.items())
             else:
                 num_episodes = 0

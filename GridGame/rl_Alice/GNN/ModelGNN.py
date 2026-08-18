@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch_geometric.nn import TransformerConv, global_mean_pool
 
 class GraphColoringNet(nn.Module):
-    def __init__(self, width, height, num_colors, hidden_dim=64, num_layers=3):
+    def __init__(self, width, height, num_colors, hidden_dim=64, num_layers=5):
         super().__init__()
         
         self.width = width
@@ -15,10 +15,10 @@ class GraphColoringNet(nn.Module):
         # Encodeur initial
         self.encoder = nn.Linear(in_channels, hidden_dim)
         
-        # Couches Graph attention-based
-        self.gnn_layers = nn.ModuleList()
+        # Couches Graph attention-based 
+        self.transformer_layers = nn.ModuleList()
         for _ in range(num_layers):
-            self.gnn_layers.append(
+            self.transformer_layers.append(
                 TransformerConv(
                     in_channels=hidden_dim, 
                     out_channels=hidden_dim // 4, 
@@ -64,8 +64,8 @@ class GraphColoringNet(nn.Module):
         # On transpose d'abord pour séparer proprement la ligne des sources et des cibles
         batched_edge_index = batched_edge_index.transpose(0, 1).reshape(2, B * E)
         
-        # Passage dans les couches GNN
-        for conv in self.gnn_layers:
+        # Passage dans les couches Transformer
+        for conv in self.transformer_layers:
             h_flat = torch.relu(conv(h_flat, batched_edge_index))
             
         # Calcul de l'Acteur

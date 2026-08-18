@@ -41,3 +41,14 @@ batch,num_episodes,win_rate,min_score,avg_score,max_score,avg_length,actor_loss,
 3800,1598,0.9274,-10.0000,8.5482,10.0000,12.5163,-0.000678,0.001553,-0.021606
 3900,1568,0.9636,-10.0000,9.2730,10.0000,12.7583,-0.005539,0.004492,-0.008760
 4000,1574,0.9536,-10.0000,9.0724,10.0000,12.6989,-0.010073,0.487131,-0.018622
+Alice Training On size: w=5, h=5, c=4
+batch,num_episodes,win_rate,min_score,avg_score,max_score,avg_length,actor_loss,value_loss,entropy_loss
+Alice Training On size: w=5, h=5, c=4
+batch,num_episodes,win_rate,min_score,avg_score,max_score,avg_length,actor_loss,value_loss,entropy_loss
+Alice Training On size: w=5, h=5, c=4
+batch,num_episodes,win_rate,min_score,avg_score,max_score,avg_length,actor_loss,value_loss,entropy_loss
+100,1954,0.5983,-10.0000,1.9652,10.0000,10.2375,-0.010537,2.921492,-0.029968
+200,1903,0.6343,-10.0000,2.6852,10.0000,10.5097,-0.001009,2.900728,-0.028136
+300,1911,0.6384,-10.0000,2.7682,10.0000,10.4694,-0.006148,2.915536,-0.031660
+400,1947,0.6086,-10.0000,2.1726,10.0000,10.2696,0.001662,3.779931,-0.033571
+500,1964,0.5896,-10.0000,1.7923,10.0000,10.1808,-0.013788,4.527939,-0.033528
