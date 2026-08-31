@@ -27,8 +27,8 @@ def run_random_vs_random(grid_width, grid_height, num_colors, num_games):
 
             # Alice logic
             #alice_move = alice.next_safe_move()
-            #alice_move = alice.next_random_move()
-            alice_move = alice.next_heuristic1_move()
+            alice_move = alice.next_random_move()
+            #alice_move = alice.next_heuristic1_move()
 
             if start:
                 start = False
@@ -52,9 +52,9 @@ def run_random_vs_random(grid_width, grid_height, num_colors, num_games):
             grid.player = 1
 
             # BOB logic here
-            #bob_move = bob.next_random_move()
+            bob_move = bob.next_random_move()
             #bob_move = bob.kill_if_possible()
-            bob_move = bob.next_move_euristic()
+            #bob_move = bob.next_move_euristic()
 
 
             if bob_move is None:

@@ -147,6 +147,9 @@ def main():
     print("Creating Actor-Critic network...")
     core_network = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS, hidden_dim=128, num_layers=3)
     
+    total_parameters = sum(p.numel() for p in core_network.parameters() if p.requires_grad)
+    print(f"Exact parameter count: {total_parameters}")
+    
     # Static edge creation for the model
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     core_network = core_network.to(device)

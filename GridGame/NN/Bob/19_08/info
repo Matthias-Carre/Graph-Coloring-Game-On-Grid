@@ -1,0 +1,4 @@
+model cnn 8 par 8 4 couleurs converger a 96%
+1 batch = 1m20
+flipRot2dOnR2
+3 couches

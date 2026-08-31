@@ -1,4 +1,11 @@
+"""
+This file contains the implementation of the GraphColoringEnv class, which is a Gymnasium environment for the graph coloring game.
+
+its here we chose the reward function, the step function, the reset function.
+We can configure Bobs behavior to be heuristic, random, or neural network-based.
+"""
 import random
+
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
@@ -6,39 +13,52 @@ import torch
 import sys
 from pathlib import Path
 
+# Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from game.Grid import Grid
 from game.Bob.bob import Bob
 from Model import GraphColoringNet
 
-BOB_MODE = "heuristic" 
-LOGICS = ["heuristic", "random", "nn"]
+# ==========================================
+# TOGGLE BOB'S BEHAVIOR HERE heuristic / nn / rand
+# ==========================================
+#BOB_MODE = "heuristic" 
+BOB_MODE = "nn" 
+LOGICS = ["nn"] #["heuristic", "rand","nn"]
 
 BOB_NN_PATH = str(Path(__file__).parent.parent / "checkpoints" / "Bob" / "latest.pt")
 
+
 class GraphColoringEnv(gym.Env):
+    """
+    Gymnasium environment for graph coloring game.
+    """
     def __init__(self, width=3, height=3, num_colors=4):
         super(GraphColoringEnv, self).__init__()
         
         self.width = width
         self.height = height
         self.num_colors = num_colors
-        self.num_nodes = width * height
         
-        self.total_actions = self.num_nodes * self.num_colors
+        # Action space: choice of a cell and a color
+        # Total actions = (width * height) * number_of_colors
+        self.total_actions = self.width * self.height * self.num_colors
         self.action_space = spaces.Discrete(self.total_actions)
         
+        # Observation space in one-hot encoding
+        # Format: (channels, height, width)
+        # Channels: 1 for empty cells (0), then one channel per color
         self.observation_space = spaces.Dict({
             "observation": spaces.Box(
                 low=0, high=1, 
-                shape=(self.num_nodes, self.num_colors + 1), 
+                shape=(self.num_colors + 1, self.height, self.width), 
                 dtype=np.float32
             ),
             "mask": spaces.Box(
                 low=0, high=1, 
                 shape=(self.total_actions,), 
-                dtype=np.bool_
+                dtype=np.bool_ # Mask is a boolean array
             )
         })
         
@@ -49,19 +69,21 @@ class GraphColoringEnv(gym.Env):
         self.episode_length = 0
         self.completed_episodes = []
 
+        # Load Bob's neural network if mode is active
         self.bob_nn = None
         if BOB_MODE == "nn":
             self.bob_nn = GraphColoringNet(width=self.width, height=self.height, num_colors=self.num_colors)
             try:
                 checkpoint = torch.load(BOB_NN_PATH, map_location="cpu")
                 self.bob_nn.load_state_dict(checkpoint["model_state_dict"])
-                self.bob_nn.eval()
-                print(f"Environment initialized: Bob's NN successfully loaded")
+                self.bob_nn.eval() # Freeze the network
+                print(f"Environment initialized: Bob's NN successfully loaded from {BOB_NN_PATH}")
             except FileNotFoundError:
-                print(f"Warning: Bob's model not found. Falling back to heuristic.")
+                print(f"Warning: Bob's model not found at {BOB_NN_PATH}. Falling back to heuristic.")
                 self.bob_nn = None
 
     def _finish_episode(self, reason, reward):
+        """Store the completed episode statistics for later logging."""
         self.completed_episodes.append({
             "return": self.episode_return + reward,
             "length": self.episode_length,
@@ -69,19 +91,19 @@ class GraphColoringEnv(gym.Env):
         })
 
     def _get_obs(self):
-        obs = np.zeros((self.num_nodes, self.num_colors + 1), dtype=np.float32)
+        """Converts grid state to one-hot tensor (C+1, H, W)."""
+        obs = np.zeros((self.num_colors + 1, self.height, self.width), dtype=np.float32)
         
-        for j in range(self.height):
-            for i in range(self.width):
+        for i in range(self.width):
+            for j in range(self.height):
                 val = self.grid.get_cell(i, j).get_value()
-                node_idx = j * self.width + i
-                obs[node_idx, val] = 1.0 
+                # val is in [0, num_colors]
+                obs[val, j, i] = 1.0 
                 
         return {
             "observation": obs,
             "mask": self.action_masks()
         }
-
 
     def reset(self, seed=None, options=None):
         """Reinitializes environment at episode start."""
@@ -139,7 +161,7 @@ class GraphColoringEnv(gym.Env):
         return self._action_to_move(best_action)
     
     
-    # Step with rewards only on lose or win (kept for reference)
+    # Step with rewards only on lose or win
     def step(self, action):
         self.current_step += 1
         self.episode_length += 1

@@ -1,0 +1,3 @@
+self.r2_act = gspaces.rot2dOnR2(N=4)
+2 couches
+et reshaped_tensor = raw_critic_tensor.view(B, 32, *4*, H, W)

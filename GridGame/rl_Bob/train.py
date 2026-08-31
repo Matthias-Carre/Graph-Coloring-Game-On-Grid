@@ -7,9 +7,7 @@ from tensordict.nn import TensorDictModule
 from torchrl.envs.libs.gym import GymWrapper
 from torchrl.collectors import SyncDataCollector
 
-#from torchrl.objectives import ReinforceLoss
 from torchrl.objectives import A2CLoss
-
 from torchrl.objectives.value import GAE
 from torchrl.modules import ProbabilisticActor, ValueOperator
 from torchrl.modules.distributions import MaskedCategorical
@@ -61,11 +59,12 @@ def log_metrics_to_file(log_path, batch_idx, num_episodes, win_rate, min_episode
     
     with open(log_path, 'a') as f:
         if not file_exists or batch_idx == 0:
-            f.write(f"Alice Training On size: w={WIDTH}, h={HEIGHT}, c={COLORS}\n")
+            f.write(f"Bob Training On size: w={WIDTH}, h={HEIGHT}, c={COLORS}\n")
             f.write("batch,num_episodes,win_rate,min_score,avg_score,max_score,avg_length,actor_loss,value_loss,entropy_loss\n")
-            return
-        f.write(f"{batch_idx},{num_episodes},{win_rate:.4f},{min_episode_return:.4f},{avg_episode_return:.4f},"
+        if num_episodes > 0:
+            f.write(f"{batch_idx},{num_episodes},{win_rate:.4f},{min_episode_return:.4f},{avg_episode_return:.4f},"
                 f"{max_episode_return:.4f},{avg_episode_length:.4f},{actor_loss:.6f},{value_loss:.6f},{entropy_loss:.6f}\n")
+
 
 def run_evaluation_episode(policy, env):
     """
@@ -102,18 +101,11 @@ def run_evaluation_episode(policy, env):
     print("="*30 + "\n")
 
 
-# save the latest.pt if exists to avoid overwriting it
-def backup_latest_checkpoint(checkpoint_path):
-    if os.path.exists(checkpoint_path):
-        backup_path = checkpoint_path.replace("latest.pt", "latest_backup.pt")
-        torch.save(torch.load(checkpoint_path), backup_path)
-        print(f"Backup of latest checkpoint saved to {backup_path}")
-
 def main():
     # Calculate checkpoint path relative to this script location
     script_dir = Path(__file__).parent.parent  # GridGame directory
-    default_checkpoint = str(script_dir / "checkpoints" / "Alice" / "latest.pt")
-    default_log_file = str(script_dir / "checkpoints" / "Alice" / "training_metrics.csv")
+    default_checkpoint = str(script_dir / "checkpoints"/ "Bob" / "latest.pt")
+    default_log_file = str(script_dir / "checkpoints" / "Bob" / "training_metrics.csv")
     
     parser = argparse.ArgumentParser(description="Train graph coloring agent.")
     parser.add_argument("--resume", action="store_true", help="Resume from checkpoint.")
@@ -138,63 +130,33 @@ def main():
     args = parser.parse_args()
 
     # Hyperparameters.
-    WIDTH, HEIGHT, COLORS = 20, 5, 4
+    WIDTH, HEIGHT, COLORS = 10, 10, 4
     LEARNING_RATE = 1e-3
     FRAMES_PER_BATCH = 100    # Steps collected before updating the network
-    TOTAL_FRAMES = 1_000_000     # Total training steps
-    GAMMA = 0.99           # Discount factor for future rewards
+    TOTAL_FRAMES = 500_000     # Total training steps
+    GAMMA = 0.95              # Discount factor for future rewards
     
-    # Backup the latest checkpoint if it exists.
-    backup_latest_checkpoint(args.checkpoint_path)
-
-
     # Environment setup.
-    print("Initializing environment...")    
+    print("Initializing environment...")
     base_env = GraphColoringEnv(width=WIDTH, height=HEIGHT, num_colors=COLORS)
     # Convert Gymnasium outputs to TensorDict for TorchRL.
     env = GymWrapper(base_env, categorical_action_encoding=True)
-
     eval_env = GraphColoringEnv(width=WIDTH, height=HEIGHT, num_colors=COLORS)
 
-        # Neural network setup.
-    print("Creating Actor-Critic network...")
+    # Neural network setup.
+    print("Creating Actor-Critic network (escnn)...")
     core_network = GraphColoringNet(width=WIDTH, height=HEIGHT, num_colors=COLORS)
 
-
-
-
-
-
-
-    """test de set un filte
     
-    #================================
-    # TEST : setting a custom filter 
-    #================================
-    import numpy as np
-    
-    
-    # Create a filter initialized with 0.0
-    custom_filter = np.full((COLORS + 1, 3, 3), 0.0, dtype=np.float32)
-    
-    # Define the expected pattern
-    custom_filter[1, 0, 1] = 0.2
-    custom_filter[2, 1, 0] = 0.2
-    custom_filter[0, 1, 1] = 0.2
-    custom_filter[3, 1, 2] = 0.2
-    custom_filter[0, 2, 1] = 0.2
-
-    # Convert to tensor and inject into the first filter
-    custom_tensor = torch.tensor(custom_filter)
-    with torch.no_grad():
-        core_network.shared_cnn[0].weight[0] = custom_tensor
-        core_network.shared_cnn[0].bias[0] = 0.0
-
-    """
-
-
-
-
+    total_parameters = sum(p.numel() for p in core_network.parameters() if p.requires_grad)
+    print(f"Exact parameter count: {total_parameters}")
+    # =========================================================================
+    # REMOVED: Custom manual filter injection.
+    # escnn uses steerable basis functions to construct weights dynamically. 
+    # Directly overwriting weight tensors with arbitrary values breaks the 
+    # geometric constraints and equivariance properties of the G-CNN.
+    # The network will learn the optimal symmetrical filters natively.
+    # =========================================================================
 
     # Wrappers to split actor and critic outputs.
     class ActorWrapper(torch.nn.Module):
@@ -208,7 +170,6 @@ def main():
             # Handle the case where the model creates an artificial batch dimension.
             if obs.dim() == 3 and logits.dim() == 2:
                 logits = logits.squeeze(0)  # [1, A] -> [A]
-                
                 
             # Align mask shape with logits when needed.
             if mask.dim() < logits.dim():
@@ -232,8 +193,6 @@ def main():
                 
             return value
         
-
-        
     # Actor module: takes observation and action mask.
     actor_module = TensorDictModule(
         module=ActorWrapper(core_network),
@@ -256,7 +215,6 @@ def main():
         in_keys=["observation"],
         out_keys=["state_value"]
     )
-
     
     # Data collector.
     print("Setting up SyncDataCollector...")
@@ -267,7 +225,6 @@ def main():
         total_frames=TOTAL_FRAMES,
         device="cpu" 
     )
-
 
     # Loss and advantage modules.
     # A2C objective with entropy regularization.
@@ -324,7 +281,7 @@ def main():
         # Extract loss components.
         actor_loss = loss_dict["loss_objective"]
         value_loss = loss_dict["loss_critic"]
-        entropy_loss = loss_dict["loss_entropy"]  # Optional, useful for monitoring.
+        entropy_loss = loss_dict["loss_entropy"]  
         
         # Build total optimization loss.
         total_loss = actor_loss + value_loss + entropy_loss
@@ -332,11 +289,18 @@ def main():
         # Backpropagation.
         optimizer.zero_grad()
         total_loss.backward()
-                
+        
+        # =========================================================================
+        # ADDED: Gradient Clipping
+        # Prevents exploding gradients from destroying the network weights
+        # when the agent encounters severe negative rewards.
+        # =========================================================================
+        torch.nn.utils.clip_grad_norm_(core_network.parameters(), max_norm=0.5)
+
         optimizer.step()
 
         # Logging metrics.
-        if batch_idx % 100 == 0:
+        if batch_idx % 100 == 0 :
             avg_reward = tensordict_data["next", "reward"].mean().item()
 
             completed_episodes = base_env.completed_episodes
@@ -350,7 +314,7 @@ def main():
                 avg_episode_length = sum(lengths) / len(lengths)
                 min_episode_return = min(returns)
                 max_episode_return = max(returns)
-                win_rate = reasons.get("alice_won", 0) / num_episodes
+                win_rate = (num_episodes - reasons.get("bob_loses", 0)) / num_episodes
                 reasons_str = ", ".join(f"{k}={v}" for k, v in reasons.items())
             else:
                 num_episodes = 0
@@ -365,12 +329,12 @@ def main():
                 f"Batch {batch_idx:4d} | Actor Loss: {actor_loss.item(): 8.3f} | Value Loss: {value_loss.item(): 8.3f} | "
                 f"Avg Step Reward: {avg_reward: 6.3f} | Avg Episode Return: {avg_episode_return: 6.3f} | "
                 f"Avg Episode Len: {avg_episode_length: 6.1f} | Episodes: {num_episodes:4d} | "
-                f"WinRate: {win_rate: 6.2%} | Return[min/max]: {min_episode_return: 6.2f}/{max_episode_return: 6.2f} | "
+                f"WinRate (Bob): {win_rate: 6.2%} | Return[min/max]: {min_episode_return: 6.2f}/{max_episode_return: 6.2f} | "
                 f"Reasons: {reasons_str}"
             )
 
             base_env.completed_episodes.clear()
-            
+
             # Log metrics to file
             log_metrics_to_file(
                 args.log_path, batch_idx, num_episodes, win_rate, min_episode_return,
@@ -381,9 +345,7 @@ def main():
 
             run_evaluation_episode(policy, eval_env)
 
-            if batch_idx % args.save_every == 0:
-                if batch_idx == 0:
-                    save_checkpoint(args.checkpoint_path, core_network, optimizer, batch_idx, config)
+            if args.save_every > 0 and batch_idx > 0 and batch_idx % args.save_every == 0:
                 save_checkpoint(args.checkpoint_path, core_network, optimizer, batch_idx, config)
                 print(f"Checkpoint saved: {args.checkpoint_path} (batch {batch_idx})")
 
